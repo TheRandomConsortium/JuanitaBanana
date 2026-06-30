@@ -26,10 +26,10 @@ use servo::{
 
 use std::sync::Arc;
 use winit::{
-    event::{Event, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    // WindowBuilder changed in newer winit, we'll fix this later
-    // window::WindowBuilder,
+    application::ApplicationHandler,
+    event::WindowEvent,
+    event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
+    window::{Window, WindowId},
 };
 
 use crate::browser::{SharedBanList, normalize_url, extract_domain};
@@ -57,31 +57,52 @@ impl EmbedderMethods for JuanitaEmbedder {
 }
 */
 
+struct JuanitaApp {
+    window: Option<Arc<Window>>,
+    state: SharedBanList,
+}
+
+impl ApplicationHandler for JuanitaApp {
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        if self.window.is_none() {
+            let attrs = Window::default_attributes()
+                .with_title("Juanita Banana 🍌")
+                .with_inner_size(winit::dpi::LogicalSize::new(1280, 800));
+            
+            let window = event_loop.create_window(attrs).expect("Failed to create window");
+            self.window = Some(Arc::new(window));
+
+            // TODO: Initialize surfman + Servo compositor here.
+            
+            log::info!("[JuanitaBanana] Starting — engine: Servo, stack: 100% Rust");
+            log::info!("[JuanitaBanana] User-Agent: {}", spoof::USER_AGENT);
+            println!("Banana Browser Core Initialized!");
+            println!("Servo Engine has successfully compiled!");
+        }
+    }
+
+    fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
+        match event {
+            WindowEvent::CloseRequested => {
+                event_loop.exit();
+            }
+            WindowEvent::KeyboardInput { .. } => {
+                // TODO: Pass keyboard events to Servo
+            }
+            _ => {}
+        }
+    }
+}
+
 // ── Main run loop ─────────────────────────────────────────────
 pub fn run(state: SharedBanList) {
-    // We are temporarily disabling the window creation until we
-    // stabilize the surfman + Servo compositor integration.
-    
-    // let event_loop = EventLoop::new().expect("Failed to create event loop");
-    // let window = WindowBuilder::new().with_title("Juanita Banana 🍌").build(&event_loop).unwrap();
-    // let window = Arc::new(window);
+    let event_loop = EventLoop::new().expect("Failed to create event loop");
+    event_loop.set_control_flow(ControlFlow::Wait);
 
-    // TODO: Initialize surfman + Servo compositor here.
-    // The Servo 0.3 API is being adjusted — this will be
-    // completed as we resolve compilation errors.
-    //
-    // Reference: https://github.com/servo/servo/tree/main/ports/servoshell
+    let mut app = JuanitaApp {
+        window: None,
+        state,
+    };
 
-    let home_url = "https://duckduckgo.com";
-    let mut current_url = home_url.to_string();
-
-    // UI state (egui chrome)
-    let mut url_input = home_url.to_string();
-    let mut is_banned_page = false;
-
-    log::info!("[JuanitaBanana] Starting — engine: Servo, stack: 100% Rust");
-    log::info!("[JuanitaBanana] User-Agent: {}", spoof::USER_AGENT);
-
-    println!("Banana Browser Core Initialized!");
-    println!("Servo Engine has successfully compiled!");
+    event_loop.run_app(&mut app).expect("Event loop error");
 }
