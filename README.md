@@ -62,7 +62,7 @@ Read the full manifesto → [`docs/MANIFESTO.md`](docs/MANIFESTO.md)
 - **Viewport:** `screen.*` and `window.inner*` report randomized dimensions. Layout is unaffected.
 - **WebGL:** Vendor/renderer strings replaced with Juanita Banana GPU
 - **Navigator:** hardwareConcurrency, deviceMemory, platform — all spoofed
-- **User-Agent:** Rotates daily through a curated list of genuine, modern User-Agents (Windows Chrome, iOS Safari, Linux Firefox, etc.). We blend into the crowd perfectly.
+- **User-Agent:** Honest by default (`JuanitaBanana/0.1`). In the future, a config toggle will allow switching to a rotating mode that cycles daily through a curated list of genuine, modern User-Agents to blend into the crowd perfectly.
 
 ### 🔍 Search Profile Obfuscation
 - Every real search fires 20 background searches from a heterogeneous pool
@@ -81,7 +81,7 @@ Read the full manifesto → [`docs/MANIFESTO.md`](docs/MANIFESTO.md)
 - Detects AI-generated content disclosures → injects warning in the article title
 
 ### 🔮 Future Arsenal
-GTM poisoning · Meta Pixel contamination · Cookie garbage fill · Beacon API interception · Tor integration · Password manager · P2P search pool
+GTM poisoning · Meta Pixel contamination · Cookie garbage fill · Beacon API interception · Tor integration · Password manager · P2P search pool · GDPR Aggressive Unsubscribe
 
 See [`docs/FUNCTIONALITIES.md`](docs/FUNCTIONALITIES.md) for full status.
 

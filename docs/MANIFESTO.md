@@ -5,8 +5,8 @@
 
 We adamantly refuse to use Google's engine (Blink/Chromium). This browser is ultra bare-metal, built in native compiled code (Rust) to talk directly to the machine. It runs blazing fast, has the most spartan interface in existence, and shows absolutely no mercy to the modern web.
 
-**Engine:** Servo (Rust, Linux Foundation) — 100% Rust, from the engine up.
-**UI:** winit + egui — minimal, spartan, no desktop environment dependencies.
+**Engine:** WebKitGTK (pragmatic fallback — goal is to return to Servo once its HTTP/2 stack matures).
+**UI:** GTK3 native — HeaderBar, Entry, Button. Minimal, spartan, no fluff.
 
 ---
 
@@ -28,10 +28,12 @@ We adamantly refuse to use Google's engine (Blink/Chromium). This browser is ult
 
 **Critical Design Principle:** The DOM always receives real data so that browsing remains indistinguishable from any modern browser (Brave, Firefox). Fake data is only sent to tracking APIs. The user never notices the difference, but the tracker goes blind.
 
-- **Canvas Fingerprinting:** When a website attempts canvas fingerprinting, we intercept `toDataURL()` and `toBlob()` and return a pre-rendered `phallus.jpg` canvas. Guaranteed identification as Juanita Banana, not as you.
-- **Viewport Fingerprinting:** `screen.width/height`, `window.innerWidth/Height`, and other APIs report randomized dimensions. Servo's layout engine uses the real dimensions — the DOM renders correctly, the tracker receives garbage.
+- **Canvas Fingerprinting:** When a website attempts canvas fingerprinting, we intercept `toDataURL()`, `toBlob()`, AND `getImageData()` (all three read paths). We return a static Base64 image — pixel noise alone is insufficient because `getImageData` reads the real underlying buffer. Guaranteed poisoning across all extraction methods.
+- **Viewport Fingerprinting:** `screen.width/height`, `window.innerWidth/Height`, and other APIs report randomized dimensions. The engine renders with real dimensions — the DOM renders correctly, the tracker receives garbage.
 - **WebGL Fingerprinting:** `UNMASKED_VENDOR_WEBGL` → "Juanita Banana GPU". `UNMASKED_RENDERER_WEBGL` → "JB Renderer (Not-Google)".
-- **Navigator Fingerprinting:** `hardwareConcurrency`, `deviceMemory`, `platform` and `vendor` return standardized fake values.
+- **Navigator Fingerprinting:** `hardwareConcurrency`, `deviceMemory`, `platform`, `vendor`, `userAgent`, `webdriver=false`, `languages` and a mock `plugins` array all return controlled fake values.
+- **iFrame Bypass:** The script is injected into ALL sub-frames, not just the top frame. Trackers routinely spin up invisible iframes to read the clean OS navigator and bypass main-frame protections. This closes that vector.
+- **Timezone / Geolocation Leak:** `Intl.DateTimeFormat().resolvedOptions().timeZone` is overwritten. Even when all other signals are spoofed, the real timezone pinpoints the user's physical location. We freeze it to a neutral value.
 
 ### 2. Search Profile Obfuscation (Search Intoxication)
 
@@ -112,3 +114,6 @@ The result: your fake searches are the real searches of other users — maximum 
 #### Identity Management
 - **Integrated Password Manager** — native, no extensions, no cloud.
 - **Tor Integration** — optional SOCKS5 proxy. We aren't on Tor all day, but we can be.
+
+#### Weaponized Privacy (GDPR Art. 17)
+- **Aggressive Unsubscribe Button** — A local crawler that scans subdomains, legal texts, and footers to extract contact emails. It automatically sends formal legal requests demanding the deletion of all personal data (Right to be Forgotten, GDPR Article 17) and keeps a local registry of unsubscribed services. If a service fails to respond or comply, the tool generates a PDF with a formal complaint ready to be sent to European data protection authorities. Requires a local form with the user's data (EU citizens only).

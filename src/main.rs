@@ -1,21 +1,19 @@
 // ============================================================
 // JUANITA BANANA 🍌
 //
-// Stack: 100% Rust
-//   Engine:  Servo (Linux Foundation, not Google)
-//   Window:  winit
-//   GL:      surfman
-//   Chrome:  egui (URL bar + BAN button, minimal)
+// Stack:
+//   Engine:  WebKitGTK (pragmatic fallback)
+//            Goal: Return to Servo once its HTTP/2 stack matures.
+//   Window:  GTK3 native
+//   Chrome:  GTK HeaderBar + Entry + Button
 //
 // Anti-fingerprinting:
-//   Canvas/viewport spoofing is achieved by implementing
-//   Servo's EmbedderMethods — we control what JS sees.
-//   SpiderMonkey executes the page's JS, but we control
-//   the APIs that the JS can read.
-//   No engine rewrite needed for this.
+//   A JS payload is injected into EVERY page (including all
+//   sub-frames) via WebKit's UserContentManager BEFORE any
+//   page script executes. We overwrite tracking APIs at the
+//   JS prototype level. No engine rewrite needed.
 //
-// NOTE: First build = 30-60 min (SpiderMonkey in C++).
-//       Subsequent builds are fast.
+// NOTE: Build is fast — dynamically links to system GTK/WebKit.
 // ============================================================
 
 mod ban;
@@ -24,7 +22,6 @@ mod gui;
 mod spoof;
 
 fn main() {
-    // Logger initialized by Servo
     // Load persisted ban list
     let state = browser::BanList::load();
 

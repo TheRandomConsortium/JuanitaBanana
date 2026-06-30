@@ -22,7 +22,7 @@ pub fn run(banlist: SharedBanList) {
         
         let script = UserScript::new(
             spoof::anti_fingerprint_script(),
-            UserContentInjectedFrames::TopFrame,
+            UserContentInjectedFrames::AllFrames,
             UserScriptInjectionTime::Start,
             &[],
             &[],
