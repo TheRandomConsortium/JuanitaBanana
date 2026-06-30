@@ -62,6 +62,11 @@ pub fn run(banlist: SharedBanList) {
         
         url_entry.connect_activate(move |entry| {
             let text = entry.text();
+            if text == "juanita:history" || text == "juanita://history" {
+                let history_html = "<html><head><style>body { background: #000; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: monospace; font-size: 3rem; }</style></head><body><div style=\"font-size: 10rem\">🖕</div><div>history? what history?</div></body></html>";
+                webview_clone.load_html(history_html, Some("juanita://history"));
+                return;
+            }
             let url = crate::browser::normalize_url(&text);
             webview_clone.load_uri(&url);
         });
@@ -96,10 +101,18 @@ pub fn run(banlist: SharedBanList) {
                 if let Some(nav_decision) = decision.downcast_ref::<NavigationPolicyDecision>() {
                     if let Some(req) = nav_decision.request() {
                         if let Some(uri) = req.uri() {
-                            if banlist_nav.borrow().is_banned(uri.as_str()) {
+                            let uri_str = uri.as_str();
+                            if uri_str == "juanita:history" || uri_str == "juanita://history" || uri_str == "juanita://history/" {
                                 use webkit2gtk::PolicyDecisionExt;
                                 decision.ignore();
-                                let banned_html = crate::ban::banned_page(uri.as_str());
+                                let history_html = "<html><head><style>body { background: #000; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: monospace; font-size: 3rem; }</style></head><body><div style=\"font-size: 10rem\">🖕</div><div>history? what history?</div></body></html>";
+                                webview_nav.load_html(history_html, Some("juanita://history"));
+                                return true;
+                            }
+                            if banlist_nav.borrow().is_banned(uri_str) {
+                                use webkit2gtk::PolicyDecisionExt;
+                                decision.ignore();
+                                let banned_html = crate::ban::banned_page(uri_str);
                                 webview_nav.load_html(&banned_html, Some("juanita://banned"));
                                 return true;
                             }
