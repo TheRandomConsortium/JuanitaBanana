@@ -29,7 +29,7 @@ use winit::{
     application::ApplicationHandler,
     event::WindowEvent,
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
-    window::{Window, WindowId},
+    window::{Window, WindowId, Icon},
 };
 
 use crate::browser::{SharedBanList, normalize_url, extract_domain};
@@ -57,20 +57,50 @@ impl EmbedderMethods for JuanitaEmbedder {
 }
 */
 
+fn load_icon() -> Option<Icon> {
+    let (icon_rgba, icon_width, icon_height) = {
+        let image = image::open("assets/icon.png").ok()?.into_rgba8();
+        let (width, height) = image.dimensions();
+        let rgba = image.into_raw();
+        (rgba, width, height)
+    };
+    Icon::from_rgba(icon_rgba, icon_width, icon_height).ok()
+}
+
 struct JuanitaApp {
     window: Option<Arc<Window>>,
+    surface: Option<softbuffer::Surface<Arc<Window>, Arc<Window>>>,
     state: SharedBanList,
 }
 
 impl ApplicationHandler for JuanitaApp {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if self.window.is_none() {
-            let attrs = Window::default_attributes()
+            #[allow(unused_mut)]
+            let mut attrs = Window::default_attributes()
                 .with_title("Juanita Banana 🍌")
+                .with_window_icon(load_icon())
                 .with_inner_size(winit::dpi::LogicalSize::new(1280, 800));
             
-            let window = event_loop.create_window(attrs).expect("Failed to create window");
-            self.window = Some(Arc::new(window));
+            #[cfg(target_os = "linux")]
+            {
+                use winit::platform::wayland::WindowAttributesExtWayland;
+                use winit::platform::x11::WindowAttributesExtX11;
+                // Add name/class so it doesn't show as "desconocido"
+                attrs = WindowAttributesExtWayland::with_name(attrs.clone(), "juanita-banana", "Juanita Banana");
+                attrs = WindowAttributesExtX11::with_name(attrs, "juanita-banana", "Juanita Banana");
+            }
+            
+            let window = Arc::new(event_loop.create_window(attrs).expect("Failed to create window"));
+            self.window = Some(window.clone());
+
+            // Temporary softbuffer to clear screen and map the window on Wayland
+            if let Ok(context) = softbuffer::Context::new(window.clone()) {
+                if let Ok(surface) = softbuffer::Surface::new(&context, window.clone()) {
+                    self.surface = Some(surface);
+                }
+            }
+            window.request_redraw();
 
             // TODO: Initialize surfman + Servo compositor here.
             
@@ -85,6 +115,24 @@ impl ApplicationHandler for JuanitaApp {
         match event {
             WindowEvent::CloseRequested => {
                 event_loop.exit();
+            }
+            WindowEvent::RedrawRequested => {
+                if let (Some(window), Some(surface)) = (&self.window, &mut self.surface) {
+                    let size = window.inner_size();
+                    if size.width > 0 && size.height > 0 {
+                        if let Ok(_) = surface.resize(
+                            std::num::NonZeroU32::new(size.width).unwrap(),
+                            std::num::NonZeroU32::new(size.height).unwrap(),
+                        ) {
+                            if let Ok(mut buffer) = surface.buffer_mut() {
+                                for index in 0..(size.width * size.height) {
+                                    buffer[index as usize] = 0x00_22_22_22; // Dark gray
+                                }
+                                buffer.present().unwrap();
+                            }
+                        }
+                    }
+                }
             }
             WindowEvent::KeyboardInput { .. } => {
                 // TODO: Pass keyboard events to Servo
@@ -101,6 +149,7 @@ pub fn run(state: SharedBanList) {
 
     let mut app = JuanitaApp {
         window: None,
+        surface: None,
         state,
     };
 
