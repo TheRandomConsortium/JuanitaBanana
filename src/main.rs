@@ -24,8 +24,7 @@ mod embedder;
 mod spoof;
 
 fn main() {
-    env_logger::init();
-
+    // Logger initialized by Servo
     // Load persisted ban list
     let state = browser::BanList::load();
 

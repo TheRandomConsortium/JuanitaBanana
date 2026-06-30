@@ -3602,6 +3602,7 @@ dependencies = [
  "egui-winit",
  "egui_glow",
  "env_logger",
+ "euclid",
  "image",
  "log",
  "serde",
@@ -3609,6 +3610,7 @@ dependencies = [
  "servo",
  "softbuffer",
  "surfman 0.9.8",
+ "url",
  "winit",
 ]
 

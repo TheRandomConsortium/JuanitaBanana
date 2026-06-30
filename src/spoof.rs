@@ -73,6 +73,8 @@ pub fn anti_fingerprint_script() -> &'static str {
             { get: () => 'Linux x86_64' });
         Object.defineProperty(navigator, 'vendor',
             { get: () => 'Juanita Banana' });
+        Object.defineProperty(navigator, 'userAgent',
+            { get: () => 'Mozilla/5.0 JuanitaBanana/0.1 (FOSS; Not-Google; Linux) AppleWebKit/605.1.15' });
 
         console.log('[JuanitaBanana] Anti-fingerprint active 🍌');
     })();
