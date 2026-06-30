@@ -1,0 +1,46 @@
+[package]
+name = "juanita-banana"
+version = "0.1.0"
+edition = "2021"
+
+[patch.crates-io]
+
+cookie_16 = { package = "cookie", path = "vendor/cookie-0.16.2" }
+cookie_18 = { package = "cookie", path = "vendor/cookie-0.18.1" }
+
+# ── Stack 100% Rust ──────────────────────────────────────────
+# Motor:    Servo  — Rust, Linux Foundation, not Google
+# Ventana:  winit  — event loop nativo puro Rust
+# GL:       surfman — gestión de superficie OpenGL para Servo
+# UI:       egui   — toolbar minimalista sobre la superficie GL
+#
+# Servo incluye SpiderMonkey (JS engine de Firefox) que compila
+# en C++ la primera vez → espera 30-60 min. Después incremental.
+# ────────────────────────────────────────────────────────────
+
+[dependencies]
+# Motor principal — renderiza HTML/CSS/JS
+servo = { git = "https://github.com/servo/servo.git", default-features = false, features = ["baked-in-resources"] }
+
+# Ventana y event loop nativo
+winit = "0.30"
+
+# Gestión de superficie GL que Servo necesita para renderizar
+surfman = { version = "0.9", features = ["sm-x11", "sm-wayland-default"] }
+
+# UI chrome mínima (barra URL + botón BAN) encima de la superficie GL
+egui = "0.31"
+egui-winit = "0.31"
+egui_glow = "0.31"
+
+# Utilidades
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+log = "0.4"
+env_logger = "0.11"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+
