@@ -22,6 +22,7 @@
 | **Web Audio API Spoofing** | 🔭 Future | Procedurally generated acoustic signatures (Soviet 1980s sound card) to poison oscillator fingerprinting. |
 | **Sensor API Poisoning** | 🔭 Future | Inject synthetic accelerometer/gyroscope data simulating constant freefall or spiral walking. |
 | **Typing Biometrics Corruption** | 🔭 Future | Introduce random millisecond jitter in `keydown`/`keyup` events to destroy typing cadence AI profiling. |
+| **Drunk Mouse Movement** | 🔭 Future | Introduce randomized offsets or slight delays to cursor movement events to sabotage mouse-tracking behavior analysis. |
 
 ---
 

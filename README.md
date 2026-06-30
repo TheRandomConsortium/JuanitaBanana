@@ -20,7 +20,7 @@
 ### 🍌 A browser that fights back.
 
 ![License](https://img.shields.io/badge/license-MPL--2.0-blue)
-![Engine](https://img.shields.io/badge/engine-Servo-orange)
+![Engine](https://img.shields.io/badge/engine-WebKitGTK-orange)
 ![Lang](https://img.shields.io/badge/lang-Rust-red)
 ![Google](https://img.shields.io/badge/Google-NOT%20WELCOME-critical)
 
@@ -30,7 +30,7 @@
 
 ## What is this?
 
-Juanita Banana is a **bare-metal browser** built entirely in Rust, powered by [Servo](https://servo.org) (the Rust browser engine from the Linux Foundation), with one mission: **make your browsing profile a statistical impossibility.**
+Juanita Banana is a **bare-metal browser** built entirely in Rust, currently powered by **WebKitGTK** (with a long-term goal to return to [Servo](https://servo.org) once its HTTP/2 stack matures), with one mission: **make your browsing profile a statistical impossibility.**
 
 It is not trying to be another browser. It is trying to be the browser the surveillance economy fears.
 
@@ -48,7 +48,7 @@ Read the full manifesto → [`docs/MANIFESTO.md`](docs/MANIFESTO.md)
 
 | Principle | Implementation |
 |---|---|
-| **No Google, ever** | Engine: Servo. Not Blink. Not CEF. Not WebView2. |
+| **No Google, ever** | Engine: WebKitGTK (pragmatic fallback). Not Blink. Not CEF. Not WebView2. |
 | **Native binary** | Rust compiled with `-O3 -march=native`. CPU gets instructions, not a VM. |
 | **Spartan by design** | No Electron. No Node. No Python. No browser decorations we didn't ask for. |
 | **Privacy as offense** | We don't just block trackers. We poison their data. |
@@ -62,7 +62,7 @@ Read the full manifesto → [`docs/MANIFESTO.md`](docs/MANIFESTO.md)
 - **Viewport:** `screen.*` and `window.inner*` report randomized dimensions. Layout is unaffected.
 - **WebGL:** Vendor/renderer strings replaced with Juanita Banana GPU
 - **Navigator:** hardwareConcurrency, deviceMemory, platform — all spoofed
-- **User-Agent:** `JuanitaBanana/0.1 (FOSS; Not-Google; Linux)`
+- **User-Agent:** Rotates daily through a curated list of genuine, modern User-Agents (Windows Chrome, iOS Safari, Linux Firefox, etc.). We blend into the crowd perfectly.
 
 ### 🔍 Search Profile Obfuscation
 - Every real search fires 20 background searches from a heterogeneous pool
@@ -89,20 +89,19 @@ See [`docs/FUNCTIONALITIES.md`](docs/FUNCTIONALITIES.md) for full status.
 
 ```
 juanita-banana
-├── Engine:    Servo 0.3   — HTML/CSS/JS, Rust, Linux Foundation
-├── JS Engine: SpiderMonkey — Firefox's JS engine (via Servo)
-├── Window:    winit        — cross-platform, pure Rust
-├── GL:        surfman      — OpenGL surface management for Servo
-└── UI Chrome: egui         — minimal toolbar, pure Rust
+├── Engine:    WebKitGTK — Pragmatic, production-ready fallback for HTTP/2 SPAs
+├── Meta:      Return to Servo once its experimental network stack matures
+├── Window:    GTK3      — cross-platform, native UI
+└── Spoofing:  UserContentManager — injects noise into WebKit's JS runtime
 ```
 
 ## Build
 
-First build takes **30-60 minutes** — SpiderMonkey (the JS engine) compiles from C++ source. Subsequent builds are fast.
+Builds are extremely fast since we are dynamically linking to your system's GTK3 and WebKit2GTK libraries.
 
 ```bash
 # Prerequisites (Fedora)
-sudo dnf install -y gcc-c++ make cmake pkgconf-pkg-config openssl-devel clang-devel
+sudo dnf install -y webkit2gtk4.1-devel gtk3-devel gcc-c++ make cmake pkgconf-pkg-config openssl-devel clang-devel
 
 # Install Rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -115,14 +114,14 @@ cargo build --release
 ./target/release/juanita-banana
 ```
 
-## Why Servo and not Gecko/Blink?
+## Why WebKitGTK and not Gecko/Blink?
 
 | Engine | Language | Our take |
 |---|---|---|
 | **Blink** (Chrome) | C++ | Google's engine. Absolutely not. |
 | **Gecko** (Firefox) | C++ + Rust | No public embedding API for desktop. |
-| **WebKit** | C++ | Apple's engine. FOSS but not native Rust. |
-| **Servo** | **Rust** | Linux Foundation. Native Rust. Embeddable crate. Our engine. |
+| **Servo** | **Rust** | Linux Foundation. Our true long-term goal. Currently shelved due to critical HTTP/2 `SendRequest` bugs with modern SPAs. |
+| **WebKitGTK** | C++ | Apple/GNOME engine. Pragmatic, open-source fallback. Fast and reliable. |
 
 ## Contributing
 

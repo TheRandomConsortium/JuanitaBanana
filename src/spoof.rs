@@ -12,14 +12,11 @@
 /// JS script injected into EVERY page before its own JS.
 /// Overwrites fingerprinting APIs with noisy values.
 pub fn anti_fingerprint_script() -> &'static str {
-    r#"
-    (function() {
+        r#"
+    (function() {{
         'use strict';
 
         // ── Viewport Fingerprinting ──────────────────────────
-        // We return slightly randomized dimensions.
-        // The variation is small so as not to break layouts but
-        // enough to make the fingerprint useless.
         const _randInt = (n) => Math.floor(Math.random() * n);
         const fakeWidth  = screen.width  + _randInt(50) - 25;
         const fakeHeight = screen.height + _randInt(50) - 25;
@@ -32,14 +29,11 @@ pub fn anti_fingerprint_script() -> &'static str {
         Object.defineProperty(window, 'innerHeight', { get: () => fakeHeight });
 
         // ── Canvas Fingerprinting ────────────────────────────
-        // We intercept toDataURL() and toBlob() to inject
-        // minimal visual noise into the canvas before exporting.
         const _origToDataURL = HTMLCanvasElement.prototype.toDataURL;
         const _origToBlob    = HTMLCanvasElement.prototype.toBlob;
         const _addNoise = (canvas) => {
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
-            // We modify 1 random pixel with minimal alpha variation
             const x = _randInt(canvas.width  || 1);
             const y = _randInt(canvas.height || 1);
             const d = ctx.getImageData(x, y, 1, 1);
@@ -58,9 +52,8 @@ pub fn anti_fingerprint_script() -> &'static str {
         // ── WebGL Fingerprinting ─────────────────────────────
         const _origGetParam = WebGLRenderingContext.prototype.getParameter;
         WebGLRenderingContext.prototype.getParameter = function(param) {
-            // UNMASKED_VENDOR_WEBGL and UNMASKED_RENDERER_WEBGL
-            if (param === 37445) return 'Juanita Banana GPU';
-            if (param === 37446) return 'JB Renderer (Not-Google)';
+            if (param === 37445) return 'Juanita Banana GPU'; // UNMASKED_VENDOR_WEBGL
+            if (param === 37446) return 'Juanita Banana Graphics API'; // UNMASKED_RENDERER_WEBGL
             return _origGetParam.call(this, param);
         };
 
@@ -74,14 +67,9 @@ pub fn anti_fingerprint_script() -> &'static str {
         Object.defineProperty(navigator, 'vendor',
             { get: () => 'Juanita Banana' });
         Object.defineProperty(navigator, 'userAgent',
-            { get: () => 'Mozilla/5.0 JuanitaBanana/0.1 (FOSS; Not-Google; Linux) AppleWebKit/605.1.15' });
+            { get: () => 'JuanitaBanana/0.1 (FOSS; Not-Google; Linux)' });
 
         console.log('[JuanitaBanana] Anti-fingerprint active 🍌');
     })();
     "#
 }
-
-/// User-Agent that servers see.
-/// We are what we are. No disguises.
-pub const USER_AGENT: &str =
-    "Mozilla/5.0 JuanitaBanana/0.1 (FOSS; Not-Google; Linux) AppleWebKit/605.1.15";

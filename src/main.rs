@@ -20,7 +20,7 @@
 
 mod ban;
 mod browser;
-mod embedder;
+mod gui;
 mod spoof;
 
 fn main() {
@@ -28,6 +28,6 @@ fn main() {
     // Load persisted ban list
     let state = browser::BanList::load();
 
-    // Launch window and event loop
-    embedder::run(state);
+    // Launch GTK application
+    gui::run(state);
 }
