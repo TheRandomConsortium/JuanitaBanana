@@ -4,11 +4,11 @@ use webkit2gtk::{WebView, WebViewExt, WebViewExtManual, WebContext, UserContentM
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use crate::browser::SharedBanList;
-use crate::spoof;
-use crate::config::AppConfig;
-use crate::noise::RssNoiseProvider;
-use crate::intoxication::IntoxicationEngine;
+use crate::browsing::browser::SharedBanList;
+use crate::fingerprint::spoof;
+use crate::util::config::AppConfig;
+use crate::search::noise::RssNoiseProvider;
+use crate::search::intoxication::IntoxicationEngine;
 
 pub fn run(banlist: SharedBanList) {
     let app = Application::builder()
@@ -88,7 +88,7 @@ pub fn run(banlist: SharedBanList) {
                 webview_clone.load_uri(text_str);
                 return;
             }
-            let url = crate::browser::normalize_url(text_str);
+            let url = crate::browsing::browser::normalize_url(text_str);
             webview_clone.load_uri(&url);
         });
 
@@ -96,12 +96,12 @@ pub fn run(banlist: SharedBanList) {
         let banlist_btn = banlist.clone();
         ban_button.connect_clicked(move |_| {
             if let Some(uri) = webview_clone2.uri() {
-                let domain = crate::browser::extract_domain(uri.as_str());
+                let domain = crate::browsing::browser::extract_domain(uri.as_str());
                 let mut bl = banlist_btn.borrow_mut();
                 bl.ban(&domain);
                 bl.save();
                 println!("[BAN] Banned domain: {}", domain);
-                let banned_html = crate::ban::banned_page(uri.as_str());
+                let banned_html = crate::util::ban::banned_page(uri.as_str());
                 webview_clone2.load_html(&banned_html, Some("juanita://banned/"));
             }
         });
@@ -141,7 +141,7 @@ pub fn run(banlist: SharedBanList) {
                             if uri_str.starts_with("juanita://config") {
                                 use webkit2gtk::PolicyDecisionExt;
                                 decision.ignore();
-                                let config_html = crate::config::config_page_html(&config);
+                                let config_html = crate::util::config::config_page_html(&config);
                                 let base_uri = uri_str.replace("juanita://config", "juanita://config-page");
                                 webview_nav.load_html(&config_html, Some(&base_uri));
                                 return true;
@@ -151,7 +151,7 @@ pub fn run(banlist: SharedBanList) {
                                 decision.ignore();
                                 let data_str = &uri_str["juanita://save-config?data=".len()..];
                                 if let Ok(decoded) = urlencoding::decode(data_str) {
-                                    if let Ok(new_config) = serde_json::from_str::<crate::config::AppConfig>(&decoded) {
+                                    if let Ok(new_config) = serde_json::from_str::<crate::util::config::AppConfig>(&decoded) {
                                         new_config.save();
                                         println!("[CONFIG] Configuration saved successfully.");
                                     }
@@ -169,7 +169,7 @@ pub fn run(banlist: SharedBanList) {
                             if banlist_nav.borrow().is_banned(uri_str) {
                                 use webkit2gtk::PolicyDecisionExt;
                                 decision.ignore();
-                                let banned_html = crate::ban::banned_page(uri_str);
+                                let banned_html = crate::util::ban::banned_page(uri_str);
                                 webview_nav.load_html(&banned_html, Some("juanita://banned"));
                                 return true;
                             }

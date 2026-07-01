@@ -351,9 +351,46 @@ pub fn config_page_html(config: &AppConfig) -> String {
             document.getElementById('new-engine-name').value = '';
             document.getElementById('new-engine-regex').value = '';
             document.getElementById('new-engine-params').value = '';
-        }}
     </script>
 </body>
 </html>
     "#)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_config() {
+        let config = AppConfig::default();
+        assert_eq!(config.search_engines.len(), 3);
+        assert_eq!(config.search_engines[0].name, "Google");
+        assert_eq!(config.rss_sources.len(), 2);
+        assert_eq!(config.max_concurrent_searches, 2);
+    }
+
+    #[test]
+    fn test_config_serialization() {
+        let config = AppConfig::default();
+        let json = serde_json::to_string(&config).unwrap();
+        let deserialized: AppConfig = serde_json::from_str(&json).unwrap();
+        
+        assert_eq!(config.max_concurrent_searches, deserialized.max_concurrent_searches);
+        assert_eq!(config.search_engines.len(), deserialized.search_engines.len());
+        assert_eq!(config.rss_sources[0].url, deserialized.rss_sources[0].url);
+    }
+
+    #[test]
+    fn test_config_page_html() {
+        let mut config = AppConfig::default();
+        config.max_concurrent_searches = 777;
+        
+        let html = config_page_html(&config);
+        
+        // Ensure our unique value is in the HTML
+        assert!(html.contains("777"));
+        assert!(html.contains("Hacker News"));
+        assert!(html.contains("DuckDuckGo"));
+    }
 }

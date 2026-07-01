@@ -16,18 +16,15 @@
 // NOTE: Build is fast — dynamically links to system GTK/WebKit.
 // ============================================================
 
-mod ban;
-mod browser;
-mod gui;
-mod spoof;
-mod config;
-mod noise;
-mod intoxication;
+mod browsing;
+mod fingerprint;
+mod search;
+mod util;
 
 fn main() {
     // Load persisted ban list
-    let state = browser::BanList::load();
+    let state = browsing::browser::BanList::load();
 
     // Launch GTK application
-    gui::run(state);
+    browsing::gui::run(state);
 }

@@ -89,3 +89,29 @@ pub fn anti_fingerprint_script() -> &'static str {
     })();
     "#
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_anti_fingerprint_script_contains_overrides() {
+        let script = anti_fingerprint_script();
+        
+        // Viewport
+        assert!(script.contains("Object.defineProperty(screen, 'width'"));
+        assert!(script.contains("Object.defineProperty(window, 'innerHeight'"));
+        
+        // GPU
+        assert!(script.contains("Juanita Banana GPU"));
+        assert!(script.contains("Juanita Banana Graphics API"));
+        
+        // Navigator
+        assert!(script.contains("JuanitaBanana/0.1"));
+        assert!(script.contains("webdriver"));
+        
+        // Timezone
+        assert!(script.contains("Intl.DateTimeFormat"));
+        assert!(script.contains("Europe/London"));
+    }
+}

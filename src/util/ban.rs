@@ -20,3 +20,18 @@ pub fn banned_page(uri: &str) -> String {
   <small>Changed your mind? Open juanita://config and solve the equation.</small>
 </div></body></html>"#)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_banned_page_formatting() {
+        let uri = "https://example.com/toxic-tracker";
+        let html = banned_page(uri);
+        
+        assert!(html.contains(uri));
+        assert!(html.contains("You blocked this website before."));
+        assert!(html.contains("🍌"));
+    }
+}

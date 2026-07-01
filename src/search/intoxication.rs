@@ -8,8 +8,8 @@ use std::time::Duration;
 use webkit2gtk::{LoadEvent, WebContext, WebView, WebViewExt};
 use gtk::prelude::WidgetExtManual;
 
-use crate::config::AppConfig;
-use crate::noise::NoiseProvider;
+use crate::util::config::AppConfig;
+use crate::search::noise::NoiseProvider;
 
 pub enum IntoxicationTask {
     FakeSearch(String),
