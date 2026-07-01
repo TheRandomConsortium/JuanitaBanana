@@ -58,6 +58,7 @@
 | **Local Search Noise** | ✅ Done | Fires 20 background searches from a local heterogeneous pool using dynamic RSS n-grams for every real user search, effectively poisoning the data profile. |
 | **P2P Gossip Protocol** | 🔭 Future | Decentralized sharing of anonymized searches to use real user data as noise for everyone. |
 | **Dumb Pipe TTL Server** | 🔭 Future | Minimalist server for search pool as an alternative to Gossip Protocol. |
+| **Background Captcha Solver** | 📋 Planned | **IMPORTANT**: Detects when a hidden WebView encounters a Captcha. Uses Auto-Click heuristics or pops up a temporary window for the user to solve it manually. Crucial to prevent session flagging from heavy search noise. |
 
 ---
 
