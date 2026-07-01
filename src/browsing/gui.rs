@@ -1,11 +1,10 @@
 use gtk::prelude::*;
 use gtk::{Application, ApplicationWindow, Box as GtkBox, Button, Entry, HeaderBar, Orientation};
-use std::cell::RefCell;
 use std::rc::Rc;
 use webkit2gtk::{
     NavigationPolicyDecision, NavigationPolicyDecisionExt, PolicyDecisionType, URIRequestExt,
     UserContentInjectedFrames, UserContentManager, UserContentManagerExt, UserScript,
-    UserScriptInjectionTime, WebContext, WebView, WebViewExt, WebViewExtManual,
+    UserScriptInjectionTime, WebContext, WebView, WebViewExt,
 };
 
 use crate::browsing::browser::SharedBanList;
@@ -125,6 +124,7 @@ pub fn run(banlist: SharedBanList) {
         webview.connect_decide_policy(move |_, decision, decision_type| {
             if decision_type == PolicyDecisionType::NavigationAction {
                 if let Some(nav_decision) = decision.downcast_ref::<NavigationPolicyDecision>() {
+                    #[allow(deprecated)]
                     if let Some(req) = nav_decision.request() {
                         if let Some(uri) = req.uri() {
                             let uri_str = uri.as_str();
@@ -150,10 +150,9 @@ pub fn run(banlist: SharedBanList) {
                                 webview_nav.load_html(&config_html, Some(&base_uri));
                                 return true;
                             }
-                            if uri_str.starts_with("juanita://save-config?data=") {
+                            if let Some(data_str) = uri_str.strip_prefix("juanita://save-config?data=") {
                                 use webkit2gtk::PolicyDecisionExt;
                                 decision.ignore();
-                                let data_str = &uri_str["juanita://save-config?data=".len()..];
                                 if let Ok(decoded) = urlencoding::decode(data_str) {
                                     if let Ok(new_config) = serde_json::from_str::<crate::util::config::AppConfig>(&decoded) {
                                         new_config.save();
