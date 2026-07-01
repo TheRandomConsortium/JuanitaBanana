@@ -1,5 +1,6 @@
 pub fn banned_page(uri: &str) -> String {
-    format!(r#"<!DOCTYPE html>
+    format!(
+        r#"<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><title>Banned — Juanita Banana</title>
 <style>
   *{{margin:0;padding:0;box-sizing:border-box}}
@@ -18,7 +19,8 @@ pub fn banned_page(uri: &str) -> String {
   <p><code>{uri}</code></p>
   <p style="margin-top:1rem">Go look for greener pastures elsewhere.</p>
   <small>Changed your mind? Open juanita://config and solve the equation.</small>
-</div></body></html>"#)
+</div></body></html>"#
+    )
 }
 
 #[cfg(test)]
@@ -29,7 +31,7 @@ mod tests {
     fn test_banned_page_formatting() {
         let uri = "https://example.com/toxic-tracker";
         let html = banned_page(uri);
-        
+
         assert!(html.contains(uri));
         assert!(html.contains("You blocked this website before."));
         assert!(html.contains("🍌"));

@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
@@ -66,8 +66,7 @@ impl AppConfig {
         let base = std::env::var("XDG_DATA_HOME")
             .map(PathBuf::from)
             .unwrap_or_else(|_| {
-                PathBuf::from(std::env::var("HOME").unwrap_or_default())
-                    .join(".local/share")
+                PathBuf::from(std::env::var("HOME").unwrap_or_default()).join(".local/share")
             });
         let mut path = base;
         path.push("juanita-banana");
@@ -111,12 +110,13 @@ pub fn config_page_html(config: &AppConfig) -> String {
     }
 
     let json_data = serde_json::to_string(&config).unwrap_or_default();
-    
+
     let max_concurrent = config.max_concurrent_searches;
     let min_delay = config.min_delay_ms;
     let max_delay = config.max_delay_ms;
 
-    format!(r#"
+    format!(
+        r#"
 <!DOCTYPE html>
 <html>
 <head>
@@ -354,7 +354,8 @@ pub fn config_page_html(config: &AppConfig) -> String {
     </script>
 </body>
 </html>
-    "#)
+    "#
+    )
 }
 
 #[cfg(test)]
@@ -375,9 +376,15 @@ mod tests {
         let config = AppConfig::default();
         let json = serde_json::to_string(&config).unwrap();
         let deserialized: AppConfig = serde_json::from_str(&json).unwrap();
-        
-        assert_eq!(config.max_concurrent_searches, deserialized.max_concurrent_searches);
-        assert_eq!(config.search_engines.len(), deserialized.search_engines.len());
+
+        assert_eq!(
+            config.max_concurrent_searches,
+            deserialized.max_concurrent_searches
+        );
+        assert_eq!(
+            config.search_engines.len(),
+            deserialized.search_engines.len()
+        );
         assert_eq!(config.rss_sources[0].url, deserialized.rss_sources[0].url);
     }
 
@@ -385,9 +392,9 @@ mod tests {
     fn test_config_page_html() {
         let mut config = AppConfig::default();
         config.max_concurrent_searches = 777;
-        
+
         let html = config_page_html(&config);
-        
+
         // Ensure our unique value is in the HTML
         assert!(html.contains("777"));
         assert!(html.contains("Hacker News"));

@@ -22,7 +22,7 @@ pub fn tokenize_to_ngrams(text: &str) -> Vec<String> {
         })
         .filter(|s| s.len() > 3)
         .collect();
-    
+
     // Group into n-grams (sizes 2 to 5) for more human-like queries
     for n in 2..=5 {
         for window in words.windows(n) {
@@ -69,7 +69,7 @@ impl RssNoiseProvider {
                 // Deduplicate
                 all_words.sort();
                 all_words.dedup();
-                
+
                 if let Ok(mut lock) = keywords_clone.lock() {
                     *lock = all_words;
                     println!("[NOISE] Loaded {} fresh keywords from RSS.", lock.len());
@@ -109,14 +109,14 @@ mod tests {
     fn test_tokenize_to_ngrams() {
         let input = "The quick! brown fox... jumps over the lazy dog.";
         let ngrams = tokenize_to_ngrams(input);
-        
+
         // Single words (filtered len > 3)
         assert!(ngrams.contains(&"quick".to_string()));
         assert!(ngrams.contains(&"brown".to_string()));
         assert!(ngrams.contains(&"jumps".to_string()));
         assert!(ngrams.contains(&"over".to_string()));
         assert!(ngrams.contains(&"lazy".to_string()));
-        
+
         // Excluded short words (len <= 3)
         assert!(!ngrams.contains(&"the".to_string()));
         assert!(!ngrams.contains(&"fox".to_string()));

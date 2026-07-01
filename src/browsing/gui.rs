@@ -1,14 +1,18 @@
 use gtk::prelude::*;
-use gtk::{Application, ApplicationWindow, HeaderBar, Entry, Button, Box as GtkBox, Orientation};
-use webkit2gtk::{WebView, WebViewExt, WebViewExtManual, WebContext, UserContentManager, UserContentManagerExt, UserScript, UserScriptInjectionTime, UserContentInjectedFrames, PolicyDecisionType, NavigationPolicyDecision, NavigationPolicyDecisionExt, URIRequestExt};
-use std::rc::Rc;
+use gtk::{Application, ApplicationWindow, Box as GtkBox, Button, Entry, HeaderBar, Orientation};
 use std::cell::RefCell;
+use std::rc::Rc;
+use webkit2gtk::{
+    NavigationPolicyDecision, NavigationPolicyDecisionExt, PolicyDecisionType, URIRequestExt,
+    UserContentInjectedFrames, UserContentManager, UserContentManagerExt, UserScript,
+    UserScriptInjectionTime, WebContext, WebView, WebViewExt, WebViewExtManual,
+};
 
 use crate::browsing::browser::SharedBanList;
 use crate::fingerprint::spoof;
-use crate::util::config::AppConfig;
-use crate::search::noise::RssNoiseProvider;
 use crate::search::intoxication::IntoxicationEngine;
+use crate::search::noise::RssNoiseProvider;
+use crate::util::config::AppConfig;
 
 pub fn run(banlist: SharedBanList) {
     let app = Application::builder()
@@ -22,7 +26,7 @@ pub fn run(banlist: SharedBanList) {
 
         let web_context = WebContext::default().unwrap();
         let ucm = UserContentManager::new();
-        
+
         let script = UserScript::new(
             spoof::anti_fingerprint_script(),
             UserContentInjectedFrames::AllFrames,
@@ -74,7 +78,7 @@ pub fn run(banlist: SharedBanList) {
         let webview_clone = webview.clone();
         let url_entry_clone = url_entry.clone();
         let intox_engine_entry = intox_engine.clone(); // Clone for entry closure
-        
+
         url_entry.connect_activate(move |entry| {
             let text = entry.text();
             let text_str = text.as_str();
@@ -159,7 +163,7 @@ pub fn run(banlist: SharedBanList) {
                                 webview_nav.load_uri("juanita://config");
                                 return true;
                             }
-                            
+
                             // Check for Search Intoxication
                             if intox_engine.check_and_poison_search(uri_str, &config, &*noise_provider) {
                                 use webkit2gtk::PolicyDecisionExt;

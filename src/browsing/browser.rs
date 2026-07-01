@@ -1,9 +1,9 @@
+use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::collections::HashSet;
 use std::fs;
 use std::path::PathBuf;
 use std::rc::Rc;
-use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Default, Clone)]
 pub struct BanList {
@@ -18,8 +18,7 @@ impl BanList {
         let base = std::env::var("XDG_DATA_HOME")
             .map(PathBuf::from)
             .unwrap_or_else(|_| {
-                PathBuf::from(std::env::var("HOME").unwrap_or_default())
-                    .join(".local/share")
+                PathBuf::from(std::env::var("HOME").unwrap_or_default()).join(".local/share")
             });
         base.join("juanita-banana").join("banlist.json")
     }
@@ -37,7 +36,9 @@ impl BanList {
 
     pub fn save(&self) {
         let path = Self::state_path();
-        if let Some(p) = path.parent() { let _ = fs::create_dir_all(p); }
+        if let Some(p) = path.parent() {
+            let _ = fs::create_dir_all(p);
+        }
         if let Ok(json) = serde_json::to_string_pretty(self) {
             let _ = fs::write(path, json);
         }

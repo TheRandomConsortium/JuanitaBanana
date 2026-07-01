@@ -1,4 +1,5 @@
 use gtk::glib;
+use gtk::prelude::WidgetExtManual;
 use rand::Rng;
 use regex::Regex;
 use std::cell::RefCell;
@@ -6,10 +7,9 @@ use std::collections::{HashSet, VecDeque};
 use std::rc::Rc;
 use std::time::Duration;
 use webkit2gtk::{LoadEvent, WebContext, WebView, WebViewExt};
-use gtk::prelude::WidgetExtManual;
 
-use crate::util::config::AppConfig;
 use crate::search::noise::NoiseProvider;
+use crate::util::config::AppConfig;
 
 pub enum IntoxicationTask {
     FakeSearch(String),
@@ -60,7 +60,7 @@ impl IntoxicationEngine {
         for rule in &config.search_engines {
             if let Ok(re) = Regex::new(&rule.domain_regex) {
                 if re.is_match(real_uri) {
-                    // Make sure the URL actually contains the query param! 
+                    // Make sure the URL actually contains the query param!
                     // Otherwise we might intercept the homepage (e.g. duckduckgo.com/)
                     let mut has_params = false;
                     for param in &rule.query_params {
@@ -72,16 +72,16 @@ impl IntoxicationEngine {
                             }
                         }
                     }
-                    
+
                     if !has_params {
                         continue;
                     }
 
                     println!("[INTOX] Intercepted search on {}", rule.name);
-                    
+
                     let mut tasks = Vec::new();
                     let fake_terms = noise.get_keywords(20);
-                    
+
                     for term in fake_terms {
                         // Replace the search terms in the URL
                         let mut fake_uri = real_uri.to_string();
@@ -90,29 +90,34 @@ impl IntoxicationEngine {
                             let param_re_str = format!(r"([?&]{}=)[^&]+", regex::escape(param));
                             if let Ok(param_re) = Regex::new(&param_re_str) {
                                 let replacement = format!("${{1}}{}", urlencoding::encode(&term));
-                                fake_uri = param_re.replace_all(&fake_uri, replacement.as_str()).to_string();
+                                fake_uri = param_re
+                                    .replace_all(&fake_uri, replacement.as_str())
+                                    .to_string();
                             }
                         }
                         tasks.push(IntoxicationTask::FakeSearch(fake_uri));
                     }
-                    
+
                     // The Camouflage Shuffle: Insert the real search dynamically
                     let mut rng = rand::thread_rng();
                     let max_idx = (config.max_concurrent_searches * 2).saturating_sub(1);
                     let insert_idx = rng.gen_range(0..=max_idx.min(tasks.len()));
-                    
+
                     *self.search_session_id.borrow_mut() += 1;
                     let session_id = *self.search_session_id.borrow();
-                    tasks.insert(insert_idx, IntoxicationTask::RealSearch(real_uri.to_string(), session_id));
-                    
+                    tasks.insert(
+                        insert_idx,
+                        IntoxicationTask::RealSearch(real_uri.to_string(), session_id),
+                    );
+
                     // Add all to queue
                     self.queue.borrow_mut().extend(tasks);
-                    
+
                     // Start processing (kickstart up to max concurrency)
                     for _ in 0..self.max_concurrent_searches {
                         self.process_queue();
                     }
-                    
+
                     return true;
                 }
             }
@@ -129,17 +134,17 @@ impl IntoxicationEngine {
         if active >= self.max_concurrent_searches {
             return; // Max concurrency reached
         }
-        
+
         let task = self.queue.borrow_mut().pop_front();
         if let Some(task) = task {
             *self.active_count.borrow_mut() += 1;
-            
+
             let engine = self.clone();
-            
+
             // Humanized delay before executing
             let mut rng = rand::thread_rng();
             let delay = rng.gen_range(self.min_delay_ms..=self.max_delay_ms);
-            
+
             glib::timeout_add_local(Duration::from_millis(delay), move || {
                 match &task {
                     IntoxicationTask::FakeSearch(uri) => {
@@ -152,10 +157,12 @@ impl IntoxicationEngine {
                             .settings(&settings)
                             .build();
                         engine.active_views.borrow_mut().push(hidden_wv.clone());
-                        
+
                         let engine_clone = engine.clone();
                         hidden_wv.connect_load_changed(move |wv, load_event| {
-                            if load_event == LoadEvent::Committed || load_event == LoadEvent::Finished {
+                            if load_event == LoadEvent::Committed
+                                || load_event == LoadEvent::Finished
+                            {
                                 // Only process once per webview! (Finished might fire after Committed)
                                 // We remove it from active_views. If it was already removed, we ignore it to prevent double-decrement.
                                 let mut views = engine_clone.active_views.borrow_mut();
@@ -163,7 +170,9 @@ impl IntoxicationEngine {
                                     views.retain(|v| v != wv);
                                     let wv_to_destroy = wv.clone();
                                     glib::idle_add_local(move || {
-                                        unsafe { wv_to_destroy.destroy(); }
+                                        unsafe {
+                                            wv_to_destroy.destroy();
+                                        }
                                         glib::ControlFlow::Break
                                     });
                                     *engine_clone.active_count.borrow_mut() -= 1;
@@ -171,17 +180,23 @@ impl IntoxicationEngine {
                                 }
                             }
                         });
-                        
+
                         hidden_wv.load_uri(uri);
-                    },
+                    }
                     IntoxicationTask::RealSearch(uri, session_id) => {
                         if *engine.search_session_id.borrow() == *session_id {
-                            println!("[INTOX] Rending REAL search after camouflage delay: {}", uri);
+                            println!(
+                                "[INTOX] Rending REAL search after camouflage delay: {}",
+                                uri
+                            );
                             *engine.active_count.borrow_mut() -= 1;
                             engine.allowed_urls.borrow_mut().insert(uri.clone());
                             engine.main_webview.load_uri(uri);
                         } else {
-                            println!("[INTOX] Discarding stale search (user navigated away): {}", uri);
+                            println!(
+                                "[INTOX] Discarding stale search (user navigated away): {}",
+                                uri
+                            );
                             *engine.active_count.borrow_mut() -= 1;
                         }
                         engine.process_queue(); // Trigger next
