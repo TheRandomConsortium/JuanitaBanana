@@ -32,7 +32,14 @@ pub fn run(banlist: SharedBanList) {
         );
         ucm.add_script(&script);
 
-        let webview = WebView::new_with_context_and_user_content_manager(&web_context, &ucm);
+        let settings = webkit2gtk::Settings::builder()
+            .user_agent("JuanitaBanana/0.1 (FOSS; Not-Google; Linux)")
+            .build();
+        let webview = WebView::builder()
+            .web_context(&web_context)
+            .user_content_manager(&ucm)
+            .settings(&settings)
+            .build();
 
         let window = ApplicationWindow::builder()
             .application(app)

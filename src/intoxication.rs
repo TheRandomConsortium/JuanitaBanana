@@ -144,7 +144,13 @@ impl IntoxicationEngine {
                 match &task {
                     IntoxicationTask::FakeSearch(uri) => {
                         println!("[INTOX] Firing background noise: {}", uri);
-                        let hidden_wv = WebView::with_context(&engine.context);
+                        let settings = webkit2gtk::Settings::builder()
+                            .user_agent("JuanitaBanana/0.1 (FOSS; Not-Google; Linux)")
+                            .build();
+                        let hidden_wv = webkit2gtk::WebView::builder()
+                            .web_context(&engine.context)
+                            .settings(&settings)
+                            .build();
                         engine.active_views.borrow_mut().push(hidden_wv.clone());
                         
                         let engine_clone = engine.clone();
@@ -155,8 +161,12 @@ impl IntoxicationEngine {
                                 let mut views = engine_clone.active_views.borrow_mut();
                                 if views.contains(wv) {
                                     views.retain(|v| v != wv);
+                                    let wv_to_destroy = wv.clone();
+                                    glib::idle_add_local(move || {
+                                        unsafe { wv_to_destroy.destroy(); }
+                                        glib::ControlFlow::Break
+                                    });
                                     *engine_clone.active_count.borrow_mut() -= 1;
-                                    unsafe { wv.destroy(); } // Destroy the hidden webview
                                     engine_clone.process_queue(); // Trigger next
                                 }
                             }
