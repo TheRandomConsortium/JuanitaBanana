@@ -101,3 +101,4 @@
 | **Disable JS popup windows** | ✅ Done | Via WebKit settings. |
 | **Tor integration** | 🔭 Future | SOCKS5 proxy toggle in config. |
 | **Integrated Password Manager** | 🔭 Future | Native credential management, no cloud. |
+| **Tab Inactivity TTL (Tab Death)** | 📋 Planned | If tabs are ever implemented, they will have a strict inactivity Time-To-Live (TTL). If surpassed, the tab is aggressively killed. Fuck clutter and RAM consumption. Be tidy. |
