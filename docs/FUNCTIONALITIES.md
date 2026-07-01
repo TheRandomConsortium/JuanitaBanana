@@ -42,11 +42,20 @@
 
 ---
 
+## 📣 Ad Profile Obfuscation (Inverse Advertising Framework)
+
+| Feature | Status | Notes |
+|---|---|---|
+| **Blind Background Interaction** | 🔭 Future | Ads are hidden visually but the browser simulates interaction (clicks, scrolls) in the background so the interest profile gets completely contaminated. |
+| **Anti-Ad Blockers (Full-Screen Ads)** | 🔭 Future | Replaces aggressive ad-block walls with a warning banner, respecting internal site timers to prevent breaking functionality while refusing to show the ad itself. |
+
+---
+
 ## 🔍 Search Intoxication
 
 | Feature | Status | Notes |
 |---|---|---|
-| **Local Search Noise** | 📋 Planned | Fire 20 background searches from a local heterogeneous pool for every real user search. |
+| **Local Search Noise** | ✅ Done | Fires 20 background searches from a local heterogeneous pool using dynamic RSS n-grams for every real user search, effectively poisoning the data profile. |
 | **P2P Gossip Protocol** | 🔭 Future | Decentralized sharing of anonymized searches to use real user data as noise for everyone. |
 | **Dumb Pipe TTL Server** | 🔭 Future | Minimalist server for search pool as an alternative to Gossip Protocol. |
 
@@ -60,7 +69,8 @@
 | **Local Static Ban Page** | ✅ Done | Banned domains route to a local HTML error page. |
 | **UI Ban Button** | ✅ Done | GTK HeaderBar button. Bans current domain and loads ban page immediately. |
 | **Toxic Site Warning** | 🔭 Future | Inject an annoying marquee across sites identified as toxic. |
-| **Mathematical Unban** | 🔭 Future | Require solving a complex equation in `juanita://config` to unban a site. |
+| **Contextual Guilt Trip Overlay** | 🔭 Future | Inject a semi-transparent, non-blocking contextual meme (e.g. Ceiling Cat for NSFW) over the entire page to induce guilt. Configurable. |
+| **Mathematical Unban** | ✅ Done | Requires solving a calculus equation (`∫ e^x dx from 0 to ln(3)`) in `juanita://config#unban` to unban a site. *Note: currently uses a hardcoded answer of "2" and lacks full ban-list integration.* |
 
 ---
 

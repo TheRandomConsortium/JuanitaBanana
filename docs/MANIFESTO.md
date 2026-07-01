@@ -51,7 +51,7 @@ For every real search the user makes, the browser will execute 20 additional sea
 ### 4. Punishing the Web (The Ban System)
 
 - **Banned Websites:** Any attempt to enter a banned website will route locally to a static HTML: *"You blocked this website before. Go look for greener pastures elsewhere."*
-- **Toxic Websites:** If the system declares a website as toxic, an annoying marquee will crawl across the screen: *"This website is toxic. Ban?"*
+- **Toxic Websites:** If the system declares a website as toxic, an annoying marquee will crawl across the screen: *"This website is toxic. Ban?"* Additionally, a **Guilt Trip Overlay** will be injected—a contextual, semi-transparent image (e.g., a "Fake News" meme for news sites, or "Ceiling Cat" for NSFW pages) covering the screen with a low alpha (e.g., hex `30`), allowing interaction but constantly reminding the user of their poor choices. This module will be toggleable in the configuration.
 - **Ban Button:** Visible in the navigation bar at all times.
 
 ### 5. "AI Slop" Detection

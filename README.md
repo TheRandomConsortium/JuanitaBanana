@@ -60,6 +60,7 @@ Read the full manifesto → [`docs/MANIFESTO.md`](docs/MANIFESTO.md)
 ### 🛡️ Active Anti-Fingerprinting
 - **Canvas:** Intercepts `toDataURL()` / `toBlob()` — trackers get a prerendered image, not your canvas
 - **Viewport:** `screen.*` and `window.inner*` report randomized dimensions. Layout is unaffected.
+- **Timezone:** `Intl.DateTimeFormat().resolvedOptions().timeZone` is overwritten to a neutral value (UTC) to prevent geographical location leaks.
 - **WebGL:** Vendor/renderer strings replaced with Juanita Banana GPU
 - **Navigator:** hardwareConcurrency, deviceMemory, platform — all spoofed
 - **User-Agent:** Honest by default (`JuanitaBanana/0.1`). In the future, a config toggle will allow switching to a rotating mode that cycles daily through a curated list of genuine, modern User-Agents to blend into the crowd perfectly.
@@ -71,11 +72,13 @@ Read the full manifesto → [`docs/MANIFESTO.md`](docs/MANIFESTO.md)
 ### 📣 Ad Profile Obfuscation
 - Ads are hidden from view but interacted with in background
 - If you click on everything, you are nobody
+- **Anti-Ad Blockers (Full-Screen Ads):** Replaces aggressive ad-block walls with a warning banner, respecting internal site timers to prevent breaking functionality while refusing to show the ad itself.
 
 ### 🚫 The Ban System
 - One click BAN from the navbar
 - Banned sites load a local HTML page: *"Go look for greener pastures elsewhere."*
 - To unban: solve a math equation. No easy toggles.
+- **Toxic Websites:** Marks highly suspect sites with intrusive visual elements (Marquees and semi-transparent "Guilt Trip Overlays" like Fake News memes) to constantly remind the user of their poor choices without fully blocking access.
 
 ### 🤖 AI Slop Detection
 - Detects AI-generated content disclosures → injects warning in the article title

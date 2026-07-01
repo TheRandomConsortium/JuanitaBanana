@@ -20,6 +20,9 @@ mod ban;
 mod browser;
 mod gui;
 mod spoof;
+mod config;
+mod noise;
+mod intoxication;
 
 fn main() {
     // Load persisted ban list
