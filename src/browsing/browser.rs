@@ -40,14 +40,23 @@ impl BanList {
                     loaded_state
                 } else {
                     println!("[BAN] CRITICAL: banlist.bin is corrupted! Tampering detected.");
-                    BanList { vengeful_mode: true, ..Default::default() }
+                    BanList {
+                        vengeful_mode: true,
+                        ..Default::default()
+                    }
                 }
             } else {
-                BanList { vengeful_mode: true, ..Default::default() }
+                BanList {
+                    vengeful_mode: true,
+                    ..Default::default()
+                }
             }
         } else {
             // File does not exist. If config has search engines, it's not a fresh install!
-            let mut s = BanList { secret_id: expected_secret.clone(), ..Default::default() };
+            let mut s = BanList {
+                secret_id: expected_secret.clone(),
+                ..Default::default()
+            };
             // We assume that if config exists, the directory existed before.
             // But actually, we know it's not a fresh install if they have modified config or we can just rely on first_launch_epoch.
             // If they deleted banlist.bin, it's missing but expected.
@@ -60,7 +69,7 @@ impl BanList {
             }
             s
         };
-        
+
         Rc::new(RefCell::new(state))
     }
 

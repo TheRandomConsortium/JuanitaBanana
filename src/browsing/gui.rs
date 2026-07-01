@@ -179,10 +179,10 @@ pub fn run(banlist: SharedBanList) {
                                 use crate::util::ban::{EquationProvider, BasicIntegralEquationProvider};
                                 let provider = BasicIntegralEquationProvider;
                                 let (equation, answer) = provider.generate_challenge();
-                                
+
                                 let domain = domain_query.to_string();
                                 *expected_unban.borrow_mut() = Some((domain.clone(), answer));
-                                
+
                                 let unban_html = crate::util::ban::unban_page(&domain, &equation);
                                 let base_uri = uri_str.replace("juanita://unban", "juanita://unban-page");
                                 webview_nav.load_html(&unban_html, Some(&base_uri));
@@ -199,7 +199,7 @@ pub fn run(banlist: SharedBanList) {
                             if let Some(query) = uri_str.strip_prefix("juanita://submit-unban?") {
                                 use webkit2gtk::PolicyDecisionExt;
                                 decision.ignore();
-                                
+
                                 // parse domain=X&answer=Y
                                 let parts: Vec<&str> = query.split('&').collect();
                                 let mut domain = String::new();
@@ -223,7 +223,7 @@ pub fn run(banlist: SharedBanList) {
                                         return true;
                                     }
                                 }
-                                
+
                                 println!("[UNBAN] Incorrect math or tampered domain. Access denied.");
                                 let banned_html = crate::util::ban::banned_page(&domain);
                                 webview_nav.load_html(&banned_html, Some("juanita://banned"));

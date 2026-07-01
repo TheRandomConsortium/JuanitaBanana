@@ -36,10 +36,10 @@ impl EquationProvider for BasicIntegralEquationProvider {
         let a = rng.gen_range(1..10);
         let b = rng.gen_range(1..10);
         let c = rng.gen_range(1..10);
-        
+
         let equation = format!("Evaluate: ∫ ({}x + {}) dx  from 0 to {}", a, b, c);
         let answer = (a as f32 / 2.0 * (c * c) as f32) as i32 + (b * c);
-        
+
         (equation, answer)
     }
 }

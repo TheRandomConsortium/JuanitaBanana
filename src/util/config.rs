@@ -69,7 +69,7 @@ impl Default for AppConfig {
 
 impl AppConfig {
     pub fn expected_secret_id(&self) -> String {
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
         let hostname = gethostname::gethostname().to_string_lossy().to_string();
         let payload = format!("{}-{}", hostname, self.first_launch_epoch);

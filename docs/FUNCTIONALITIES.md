@@ -66,7 +66,7 @@
 
 | Feature | Status | Notes |
 |---|---|---|
-| **Persistent Ban List** | ✅ Done | Domains saved to `~/.local/share/juanita-banana/banlist.json`. |
+| **Persistent Ban List** | ✅ Done | Domains saved to `~/.local/share/juanita-banana/banlist.bin` (cryptographically signed). |
 | **Local Static Ban Page** | ✅ Done | Banned domains route to a local HTML error page. |
 | **UI Ban Button** | ✅ Done | GTK HeaderBar button. Bans current domain and loads ban page immediately. |
 | **Toxic Site Warning** | 🔭 Future | Inject an annoying marquee across sites identified as toxic. |
