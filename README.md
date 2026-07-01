@@ -42,6 +42,12 @@ The modern web has turned the browser into a data collection terminal. Canvas AP
 > *We are making the user's data profile useless as a signal.*
 > *Intent: anti-fingerprinting. Not sabotage.*
 
+### § The Corporate Clause
+
+> "Our mascot is a derpy banana with curly hair. When your fingerprinting fails, you will have to look at it. When your quarterly metrics crash, you will have to explain it. When your profiling model collapses, you will have to project it in your board meeting.
+>
+> This is not a bug. This is a feature."
+
 Read the full manifesto → [`docs/MANIFESTO.md`](docs/MANIFESTO.md)
 
 ## Core Principles

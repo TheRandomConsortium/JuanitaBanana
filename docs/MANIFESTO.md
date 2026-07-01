@@ -20,6 +20,12 @@ We adamantly refuse to use Google's engine (Blink/Chromium). This browser is ult
 >
 > **Intent: anti-fingerprinting. Not sabotage.**
 
+### § The Corporate Clause
+
+> "Our mascot is a derpy banana with curly hair. When your fingerprinting fails, you will have to look at it. When your quarterly metrics crash, you will have to explain it. When your profiling model collapses, you will have to project it in your board meeting.
+>
+> This is not a bug. This is a feature."
+
 ---
 
 ## Rules of Engagement
