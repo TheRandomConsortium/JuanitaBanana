@@ -22,8 +22,10 @@ mod search;
 mod util;
 
 fn main() {
-    // Load persisted ban list
-    let state = browsing::browser::BanList::load();
+    let config = util::config::AppConfig::load();
+    let state = browsing::browser::BanList::load(&config);
+    config.save();
+    state.borrow().save();
 
     // Launch GTK application
     browsing::gui::run(state);

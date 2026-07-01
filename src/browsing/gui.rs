@@ -1,5 +1,6 @@
 use gtk::prelude::*;
 use gtk::{Application, ApplicationWindow, Box as GtkBox, Button, Entry, HeaderBar, Orientation};
+use std::cell::RefCell;
 use std::rc::Rc;
 use webkit2gtk::{
     NavigationPolicyDecision, NavigationPolicyDecisionExt, PolicyDecisionType, URIRequestExt,
@@ -91,6 +92,10 @@ pub fn run(banlist: SharedBanList) {
                 webview_clone.load_uri(text_str);
                 return;
             }
+            if text_str.starts_with("juanita:unban") || text_str.starts_with("juanita://unban") || text_str.starts_with("juanita://submit-unban") {
+                webview_clone.load_uri(text_str);
+                return;
+            }
             let url = crate::browsing::browser::normalize_url(text_str);
             webview_clone.load_uri(&url);
         });
@@ -120,6 +125,7 @@ pub fn run(banlist: SharedBanList) {
         });
 
         let webview_nav = webview.clone();
+        let expected_unban: Rc<RefCell<Option<(String, i32)>>> = Rc::new(RefCell::new(None));
 
         webview.connect_decide_policy(move |_, decision, decision_type| {
             if decision_type == PolicyDecisionType::NavigationAction {
@@ -160,6 +166,67 @@ pub fn run(banlist: SharedBanList) {
                                     }
                                 }
                                 webview_nav.load_uri("juanita://config");
+                                return true;
+                            }
+
+                            if uri_str.starts_with("juanita://unban-page") {
+                                return false; // allow loading the local HTML
+                            }
+
+                            if let Some(domain_query) = uri_str.strip_prefix("juanita://unban?domain=") {
+                                use webkit2gtk::PolicyDecisionExt;
+                                decision.ignore();
+                                use crate::util::ban::{EquationProvider, BasicIntegralEquationProvider};
+                                let provider = BasicIntegralEquationProvider;
+                                let (equation, answer) = provider.generate_challenge();
+                                
+                                let domain = domain_query.to_string();
+                                *expected_unban.borrow_mut() = Some((domain.clone(), answer));
+                                
+                                let unban_html = crate::util::ban::unban_page(&domain, &equation);
+                                let base_uri = uri_str.replace("juanita://unban", "juanita://unban-page");
+                                webview_nav.load_html(&unban_html, Some(&base_uri));
+                                return true;
+                            } else if uri_str.starts_with("juanita://unban") {
+                                use webkit2gtk::PolicyDecisionExt;
+                                decision.ignore();
+                                let domains = banlist_nav.borrow().banned_domains.clone();
+                                let list_html = crate::util::ban::unban_list_page(&domains);
+                                webview_nav.load_html(&list_html, Some("juanita://unban-page/"));
+                                return true;
+                            }
+
+                            if let Some(query) = uri_str.strip_prefix("juanita://submit-unban?") {
+                                use webkit2gtk::PolicyDecisionExt;
+                                decision.ignore();
+                                
+                                // parse domain=X&answer=Y
+                                let parts: Vec<&str> = query.split('&').collect();
+                                let mut domain = String::new();
+                                let mut answer = String::new();
+                                for p in parts {
+                                    if let Some(d) = p.strip_prefix("domain=") {
+                                        domain = d.to_string();
+                                    }
+                                    if let Some(a) = p.strip_prefix("answer=") {
+                                        answer = a.to_string();
+                                    }
+                                }
+
+                                if let Some((expected_domain, expected_ans)) = expected_unban.borrow().as_ref() {
+                                    if *expected_domain == domain && answer == expected_ans.to_string() {
+                                        println!("[UNBAN] User solved the math! Unbanning {}", domain);
+                                        let mut bl = banlist_nav.borrow_mut();
+                                        bl.unban(&domain);
+                                        bl.save();
+                                        webview_nav.load_uri(&format!("https://{}", domain));
+                                        return true;
+                                    }
+                                }
+                                
+                                println!("[UNBAN] Incorrect math or tampered domain. Access denied.");
+                                let banned_html = crate::util::ban::banned_page(&domain);
+                                webview_nav.load_html(&banned_html, Some("juanita://banned"));
                                 return true;
                             }
 

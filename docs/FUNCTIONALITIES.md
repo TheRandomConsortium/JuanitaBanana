@@ -58,7 +58,7 @@
 | **Local Search Noise** | ✅ Done | Fires 20 background searches from a local heterogeneous pool using dynamic RSS n-grams for every real user search, effectively poisoning the data profile. |
 | **P2P Gossip Protocol** | 🔭 Future | Decentralized sharing of anonymized searches to use real user data as noise for everyone. |
 | **Dumb Pipe TTL Server** | 🔭 Future | Minimalist server for search pool as an alternative to Gossip Protocol. |
-| **Background Captcha Solver** | 📋 Planned | **IMPORTANT**: Detects when a hidden WebView encounters a Captcha. Uses Auto-Click heuristics or pops up a temporary window for the user to solve it manually. Crucial to prevent session flagging from heavy search noise. |
+| **Background Captcha Solver** | 📋 Planned | **IMPORTANT**: Detects when a hidden WebView encounters a Captcha. We will code automated solver strategies (e.g. simple auto-click, local AI heuristics). If all automated strategies fail, it triggers a humiliating fallback popup featuring the Juanita Banana icon stating: *"Woohoo [SearchEngine] got a Boo Boo and seems to think solving a captcha will help them"*, displays the captcha, and offers a secondary button: *"Or maybe you prefer to ban?"*. |
 
 ---
 
@@ -71,7 +71,7 @@
 | **UI Ban Button** | ✅ Done | GTK HeaderBar button. Bans current domain and loads ban page immediately. |
 | **Toxic Site Warning** | 🔭 Future | Inject an annoying marquee across sites identified as toxic. |
 | **Contextual Guilt Trip Overlay** | 🔭 Future | Inject a semi-transparent, non-blocking contextual meme (e.g. Ceiling Cat for NSFW) over the entire page to induce guilt. Configurable. |
-| **Mathematical Unban** | ✅ Done | Requires solving a calculus equation (`∫ e^x dx from 0 to ln(3)`) in `juanita://config#unban` to unban a site. *Note: currently uses a hardcoded answer of "2" and lacks full ban-list integration.* |
+| **Mathematical Unban** | ✅ Done | Requires solving a randomly generated integral challenge in `juanita://unban?domain=...` to unban a site. Fully integrated with `BanList` and Vengeful Mode. |
 
 ---
 
@@ -81,6 +81,7 @@
 |---|---|---|
 | **Detect "Written with AI" footer** | 📋 Planned | DOM scan for known AI disclosure strings. |
 | **Replace article title** | 📋 Planned | Inject "This newspaper uses AI Slop. Ban?" into the DOM. |
+| **confer.to Recommendation** | 📋 Planned | Officially recommend `confer.to` when AI slop is detected, with a message like: "You might as well create this yourself and do it privately in the meantime." |
 
 ---
 

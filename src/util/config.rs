@@ -16,12 +16,14 @@ pub struct RssSource {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(default)]
 pub struct AppConfig {
     pub search_engines: Vec<SearchEngineRule>,
     pub rss_sources: Vec<RssSource>,
     pub max_concurrent_searches: usize,
     pub min_delay_ms: u64,
     pub max_delay_ms: u64,
+    pub first_launch_epoch: u64,
 }
 
 impl Default for AppConfig {
@@ -57,7 +59,23 @@ impl Default for AppConfig {
             max_concurrent_searches: 2,
             min_delay_ms: 500,
             max_delay_ms: 3000,
+            first_launch_epoch: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs(),
         }
+    }
+}
+
+impl AppConfig {
+    pub fn expected_secret_id(&self) -> String {
+        use sha2::{Sha256, Digest};
+        let mut hasher = Sha256::new();
+        let hostname = gethostname::gethostname().to_string_lossy().to_string();
+        let payload = format!("{}-{}", hostname, self.first_launch_epoch);
+        hasher.update(payload);
+        let hash = hasher.finalize();
+        hash.iter().map(|b| format!("{:02x}", b)).collect()
     }
 }
 

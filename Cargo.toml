@@ -21,6 +21,9 @@ regex = "1.10"
 rand = "0.8"
 roxmltree = "0.19"
 urlencoding = "2.1"
+bincode = "1.3.3"
+gethostname = "1.1.0"
+sha2 = "0.11.0"
 
 [profile.release]
 opt-level = 3
