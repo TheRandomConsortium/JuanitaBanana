@@ -157,3 +157,57 @@ impl DownloadManager {
         self.active_downloads.remove(id);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_download_manager_html_empty() {
+        let dm = DownloadManager::new();
+        let html = dm.generate_html();
+        assert!(html.contains("No isolated downloads yet."));
+        assert!(!html.contains("Downloading..."));
+        assert!(!html.contains("Ready"));
+    }
+
+    #[test]
+    fn test_download_manager_html_active() {
+        let mut dm = DownloadManager::new();
+        dm.active_downloads.insert(
+            "1234".to_string(),
+            (
+                "/tmp/juanita-sandbox-1234/test.pdf".to_string(),
+                "test.pdf".to_string(),
+                false,
+                0.45,
+            ),
+        );
+
+        let html = dm.generate_html();
+        assert!(html.contains("test.pdf"));
+        assert!(html.contains("Downloading... 45%"));
+        assert!(html.contains("Wait..."));
+        assert!(!html.contains("Open in Sandbox"));
+    }
+
+    #[test]
+    fn test_download_manager_html_finished() {
+        let mut dm = DownloadManager::new();
+        dm.active_downloads.insert(
+            "1234".to_string(),
+            (
+                "/tmp/juanita-sandbox-1234/test.pdf".to_string(),
+                "test.pdf".to_string(),
+                true,
+                1.0,
+            ),
+        );
+
+        let html = dm.generate_html();
+        assert!(html.contains("test.pdf"));
+        assert!(html.contains("Ready"));
+        assert!(html.contains("Open in Sandbox"));
+        assert!(html.contains("juanita://downloads/open?id=1234"));
+    }
+}
