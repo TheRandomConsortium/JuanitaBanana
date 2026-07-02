@@ -384,6 +384,7 @@ pub fn config_page_html(config: &AppConfig) -> String {
             document.getElementById('new-engine-name').value = '';
             document.getElementById('new-engine-regex').value = '';
             document.getElementById('new-engine-params').value = '';
+        }}
     </script>
 </body>
 </html>
