@@ -1,11 +1,12 @@
 use gtk::prelude::*;
 use gtk::{Application, ApplicationWindow, Box as GtkBox, Button, Entry, HeaderBar, Orientation};
+use rand::Rng;
 use std::cell::RefCell;
 use std::rc::Rc;
 use webkit2gtk::{
     NavigationPolicyDecision, NavigationPolicyDecisionExt, PolicyDecisionType, URIRequestExt,
     UserContentInjectedFrames, UserContentManager, UserContentManagerExt, UserScript,
-    UserScriptInjectionTime, WebContext, WebView, WebViewExt,
+    UserScriptInjectionTime, WebContext, WebContextExt, WebView, WebViewExt, DownloadExt
 };
 
 use crate::browsing::browser::SharedBanList;
@@ -26,6 +27,42 @@ pub fn run(banlist: SharedBanList) {
 
         let web_context = WebContext::default().unwrap();
         let ucm = UserContentManager::new();
+
+        let downloads = Rc::new(RefCell::new(crate::util::downloads::DownloadManager::new()));
+        let downloads_ctx = downloads.clone();
+        
+        web_context.connect_download_started(move |_context, download| {
+            let id = format!("{}", rand::thread_rng().gen::<u64>());
+            let dest_dir = format!("/tmp/juanita-sandbox-{}", id);
+            std::fs::create_dir_all(&dest_dir).ok();
+            
+            let mut filename = "unnamed_download".to_string();
+            #[allow(deprecated)]
+            if let Some(req) = download.request() {
+                if let Some(uri) = req.uri() {
+                    let parts: Vec<&str> = uri.split('/').collect();
+                    if let Some(last) = parts.last() {
+                        if !last.is_empty() {
+                            filename = last.to_string();
+                        }
+                    }
+                }
+            }
+            
+            let dest_path = format!("{}/{}", dest_dir, filename);
+            download.set_destination(&format!("file://{}", dest_path));
+            
+            downloads_ctx.borrow_mut().active_downloads.insert(id.clone(), (dest_path, filename.clone(), false));
+            
+            let downloads_fin = downloads_ctx.clone();
+            let id_fin = id.clone();
+            download.connect_finished(move |_| {
+                if let Some(entry) = downloads_fin.borrow_mut().active_downloads.get_mut(&id_fin) {
+                    entry.2 = true;
+                    println!("[SANDBOX] Download finished: {}", entry.1);
+                }
+            });
+        });
 
         let script = UserScript::new(
             spoof::anti_fingerprint_script(),
@@ -93,6 +130,10 @@ pub fn run(banlist: SharedBanList) {
                 return;
             }
             if text_str.starts_with("juanita:unban") || text_str.starts_with("juanita://unban") || text_str.starts_with("juanita://submit-unban") {
+                webview_clone.load_uri(text_str);
+                return;
+            }
+            if text_str.starts_with("juanita:downloads") || text_str.starts_with("juanita://downloads") {
                 webview_clone.load_uri(text_str);
                 return;
             }
@@ -166,6 +207,45 @@ pub fn run(banlist: SharedBanList) {
                                     }
                                 }
                                 webview_nav.load_uri("juanita://config");
+                                return true;
+                            }
+
+                            if uri_str.starts_with("juanita://downloads-page") {
+                                return false; // allow loading the local HTML
+                            }
+
+                            if uri_str.starts_with("juanita://downloads/open?id=") {
+                                use webkit2gtk::PolicyDecisionExt;
+                                decision.ignore();
+                                let id = uri_str.trim_start_matches("juanita://downloads/open?id=");
+                                downloads.borrow().open_sandboxed(id);
+                                webview_nav.load_uri("juanita://downloads");
+                                return true;
+                            }
+
+                            if uri_str.starts_with("juanita://downloads/persist?id=") {
+                                use webkit2gtk::PolicyDecisionExt;
+                                decision.ignore();
+                                let id = uri_str.trim_start_matches("juanita://downloads/persist?id=");
+                                downloads.borrow_mut().make_permanent(id);
+                                webview_nav.load_uri("juanita://downloads");
+                                return true;
+                            }
+
+                            if uri_str.starts_with("juanita://downloads/delete?id=") {
+                                use webkit2gtk::PolicyDecisionExt;
+                                decision.ignore();
+                                let id = uri_str.trim_start_matches("juanita://downloads/delete?id=");
+                                downloads.borrow_mut().shred(id);
+                                webview_nav.load_uri("juanita://downloads");
+                                return true;
+                            }
+
+                            if uri_str.starts_with("juanita://downloads") {
+                                use webkit2gtk::PolicyDecisionExt;
+                                decision.ignore();
+                                let html = downloads.borrow().generate_html();
+                                webview_nav.load_html(&html, Some("juanita://downloads-page/"));
                                 return true;
                             }
 
