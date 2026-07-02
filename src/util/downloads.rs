@@ -78,39 +78,35 @@ impl DownloadManager {
     pub fn open_sandboxed(&self, id: &str) {
         if let Some((path, _filename, true)) = self.active_downloads.get(id) {
             let home = std::env::var("HOME").unwrap_or_else(|_| "/home/user".to_string());
+            let run_dir = std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/run/user/1000".to_string());
             
-            // Launch Bubblewrap to open the file completely isolated
-            // --unshare-all: No IPC, User, PID
-            // --unshare-net: No Internet
-            // --ro-bind /usr /usr: Need binaries
-            // --tmpfs $HOME: Hide user home
             let status = Command::new("bwrap")
-                .arg("--unshare-all")
                 .arg("--unshare-net")
+                .arg("--unshare-pid")
+                .arg("--unshare-ipc")
                 .arg("--ro-bind")
-                .arg("/usr")
-                .arg("/usr")
-                .arg("--ro-bind-try")
-                .arg("/lib")
-                .arg("/lib")
-                .arg("--ro-bind-try")
-                .arg("/lib64")
-                .arg("/lib64")
-                .arg("--ro-bind-try")
-                .arg("/etc/fonts")
-                .arg("/etc/fonts") // needed for fonts
-                .arg("--ro-bind-try")
-                .arg("/usr/share/fonts")
-                .arg("/usr/share/fonts")
-                .arg("--dir")
-                .arg("/tmp")
+                .arg("/")
+                .arg("/")
+                .arg("--dev")
+                .arg("/dev")
                 .arg("--tmpfs")
                 .arg(&home)
+                .arg("--tmpfs")
+                .arg("/tmp")
+                .arg("--ro-bind-try")
+                .arg("/tmp/.X11-unix")
+                .arg("/tmp/.X11-unix")
+                .arg("--ro-bind-try")
+                .arg(format!("{}/wayland-0", run_dir))
+                .arg(format!("{}/wayland-0", run_dir))
+                .arg("--ro-bind-try")
+                .arg(format!("{}/bus", run_dir))
+                .arg(format!("{}/bus", run_dir))
                 .arg("--bind")
                 .arg(path)
-                .arg(format!("/sandbox_{}", _filename))
-                .arg("/usr/bin/xdg-open")
-                .arg(format!("/sandbox_{}", _filename))
+                .arg(format!("/tmp/{}", _filename))
+                .arg("xdg-open")
+                .arg(format!("/tmp/{}", _filename))
                 .spawn();
 
             if let Err(e) = status {
