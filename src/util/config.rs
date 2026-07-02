@@ -248,9 +248,9 @@ pub fn config_page_html(config: &AppConfig, is_default: bool) -> String {
 <body>
     <div id="sidebar">
         <ul>
-            <li class="active" onclick="showTab('general', this)">General</li>
-            <li onclick="showTab('intoxication', this)">Search Intoxication</li>
-            <li onclick="showTab('rss', this)">RSS Sources</li>
+            <li class="active" onclick="showTab('general')">General</li>
+            <li onclick="showTab('intoxication')">Search Intoxication</li>
+            <li onclick="showTab('rss')">RSS Sources</li>
         </ul>
     </div>
     <div id="content">
@@ -341,15 +341,14 @@ pub fn config_page_html(config: &AppConfig, is_default: bool) -> String {
             }}
         }}
 
-        function showTab(tabId, element) {{
+        function showTab(tabId) {{
             if (tabId !== 'unban' && window.location.hash === '#unban') return; // Enforce lock
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             
-            if (element) {{
-                document.querySelectorAll('#sidebar li').forEach(el => el.classList.remove('active'));
-                element.classList.add('active');
-            }}
+            document.querySelectorAll('#sidebar li').forEach(el => el.classList.remove('active'));
+            const activeLi = Array.from(document.querySelectorAll('#sidebar li')).find(li => li.innerText.toLowerCase().includes(tabId));
+            if (activeLi) activeLi.classList.add('active');
         }}
 
         function checkUnban() {{
