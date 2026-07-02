@@ -233,6 +233,10 @@ pub fn run(banlist: SharedBanList) {
                 webview_clone.load_uri(text_str);
                 return;
             }
+            if text_str.starts_with("juanita:about") || text_str.starts_with("juanita://about") {
+                webview_clone.load_uri(text_str);
+                return;
+            }
             let url = crate::browsing::browser::normalize_url(text_str);
             webview_clone.load_uri(&url);
         });
@@ -361,13 +365,8 @@ pub fn run(banlist: SharedBanList) {
                             if uri_str.starts_with("juanita://contribute") {
                                 use webkit2gtk::PolicyDecisionExt;
                                 decision.ignore();
-
-                                // Inyectamos la imagen en el binario y la pasamos a base64
-                                // Nota: Asegúrate de tener la dependencia `base64` en tu Cargo.toml
-                                let image_data = include_bytes!("../../assets/monerowallet.png"); // Ajusta el path relativo a main.rs
+                                let image_data = include_bytes!("../../assets/monerowallet.png");
                                 let b64_image = base64::encode(image_data);
-
-                                // ATENCIÓN: Las llaves de CSS están escapadas como {{ }} para que format! no colapse
                                 let html = format!(r#"
 <!DOCTYPE html>
 <html>
@@ -435,6 +434,139 @@ pub fn run(banlist: SharedBanList) {
                                 "#, b64_image);
 
                                 webview_nav.load_html(&html, Some("juanita://contribute-page/"));
+                                return true;
+                            }
+                            if uri_str.starts_with("juanita://about-page") {
+                                return false;
+                            }
+
+                            if uri_str.starts_with("juanita://about") {
+                                use webkit2gtk::PolicyDecisionExt;
+                                decision.ignore();
+
+                                let icon_bytes = include_bytes!("../../assets/icon.png"); 
+                                let b64_icon = base64::encode(icon_bytes);
+
+                                let mut rng = rand::thread_rng();
+                                let width = 256;
+                                let height = 256;
+                                let pixel_data_size = width * height * 4;
+                                let mut bmp = Vec::with_capacity(54 + pixel_data_size);
+
+                                bmp.extend_from_slice(b"BM");
+                                let file_size = (54 + pixel_data_size) as u32;
+                                bmp.extend_from_slice(&file_size.to_le_bytes());
+                                bmp.extend_from_slice(&[0, 0, 0, 0]);
+                                bmp.extend_from_slice(&(54u32).to_le_bytes());
+
+                                bmp.extend_from_slice(&(40u32).to_le_bytes());
+                                bmp.extend_from_slice(&(width as u32).to_le_bytes());
+                                bmp.extend_from_slice(&(height as i32).to_le_bytes());
+                                bmp.extend_from_slice(&(1u16).to_le_bytes());
+                                bmp.extend_from_slice(&(32u16).to_le_bytes());
+                                bmp.extend_from_slice(&(0u32).to_le_bytes());
+                                bmp.extend_from_slice(&(pixel_data_size as u32).to_le_bytes());
+                                bmp.extend_from_slice(&(2835u32).to_le_bytes());
+                                bmp.extend_from_slice(&(2835u32).to_le_bytes());
+                                bmp.extend_from_slice(&(0u32).to_le_bytes());
+                                bmp.extend_from_slice(&(0u32).to_le_bytes());
+
+                                let mut raw_pixels = vec![0u8; pixel_data_size];
+                                rand::Rng::fill(&mut rng, &mut raw_pixels[..]);
+                                bmp.extend_from_slice(&raw_pixels);
+
+                                let b64_noise = base64::encode(&bmp);
+
+                                let html = format!(r#"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>About Juanita Banana</title>
+    <style>
+        body {{
+            background: #0a0a0a;
+            color: #d4d4d4;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }}
+        h1 {{ color: #ff3333; font-size: 3em; margin-bottom: 5px; }}
+        h2 {{ color: #888; font-size: 1.5em; margin-top: 0; margin-bottom: 50px; font-weight: normal; }}
+        p.question {{ font-size: 1.8em; color: #ffcc00; margin-bottom: 10px; font-weight: bold; }}
+        p.statement {{ font-size: 1.5em; color: #fff; margin-bottom: 40px; }}
+        .manifesto-link {{
+            color: #0098ff;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.2em;
+            border: 1px solid #444;
+            padding: 15px 30px;
+            background: #111;
+            border-radius: 5px;
+            transition: all 0.2s ease-in-out;
+            font-family: sans-serif;
+        }}
+        .manifesto-link:hover {{ background: #0098ff; color: #000; border-color: #0098ff; }}
+        .footer-grid {{
+            display: flex;
+            gap: 120px;
+            margin-top: 80px;
+        }}
+        .footer-item {{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #555;
+            font-size: 1.5em;
+            font-weight: bold;
+        }}
+        .footer-item span {{ margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }}
+        .footer-item img {{
+            width: 256px;
+            height: 256px;
+            border: 2px solid #222;
+            border-radius: 4px;
+            object-fit: cover;
+            background: #000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+        }}
+        .footer-item.random-consortium img {{
+            image-rendering: pixelated;
+        }}
+    </style>
+</head>
+<body>
+    <h1>Who are we?</h1>
+    <h2>Who cares? Might as well be no one.</h2>
+    
+    <p class="question">The real question is who are you?</p>
+    <p class="statement">Another bootlicker feeding the corporate web or a sovereign user?</p>
+    
+    <a class="manifesto-link" href="https://github.com/TheRandomConsortium/JuanitaBanana/blob/main/docs/MANIFESTO.md" target="_blank">
+        Read the full manifesto at github.com/docs/MANIFESTO.md
+    </a>
+    
+    <div class="footer-grid">
+        <div class="footer-item">
+            <span>Juanita Banana</span>
+            <img src="data:image/png;base64,{}" alt="Derpy Banana">
+        </div>
+        <div class="footer-item random-consortium">
+            <span>TheRandomConsortium</span>
+            <img src="data:image/bmp;base64,{}" alt="Static Noise">
+        </div>
+    </div>
+</body>
+</html>
+                                "#, b64_icon, b64_noise);
+
+                                webview_nav.load_html(&html, Some("juanita://about-page/"));
                                 return true;
                             }
 
