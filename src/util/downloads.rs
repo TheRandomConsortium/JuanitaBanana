@@ -90,7 +90,8 @@ impl DownloadManager {
 
             let parent_dir = std::path::Path::new(path).parent().unwrap();
             let fake_xdg_open_path = parent_dir.join("fake-xdg-open");
-            let script = format!(r#"#!/bin/bash
+            let script = format!(
+                r#"#!/bin/bash
 TARGET="$1"
 RESULT=$(zenity --question --title="Juanita Banana Sandbox" --text="A sandboxed document is trying to escape and access your host system:\n\n<b>$TARGET</b>\n\nAllow this action?" --width=450 --ok-label="Allow" --cancel-label="Reject" --extra-button="Reject & Ban Origin")
 EXIT_CODE=$?
@@ -99,9 +100,15 @@ if [ $EXIT_CODE -eq 0 ]; then
 elif [ "$RESULT" = "Reject & Ban Origin" ]; then
     gio open "juanita://external/ban?url=$TARGET&domain={}"
 fi
-"#, origin_domain);
+"#,
+                origin_domain
+            );
             std::fs::write(&fake_xdg_open_path, script).ok();
-            std::process::Command::new("chmod").arg("+x").arg(&fake_xdg_open_path).status().ok();
+            std::process::Command::new("chmod")
+                .arg("+x")
+                .arg(&fake_xdg_open_path)
+                .status()
+                .ok();
 
             let status = Command::new("bwrap")
                 .arg("--unshare-net")
