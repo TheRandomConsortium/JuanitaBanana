@@ -3,9 +3,9 @@ use gtk::prelude::WidgetExtManual;
 use rand::Rng;
 use regex::Regex;
 use std::cell::RefCell;
-use std::collections::{HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 use std::rc::Rc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use webkit2gtk::{LoadEvent, WebContext, WebView, WebViewExt};
 
 use crate::search::noise::NoiseProvider;
@@ -13,14 +13,18 @@ use crate::util::config::AppConfig;
 
 pub enum IntoxicationTask {
     FakeSearch(String),
-    RealSearch(String, u64),
+    RealSearch {
+        uri: String,
+        signature: String,
+        session_id: u64,
+    },
 }
 
 pub struct IntoxicationEngine {
     queue: Rc<RefCell<VecDeque<IntoxicationTask>>>,
     active_count: Rc<RefCell<usize>>,
     active_views: Rc<RefCell<Vec<WebView>>>,
-    allowed_urls: Rc<RefCell<HashSet<String>>>,
+    allowed_urls: Rc<RefCell<HashMap<String, Instant>>>,
     search_session_id: Rc<RefCell<u64>>,
     context: WebContext,
     main_webview: WebView,
@@ -35,7 +39,7 @@ impl IntoxicationEngine {
             queue: Rc::new(RefCell::new(VecDeque::new())),
             active_count: Rc::new(RefCell::new(0)),
             active_views: Rc::new(RefCell::new(Vec::new())),
-            allowed_urls: Rc::new(RefCell::new(HashSet::new())),
+            allowed_urls: Rc::new(RefCell::new(HashMap::new())),
             search_session_id: Rc::new(RefCell::new(0)),
             context: context.clone(),
             main_webview: main_webview.clone(),
@@ -51,31 +55,33 @@ impl IntoxicationEngine {
         config: &AppConfig,
         noise: &impl NoiseProvider,
     ) -> bool {
-        // Prevent infinite loop when rendering the real search
-        if self.allowed_urls.borrow().contains(real_uri) {
-            self.allowed_urls.borrow_mut().remove(real_uri);
-            return false;
-        }
-
         for rule in &config.search_engines {
             if let Ok(re) = Regex::new(&rule.domain_regex) {
                 if re.is_match(real_uri) {
-                    // Make sure the URL actually contains the query param!
-                    // Otherwise we might intercept the homepage (e.g. duckduckgo.com/)
-                    let mut has_params = false;
+                    // Extract query params to create a signature
+                    let mut signature = String::new();
                     for param in &rule.query_params {
-                        let param_re_str = format!(r"([?&]{}=)[^&]+", regex::escape(param));
+                        let param_re_str = format!(r"[?&]{}=([^&]+)", regex::escape(param));
                         if let Ok(param_re) = Regex::new(&param_re_str) {
-                            if param_re.is_match(real_uri) {
-                                has_params = true;
-                                break;
+                            if let Some(caps) = param_re.captures(real_uri) {
+                                signature.push_str(&caps[1]);
+                                signature.push('|');
                             }
                         }
                     }
 
-                    if !has_params {
+                    if signature.is_empty() {
                         continue;
                     }
+
+                    // Prevent infinite loop and double-poisoning from Consent redirects
+                    let now = Instant::now();
+                    let mut allowed = self.allowed_urls.borrow_mut();
+                    allowed.retain(|_, time| now.duration_since(*time).as_secs() < 30); // 30 sec TTL
+                    if allowed.contains_key(&signature) {
+                        return false;
+                    }
+                    drop(allowed);
 
                     println!("[INTOX] Intercepted search on {}", rule.name);
 
@@ -98,20 +104,27 @@ impl IntoxicationEngine {
                         tasks.push(IntoxicationTask::FakeSearch(fake_uri));
                     }
 
-                    // The Camouflage Shuffle: Insert the real search dynamically
-                    let mut rng = rand::thread_rng();
-                    let max_idx = (config.max_concurrent_searches * 2).saturating_sub(1);
-                    let insert_idx = rng.gen_range(0..=max_idx.min(tasks.len()));
-
                     *self.search_session_id.borrow_mut() += 1;
                     let session_id = *self.search_session_id.borrow();
-                    tasks.insert(
-                        insert_idx,
-                        IntoxicationTask::RealSearch(real_uri.to_string(), session_id),
-                    );
 
-                    // Add all to queue
+                    // Add fake searches to the queue first
                     self.queue.borrow_mut().extend(tasks);
+
+                    // The Camouflage Shuffle: Insert the real search dynamically at the FRONT of the queue
+                    // in positions 0, 1, 2, or 3
+                    let mut rng = rand::thread_rng();
+                    let insert_idx = rng.gen_range(0..=3);
+                    let mut q = self.queue.borrow_mut();
+                    let real_idx = insert_idx.min(q.len());
+                    q.insert(
+                        real_idx,
+                        IntoxicationTask::RealSearch {
+                            uri: real_uri.to_string(),
+                            signature,
+                            session_id,
+                        },
+                    );
+                    drop(q);
 
                     // Start processing (kickstart up to max concurrency)
                     for _ in 0..self.max_concurrent_searches {
@@ -183,14 +196,14 @@ impl IntoxicationEngine {
 
                         hidden_wv.load_uri(uri);
                     }
-                    IntoxicationTask::RealSearch(uri, session_id) => {
+                    IntoxicationTask::RealSearch { uri, signature, session_id } => {
                         if *engine.search_session_id.borrow() == *session_id {
                             println!(
                                 "[INTOX] Rending REAL search after camouflage delay: {}",
                                 uri
                             );
                             *engine.active_count.borrow_mut() -= 1;
-                            engine.allowed_urls.borrow_mut().insert(uri.clone());
+                            engine.allowed_urls.borrow_mut().insert(signature.clone(), Instant::now());
                             engine.main_webview.load_uri(uri);
                         } else {
                             println!(

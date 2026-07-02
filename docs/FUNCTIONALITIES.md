@@ -58,7 +58,7 @@
 | **Local Search Noise** | ✅ Done | Fires 20 background searches from a local heterogeneous pool using dynamic RSS n-grams for every real user search, effectively poisoning the data profile. |
 | **P2P Gossip Protocol** | 🔭 Future | Decentralized sharing of anonymized searches to use real user data as noise for everyone. |
 | **Dumb Pipe TTL Server** | 🔭 Future | Minimalist server for search pool as an alternative to Gossip Protocol. |
-| **Background Captcha Solver** | 📋 Planned | **IMPORTANT**: Detects when a hidden WebView encounters a Captcha. We will code automated solver strategies (e.g. simple auto-click, local AI heuristics). If all automated strategies fail, it triggers a humiliating fallback popup featuring the Juanita Banana icon stating: *"Woohoo [SearchEngine] got a Boo Boo and seems to think solving a captcha will help them"*, displays the captcha, and offers a secondary button: *"Or maybe you prefer to ban?"*. |
+| **Background Captcha Solver** | 📋 Planned | **IMPORTANT**: Detects when a hidden WebView encounters a Captcha or a "Consent to Cookies" wall (e.g. Google's Consent screen, which currently hijacks the real search and causes double-poisoning). We will code automated solver strategies (e.g. simple auto-click, local AI heuristics). If all automated strategies fail, it triggers a humiliating fallback popup featuring the Juanita Banana icon stating: *"Woohoo [SearchEngine] got a Boo Boo and seems to think solving a captcha will help them"*, displays the captcha, and offers a secondary button: *"Or maybe you prefer to ban?"*. |
 
 ---
 
@@ -82,6 +82,15 @@
 | **Detect "Written with AI" footer** | 📋 Planned | DOM scan for known AI disclosure strings. |
 | **Replace article title** | 📋 Planned | Inject "This newspaper uses AI Slop. Ban?" into the DOM. |
 | **confer.to Recommendation** | 📋 Planned | Officially recommend `confer.to` when AI slop is detected, with a message like: "You might as well create this yourself and do it privately in the meantime." |
+
+---
+
+## 📦 Sandboxed Downloads
+
+| Feature | Status | Notes |
+|---|---|---|
+| **Fake Downloads to Sandbox** | 📋 Planned | Clicking a download link doesn't truly download the file. It saves it to a temporary file that can only be opened inside a restricted sandbox environment. |
+| **`juanita://downloads` Persistence** | 📋 Planned | If the user decides to keep the file permanently and open it on their real OS, they must navigate to `juanita://downloads` and manually persist the file. Otherwise, it is securely deleted. |
 
 ---
 
