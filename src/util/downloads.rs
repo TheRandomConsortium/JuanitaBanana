@@ -1,7 +1,5 @@
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::process::Command;
-use std::rc::Rc;
 
 pub struct DownloadManager {
     // Maps download ID -> (Sandbox Path, Original Filename, Is Finished)

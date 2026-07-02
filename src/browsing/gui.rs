@@ -33,26 +33,26 @@ pub fn run(banlist: SharedBanList) {
         
         web_context.connect_download_started(move |_context, download| {
             let id = format!("{}", rand::thread_rng().gen::<u64>());
-            let dest_dir = format!("/tmp/juanita-sandbox-{}", id);
-            std::fs::create_dir_all(&dest_dir).ok();
             
-            let mut filename = "unnamed_download".to_string();
-            #[allow(deprecated)]
-            if let Some(req) = download.request() {
-                if let Some(uri) = req.uri() {
-                    let parts: Vec<&str> = uri.split('/').collect();
-                    if let Some(last) = parts.last() {
-                        if !last.is_empty() {
-                            filename = last.to_string();
-                        }
-                    }
-                }
-            }
-            
-            let dest_path = format!("{}/{}", dest_dir, filename);
-            download.set_destination(&format!("file://{}", dest_path));
-            
-            downloads_ctx.borrow_mut().active_downloads.insert(id.clone(), (dest_path, filename.clone(), false));
+            let downloads_ctx_dest = downloads_ctx.clone();
+            let id_dest = id.clone();
+            download.connect_decide_destination(move |dl, suggested_filename| {
+                let filename = suggested_filename.to_string();
+                let dest_dir = format!("/tmp/juanita-sandbox-{}", id_dest);
+                std::fs::create_dir_all(&dest_dir).ok();
+                
+                let dest_path = format!("{}/{}", dest_dir, filename);
+                dl.set_destination(&format!("file://{}", dest_path));
+                
+                downloads_ctx_dest.borrow_mut().active_downloads.insert(id_dest.clone(), (dest_path, filename.clone(), false));
+                
+                std::process::Command::new("notify-send")
+                    .arg("Juanita Banana 🍌")
+                    .arg(&format!("Downloading: {}", filename))
+                    .spawn().ok();
+                
+                true
+            });
             
             let downloads_fin = downloads_ctx.clone();
             let id_fin = id.clone();
@@ -60,6 +60,10 @@ pub fn run(banlist: SharedBanList) {
                 if let Some(entry) = downloads_fin.borrow_mut().active_downloads.get_mut(&id_fin) {
                     entry.2 = true;
                     println!("[SANDBOX] Download finished: {}", entry.1);
+                    std::process::Command::new("notify-send")
+                        .arg("Juanita Banana 🍌")
+                        .arg(&format!("Ready in Sandbox: {}", entry.1))
+                        .spawn().ok();
                 }
             });
         });
@@ -167,6 +171,17 @@ pub fn run(banlist: SharedBanList) {
 
         let webview_nav = webview.clone();
         let expected_unban: Rc<RefCell<Option<(String, i32)>>> = Rc::new(RefCell::new(None));
+
+        let webview_create = webview.clone();
+        webview.connect_create(move |_wv, nav_action| {
+            #[allow(deprecated)]
+            if let Some(req) = nav_action.request() {
+                if let Some(uri) = req.uri() {
+                    webview_create.load_uri(uri.as_str());
+                }
+            }
+            None // Deny new window, open in same tab
+        });
 
         webview.connect_decide_policy(move |_, decision, decision_type| {
             if decision_type == PolicyDecisionType::NavigationAction {
