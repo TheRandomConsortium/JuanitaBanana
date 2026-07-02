@@ -124,7 +124,16 @@ fi
 
             let fake_bin_dir = parent_dir.join("fake-bin");
             std::fs::create_dir_all(&fake_bin_dir).ok();
-            for bin in &["firefox", "chrome", "chromium", "brave-browser", "vlc", "mpv", "xdg-open", "gio"] {
+            for bin in &[
+                "firefox",
+                "chrome",
+                "chromium",
+                "brave-browser",
+                "vlc",
+                "mpv",
+                "xdg-open",
+                "gio",
+            ] {
                 std::os::unix::fs::symlink("/usr/bin/xdg-open", fake_bin_dir.join(bin)).ok();
             }
 
@@ -151,7 +160,10 @@ fi
                 .arg(format!("{}/.local/share/applications", home))
                 .arg("--ro-bind-try")
                 .arg(&fake_desktop_path)
-                .arg(format!("{}/.local/share/applications/fake-browser.desktop", home))
+                .arg(format!(
+                    "{}/.local/share/applications/fake-browser.desktop",
+                    home
+                ))
                 .arg("--ro-bind-try")
                 .arg(&fake_bin_dir)
                 .arg("/tmp/fake-bin")
