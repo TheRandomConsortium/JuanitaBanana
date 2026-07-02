@@ -1,6 +1,31 @@
 #!/bin/bash
 set -e
 
+BUMP_TYPE=${1:-patch}
+
+CURRENT_VERSION=$(grep -E '^version = ' Cargo.toml | head -n 1 | awk -F '"' '{print $2}')
+IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
+
+if [ "$BUMP_TYPE" == "major" ]; then
+    major=$((major + 1))
+    minor=0
+    patch=0
+elif [ "$BUMP_TYPE" == "minor" ]; then
+    minor=$((minor + 1))
+    patch=0
+elif [ "$BUMP_TYPE" == "patch" ]; then
+    patch=$((patch + 1))
+fi
+
+if [ "$BUMP_TYPE" != "none" ]; then
+    NEW_VERSION="$major.$minor.$patch"
+    echo "Bumping version from $CURRENT_VERSION to $NEW_VERSION..."
+    sed -i "s/^version = \"$CURRENT_VERSION\"/version = \"$NEW_VERSION\"/" Cargo.toml
+else
+    NEW_VERSION=$CURRENT_VERSION
+    echo "Keeping version at $NEW_VERSION..."
+fi
+
 echo "Building release binary..."
 source ~/.cargo/env
 cargo build --release
@@ -28,7 +53,7 @@ EOF
 
 cat > $RPM_ROOT/SPECS/juanita-banana.spec << 'EOF'
 Name:           juanita-banana
-Version:        0.2.0
+Version:        VERSION_PLACEHOLDER
 Release:        1%{?dist}
 Summary:        A browser that fights back
 License:        MPL-2.0
@@ -51,6 +76,8 @@ cp %{_topdir}/BUILD/juanita-banana.png %{buildroot}/usr/share/pixmaps/
 /usr/share/applications/juanita-banana.desktop
 /usr/share/pixmaps/juanita-banana.png
 EOF
+
+sed -i "s/VERSION_PLACEHOLDER/$NEW_VERSION/" $RPM_ROOT/SPECS/juanita-banana.spec
 
 echo "Building RPM..."
 rpmbuild -bb $RPM_ROOT/SPECS/juanita-banana.spec
