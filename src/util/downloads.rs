@@ -93,6 +93,12 @@ impl DownloadManager {
             let script = format!(
                 r#"#!/bin/bash
 TARGET="$1"
+
+if [[ "$TARGET" == /tmp/* ]]; then
+    gio open "$TARGET"
+    exit 0
+fi
+
 RESULT=$(zenity --question --title="Juanita Banana Sandbox" --text="A sandboxed document is trying to escape and access your host system:\n\n<b>$TARGET</b>\n\nAllow this action?" --width=450 --ok-label="Allow" --cancel-label="Reject" --extra-button="Reject & Ban Origin")
 EXIT_CODE=$?
 if [ $EXIT_CODE -eq 0 ]; then
