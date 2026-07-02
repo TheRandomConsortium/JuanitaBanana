@@ -160,7 +160,8 @@ pub fn config_page_html(config: &AppConfig, is_default: bool) -> String {
     let noise_amount = config.noise_queries_amount;
 
     let default_btn = if is_default {
-        r#"<button disabled style="background: #444; color: #888; cursor: not-allowed;">Already Default Browser</button>"#
+        r#"<button disabled style="background: #444; color: #888; cursor: not-allowed;">Already Default Browser</button>
+           <button style="margin-left: 10px;" onclick="window.location.href='juanita://choose-competitor'">Choose Competitor</button>"#
     } else {
         r#"<button onclick="if(confirm('Really this piece of shit?')) { window.location.href='juanita://make-default'; }">Make Default Browser</button>"#
     };

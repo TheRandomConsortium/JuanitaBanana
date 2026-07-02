@@ -350,6 +350,30 @@ pub fn run(banlist: SharedBanList) {
                                 return true;
                             }
 
+                            if uri_str.starts_with("juanita://choose-competitor") {
+                                use webkit2gtk::PolicyDecisionExt;
+                                decision.ignore();
+                                let html = crate::util::competitors::competitors_page_html();
+                                webview_nav.load_html(&html, Some("juanita://competitors-page/"));
+                                return true;
+                            }
+
+                            if uri_str.starts_with("juanita://competitors-page") {
+                                return false; // allow loading the local HTML
+                            }
+
+                            if let Some(desktop_str) = uri_str.strip_prefix("juanita://set-competitor?desktop=") {
+                                use webkit2gtk::PolicyDecisionExt;
+                                decision.ignore();
+                                let _ = std::process::Command::new("xdg-settings")
+                                    .arg("set")
+                                    .arg("default-web-browser")
+                                    .arg(desktop_str)
+                                    .output();
+                                webview_nav.load_uri("juanita://config");
+                                return true;
+                            }
+
                             if uri_str.starts_with("juanita://downloads-page") {
                                 return false; // allow loading the local HTML
                             }
