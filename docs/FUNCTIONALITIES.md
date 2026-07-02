@@ -55,7 +55,7 @@
 
 | Feature | Status | Notes |
 |---|---|---|
-| **Local Search Noise** | ✅ Done | Fires a configurable amount (default 20) of background searches from a local heterogeneous pool using dynamic RSS n-grams for every real user search, effectively poisoning the data profile. |
+| **Local Search Noise** | ✅ Done | Fires a configurable amount (default 20, exposed as `noise_queries_amount` in config) of background searches from a local heterogeneous pool using dynamic RSS n-grams for every real user search, effectively poisoning the data profile. |
 | **P2P Gossip Protocol** | 🔭 Future | Decentralized sharing of anonymized searches to use real user data as noise for everyone. |
 | **Dumb Pipe TTL Server** | 🔭 Future | Minimalist server for search pool as an alternative to Gossip Protocol. |
 | **Background Captcha Solver** | 📋 Planned | **IMPORTANT**: Detects when a hidden WebView encounters a Captcha or a "Consent to Cookies" wall (e.g. Google's Consent screen, which currently hijacks the real search and causes double-poisoning). We will code automated solver strategies (e.g. simple auto-click, local AI heuristics). If all automated strategies fail, it triggers a humiliating fallback popup featuring the Juanita Banana icon stating: *"Woohoo [SearchEngine] got a Boo Boo and seems to think solving a captcha will help them"*, displays the captcha, and offers a secondary button: *"Or maybe you prefer to ban?"*. |
@@ -109,7 +109,9 @@
 | **Disable hyperlink auditing (`ping`)** | ✅ Done | Via WebKit settings. |
 | **Disable DNS prefetch** | ✅ Done | Via WebKit settings. |
 | **Disable JS popup windows** | ✅ Done | Via WebKit settings. Intercepts `target="_blank"` to force opening in the same window. |
-| **Make Default Browser** | ✅ Done | Button in `juanita://config` to generate a `.desktop` file and register Juanita Banana as the default system web browser using `xdg-settings`. |
+| **Make Default Browser** | ✅ Done | Button in the new General tab of `juanita://config` to register Juanita Banana as the default system web browser using `xdg-settings`. |
+| **Choose Competitor (Betrayal Mode)** | ✅ Done | If Juanita is already default, displays a "Choose Competitor" button. Clicking it dynamically loads native system desktop entries (`.desktop` via `gio mime`) and their icons, allowing the user to betray the banana and revert to Firefox/Chromium etc. |
+| **RPM Packaging & Version Bumping** | ✅ Done | Included `build_rpm.sh` script to parse Cargo versions, build a `.spec` dynamically, build RPM packages, and auto-increment `major`, `minor`, or `patch` tags automatically. |
 | **Tor integration** | 🔭 Future | SOCKS5 proxy toggle in config. |
 | **Integrated Password Manager** | 🔭 Future | Native credential management, no cloud. |
 | **Tab Inactivity TTL (Tab Death)** | 📋 Planned | If tabs are ever implemented, they will have a strict inactivity Time-To-Live (TTL). If surpassed, the tab is aggressively killed. Fuck clutter and RAM consumption. Be tidy. |
