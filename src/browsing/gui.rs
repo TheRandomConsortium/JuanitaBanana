@@ -254,24 +254,31 @@ pub fn run(banlist: SharedBanList) {
                                 use webkit2gtk::PolicyDecisionExt;
                                 decision.ignore();
                                 
-                                // Create desktop file
-                                let base = std::env::var("XDG_DATA_HOME").map(std::path::PathBuf::from).unwrap_or_else(|_| std::path::PathBuf::from(std::env::var("HOME").unwrap_or_default()).join(".local/share"));
-                                let apps_dir = base.join("applications");
-                                std::fs::create_dir_all(&apps_dir).ok();
-                                
-                                let desktop_path = apps_dir.join("juanita-banana.desktop");
+                                // Check if running from a system install (e.g. /usr/bin)
                                 let exe_path = std::env::current_exe().unwrap_or_else(|_| std::path::PathBuf::from("juanita-banana"));
+                                let is_system_install = exe_path.starts_with("/usr/");
                                 
-                                let desktop_content = format!(
-                                    "[Desktop Entry]\nVersion=1.0\nName=Juanita Banana\nGenericName=Web Browser\nComment=Weaponized Privacy Browser\nExec={} %U\nTerminal=false\nX-MultipleArgs=false\nType=Application\nIcon=web-browser\nCategories=Network;WebBrowser;\nMimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/juanita;\nStartupNotify=true",
-                                    exe_path.display()
-                                );
-                                std::fs::write(&desktop_path, desktop_content).ok();
+                                let desktop_filename = if is_system_install {
+                                    "juanita-banana.desktop".to_string()
+                                } else {
+                                    // Create a local dev desktop file so we don't shadow the system RPM one
+                                    let base = std::env::var("XDG_DATA_HOME").map(std::path::PathBuf::from).unwrap_or_else(|_| std::path::PathBuf::from(std::env::var("HOME").unwrap_or_default()).join(".local/share"));
+                                    let apps_dir = base.join("applications");
+                                    std::fs::create_dir_all(&apps_dir).ok();
+                                    
+                                    let desktop_path = apps_dir.join("juanita-banana-local.desktop");
+                                    let desktop_content = format!(
+                                        "[Desktop Entry]\nVersion=1.0\nName=Juanita Banana (Local)\nGenericName=Web Browser\nComment=Weaponized Privacy Browser\nExec={} %U\nTerminal=false\nX-MultipleArgs=false\nType=Application\nIcon=web-browser\nCategories=Network;WebBrowser;\nMimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/juanita;\nStartupNotify=true",
+                                        exe_path.display()
+                                    );
+                                    std::fs::write(&desktop_path, desktop_content).ok();
+                                    "juanita-banana-local.desktop".to_string()
+                                };
                                 
                                 std::process::Command::new("xdg-settings")
                                     .arg("set")
                                     .arg("default-web-browser")
-                                    .arg("juanita-banana.desktop")
+                                    .arg(&desktop_filename)
                                     .spawn()
                                     .ok();
                                     
