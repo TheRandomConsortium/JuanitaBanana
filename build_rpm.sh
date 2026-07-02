@@ -17,11 +17,13 @@ cat > $RPM_ROOT/BUILD/juanita-banana.desktop << 'EOF'
 [Desktop Entry]
 Name=Juanita Banana
 Comment=A browser that fights back
-Exec=juanita-banana
+Exec=juanita-banana %U
 Icon=juanita-banana
 Terminal=false
 Type=Application
 Categories=Network;WebBrowser;
+MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/juanita;
+StartupNotify=true
 EOF
 
 cat > $RPM_ROOT/SPECS/juanita-banana.spec << 'EOF'
