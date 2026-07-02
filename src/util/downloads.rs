@@ -95,7 +95,7 @@ impl DownloadManager {
 TARGET="$1"
 
 if [[ "$TARGET" == "/tmp/{}" ]]; then
-    gio open "$TARGET"
+    /usr/bin/gio open "$TARGET"
     exit 0
 fi
 
@@ -122,10 +122,19 @@ fi
             let fake_desktop_path = parent_dir.join("fake-browser.desktop");
             std::fs::write(&fake_desktop_path, "[Desktop Entry]\nName=Fake Browser\nExec=/usr/bin/xdg-open %U\nType=Application\nMimeType=x-scheme-handler/http;x-scheme-handler/https;\n").ok();
 
+            let fake_bin_dir = parent_dir.join("fake-bin");
+            std::fs::create_dir_all(&fake_bin_dir).ok();
+            for bin in &["firefox", "chrome", "chromium", "brave-browser", "vlc", "mpv", "xdg-open", "gio"] {
+                std::os::unix::fs::symlink("/usr/bin/xdg-open", fake_bin_dir.join(bin)).ok();
+            }
+
             let status = Command::new("bwrap")
                 .arg("--unshare-net")
                 .arg("--unshare-pid")
                 .arg("--unshare-ipc")
+                .arg("--setenv")
+                .arg("PATH")
+                .arg("/tmp/fake-bin:/usr/bin:/bin")
                 .arg("--ro-bind")
                 .arg("/")
                 .arg("/")
@@ -143,6 +152,9 @@ fi
                 .arg("--ro-bind-try")
                 .arg(&fake_desktop_path)
                 .arg(format!("{}/.local/share/applications/fake-browser.desktop", home))
+                .arg("--ro-bind-try")
+                .arg(&fake_bin_dir)
+                .arg("/tmp/fake-bin")
                 .arg("--tmpfs")
                 .arg("/tmp")
                 .arg("--ro-bind-try")
