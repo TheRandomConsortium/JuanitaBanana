@@ -94,7 +94,7 @@ impl DownloadManager {
                 r#"#!/bin/bash
 TARGET="$1"
 
-if [[ "$TARGET" == /tmp/* ]]; then
+if [[ "$TARGET" == "/tmp/{}" ]]; then
     gio open "$TARGET"
     exit 0
 fi
@@ -107,7 +107,7 @@ elif [ "$RESULT" = "Reject & Ban Origin" ]; then
     gio open "juanita://external/ban?url=$TARGET&domain={}"
 fi
 "#,
-                origin_domain
+                _filename, origin_domain
             );
             std::fs::write(&fake_xdg_open_path, script).ok();
             std::process::Command::new("chmod")
