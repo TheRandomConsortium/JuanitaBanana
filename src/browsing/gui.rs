@@ -18,9 +18,56 @@ use crate::util::config::AppConfig;
 pub fn run(banlist: SharedBanList) {
     let app = Application::builder()
         .application_id("org.juanitabanana.Browser")
+        .flags(gtk::gio::ApplicationFlags::HANDLES_OPEN)
         .build();
 
+    #[allow(deprecated)]
+    let (tx, rx) = gtk::glib::MainContext::channel::<(String, bool)>(gtk::glib::Priority::DEFAULT);
+
+    let tx_open = tx.clone();
+    app.connect_open(move |app, files, _hint| {
+        app.activate();
+        for file in files {
+            let uri = file.uri();
+            let _ = tx_open.send((uri.to_string(), true));
+        }
+    });
+
+    let global_webview: Rc<RefCell<Option<WebView>>> = Rc::new(RefCell::new(None));
+    let gw_rx = global_webview.clone();
+    let rx_banlist = banlist.clone();
+    let app_rx = app.clone();
+
+    rx.attach(None, move |(url, is_external)| {
+        if let Some(wv) = gw_rx.borrow().as_ref() {
+            if is_external {
+                let domain = crate::browsing::browser::extract_domain(&url);
+                if rx_banlist.borrow().is_banned(&domain) {
+                    let refuse_html = "<html><head><style>
+                        body { background: #000; color: #ff3333; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: monospace; font-size: 2rem; text-align: center; }
+                        </style></head><body>
+                        <div style=\"font-size: 8rem; margin-bottom: 20px;\">🛑</div>
+                        <div>We politely refuse on your behalf to open this shithole.</div>
+                        <div style=\"margin-top: 20px; font-size: 1.5rem; color: #888;\">Closing window in 5 seconds...</div>
+                        </body></html>";
+                    wv.load_html(refuse_html, Some("juanita://refuse/"));
+
+                    let app_clone = app_rx.clone();
+                    gtk::glib::timeout_add_seconds_local(5, move || {
+                        app_clone.quit();
+                        gtk::glib::ControlFlow::Break
+                    });
+                    return gtk::glib::ControlFlow::Continue;
+                }
+            }
+            wv.load_uri(&url);
+        }
+        gtk::glib::ControlFlow::Continue
+    });
+
     let banlist_clone = banlist.clone();
+    let gw_activate = global_webview.clone();
+    let tx_activate = tx.clone();
 
     app.connect_activate(move |app| {
         let banlist = banlist_clone.clone();
@@ -46,19 +93,22 @@ pub fn run(banlist: SharedBanList) {
             .settings(&settings)
             .build();
 
-        #[allow(deprecated)]
-        let (tx, rx) = gtk::glib::MainContext::channel::<String>(gtk::glib::Priority::DEFAULT);
-        let webview_channel = webview.clone();
-        rx.attach(None, move |url| {
-            webview_channel.load_uri(&url);
-            gtk::glib::ControlFlow::Continue
-        });
+        *gw_activate.borrow_mut() = Some(webview.clone());
 
         let downloads = Rc::new(RefCell::new(crate::util::downloads::DownloadManager::new()));
         let downloads_ctx = downloads.clone();
 
+        let tx_download = tx_activate.clone();
         web_context.connect_download_started(move |_context, download| {
             let id = format!("{}", rand::thread_rng().gen::<u64>());
+
+            let mut origin_domain = String::from("unknown");
+            #[allow(deprecated)]
+            if let Some(req) = download.request() {
+                if let Some(uri) = req.uri() {
+                    origin_domain = crate::browsing::browser::extract_domain(uri.as_str());
+                }
+            }
 
             let downloads_ctx_dest = downloads_ctx.clone();
             let id_dest = id.clone();
@@ -70,7 +120,7 @@ pub fn run(banlist: SharedBanList) {
                 let dest_path = format!("{}/{}", dest_dir, filename);
                 dl.set_destination(&format!("file://{}", dest_path));
 
-                downloads_ctx_dest.borrow_mut().active_downloads.insert(id_dest.clone(), (dest_path, filename.clone(), false, 0.0));
+                downloads_ctx_dest.borrow_mut().active_downloads.insert(id_dest.clone(), (dest_path, filename.clone(), false, 0.0, origin_domain.clone()));
 
                 std::process::Command::new("notify-send")
                     .arg("Juanita Banana 🍌")
@@ -90,7 +140,7 @@ pub fn run(banlist: SharedBanList) {
 
             let downloads_fin = downloads_ctx.clone();
             let id_fin = id.clone();
-            let tx_clone = tx.clone();
+            let tx_clone = tx_download.clone();
             download.connect_finished(move |_| {
                 if let Some(entry) = downloads_fin.borrow_mut().active_downloads.get_mut(&id_fin) {
                     entry.2 = true;
@@ -105,7 +155,7 @@ pub fn run(banlist: SharedBanList) {
                             .arg(format!("Ready in Sandbox: {}", filename))
                             .output() {
                             if String::from_utf8_lossy(&out.stdout).trim() == "open" {
-                                let _ = tx_thread.send("juanita://downloads".to_string());
+                                let _ = tx_thread.send(("juanita://downloads".to_string(), false));
                             }
                         }
                     });

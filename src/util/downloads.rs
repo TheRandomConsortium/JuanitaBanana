@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::process::Command;
 
 pub struct DownloadManager {
-    // Maps download ID -> (Sandbox Path, Original Filename, Is Finished, Progress)
-    pub active_downloads: HashMap<String, (String, String, bool, f64)>,
+    // Maps download ID -> (Sandbox Path, Original Filename, Is Finished, Progress, Origin Domain)
+    pub active_downloads: HashMap<String, (String, String, bool, f64, String)>,
 }
 
 impl DownloadManager {
@@ -15,7 +15,7 @@ impl DownloadManager {
 
     pub fn generate_html(&self) -> String {
         let mut rows = String::new();
-        for (id, (_path, filename, finished, progress)) in &self.active_downloads {
+        for (id, (_path, filename, finished, progress, _origin_domain)) in &self.active_downloads {
             let status = if *finished {
                 "Ready".to_string()
             } else {
@@ -83,10 +83,25 @@ impl DownloadManager {
     }
 
     pub fn open_sandboxed(&self, id: &str) {
-        if let Some((path, _filename, true, _)) = self.active_downloads.get(id) {
+        if let Some((path, _filename, true, _, origin_domain)) = self.active_downloads.get(id) {
             let home = std::env::var("HOME").unwrap_or_else(|_| "/home/user".to_string());
             let run_dir =
                 std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/run/user/1000".to_string());
+
+            let parent_dir = std::path::Path::new(path).parent().unwrap();
+            let fake_xdg_open_path = parent_dir.join("fake-xdg-open");
+            let script = format!(r#"#!/bin/bash
+TARGET="$1"
+RESULT=$(zenity --question --title="Juanita Banana Sandbox" --text="A sandboxed document is trying to escape and access your host system:\n\n<b>$TARGET</b>\n\nAllow this action?" --width=450 --ok-label="Allow" --cancel-label="Reject" --extra-button="Reject & Ban Origin")
+EXIT_CODE=$?
+if [ $EXIT_CODE -eq 0 ]; then
+    gio open "$TARGET"
+elif [ "$RESULT" = "Reject & Ban Origin" ]; then
+    gio open "juanita://external/ban?url=$TARGET&domain={}"
+fi
+"#, origin_domain);
+            std::fs::write(&fake_xdg_open_path, script).ok();
+            std::process::Command::new("chmod").arg("+x").arg(&fake_xdg_open_path).status().ok();
 
             let status = Command::new("bwrap")
                 .arg("--unshare-net")
@@ -113,7 +128,13 @@ impl DownloadManager {
                 .arg("--bind")
                 .arg(path)
                 .arg(format!("/tmp/{}", _filename))
-                .arg("xdg-open")
+                .arg("--ro-bind-try")
+                .arg(&fake_xdg_open_path)
+                .arg("/usr/bin/xdg-open")
+                .arg("--ro-bind-try")
+                .arg(&fake_xdg_open_path)
+                .arg("/bin/xdg-open")
+                .arg("/usr/bin/xdg-open")
                 .arg(format!("/tmp/{}", _filename))
                 .spawn();
 
@@ -126,7 +147,7 @@ impl DownloadManager {
     }
 
     pub fn make_permanent(&mut self, id: &str) {
-        if let Some((path, filename, true, _)) = self.active_downloads.get(id) {
+        if let Some((path, filename, true, _, _)) = self.active_downloads.get(id) {
             let home = std::env::var("HOME").unwrap_or_else(|_| "/home/user".to_string());
             let dest_dir = std::path::Path::new(&home).join("Downloads");
             std::fs::create_dir_all(&dest_dir).ok();
@@ -147,7 +168,7 @@ impl DownloadManager {
     }
 
     pub fn shred(&mut self, id: &str) {
-        if let Some((path, _filename, _, _)) = self.active_downloads.get(id) {
+        if let Some((path, _filename, _, _, _)) = self.active_downloads.get(id) {
             let _ = std::fs::remove_file(path);
             if let Some(parent) = std::path::Path::new(path).parent() {
                 let _ = std::fs::remove_dir(parent);
@@ -181,6 +202,7 @@ mod tests {
                 "test.pdf".to_string(),
                 false,
                 0.45,
+                "example.com".to_string(),
             ),
         );
 
@@ -201,6 +223,7 @@ mod tests {
                 "test.pdf".to_string(),
                 true,
                 1.0,
+                "example.com".to_string(),
             ),
         );
 
