@@ -921,8 +921,9 @@ dependencies = [
 
 [[package]]
 name = "juanita-banana"
-version = "0.2.0"
+version = "0.2.2"
 dependencies = [
+ "base64",
  "bincode",
  "gethostname",
  "gtk",
