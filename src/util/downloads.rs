@@ -164,11 +164,11 @@ fi
                     "{}/.local/share/applications/fake-browser.desktop",
                     home
                 ))
+                .arg("--tmpfs")
+                .arg("/tmp")
                 .arg("--ro-bind-try")
                 .arg(&fake_bin_dir)
                 .arg("/tmp/fake-bin")
-                .arg("--tmpfs")
-                .arg("/tmp")
                 .arg("--ro-bind-try")
                 .arg("/tmp/.X11-unix")
                 .arg("/tmp/.X11-unix")
