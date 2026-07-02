@@ -102,9 +102,9 @@ fi
 RESULT=$(zenity --question --title="Juanita Banana Sandbox" --text="A sandboxed document is trying to escape and access your host system:\n\n<b>$TARGET</b>\n\nAllow this action?" --width=450 --ok-label="Allow" --cancel-label="Reject" --extra-button="Reject & Ban Origin")
 EXIT_CODE=$?
 if [ $EXIT_CODE -eq 0 ]; then
-    gio open "$TARGET"
+    busctl --user call org.freedesktop.portal.Desktop /org/freedesktop/portal/desktop org.freedesktop.portal.OpenURI OpenURI "ssa{{sv}}" "" "$TARGET" 0
 elif [ "$RESULT" = "Reject & Ban Origin" ]; then
-    gio open "juanita://external/ban?url=$TARGET&domain={}"
+    busctl --user call org.freedesktop.portal.Desktop /org/freedesktop/portal/desktop org.freedesktop.portal.OpenURI OpenURI "ssa{{sv}}" "" "juanita://external/ban?url=$TARGET&domain={}" 0
 fi
 "#,
                 _filename, origin_domain
@@ -115,6 +115,12 @@ fi
                 .arg(&fake_xdg_open_path)
                 .status()
                 .ok();
+
+            let fake_mimeapps_path = parent_dir.join("mimeapps.list");
+            std::fs::write(&fake_mimeapps_path, "[Default Applications]\nx-scheme-handler/http=fake-browser.desktop\nx-scheme-handler/https=fake-browser.desktop\n").ok();
+
+            let fake_desktop_path = parent_dir.join("fake-browser.desktop");
+            std::fs::write(&fake_desktop_path, "[Desktop Entry]\nName=Fake Browser\nExec=/usr/bin/xdg-open %U\nType=Application\nMimeType=x-scheme-handler/http;x-scheme-handler/https;\n").ok();
 
             let status = Command::new("bwrap")
                 .arg("--unshare-net")
@@ -127,6 +133,16 @@ fi
                 .arg("/dev")
                 .arg("--tmpfs")
                 .arg(&home)
+                .arg("--dir")
+                .arg(format!("{}/.config", home))
+                .arg("--ro-bind-try")
+                .arg(&fake_mimeapps_path)
+                .arg(format!("{}/.config/mimeapps.list", home))
+                .arg("--dir")
+                .arg(format!("{}/.local/share/applications", home))
+                .arg("--ro-bind-try")
+                .arg(&fake_desktop_path)
+                .arg(format!("{}/.local/share/applications/fake-browser.desktop", home))
                 .arg("--tmpfs")
                 .arg("/tmp")
                 .arg("--ro-bind-try")
