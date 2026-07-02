@@ -248,9 +248,9 @@ pub fn config_page_html(config: &AppConfig, is_default: bool) -> String {
 <body>
     <div id="sidebar">
         <ul>
-            <li class="active" onclick="showTab('general')">General</li>
-            <li onclick="showTab('intoxication')">Search Intoxication</li>
-            <li onclick="showTab('rss')">RSS Sources</li>
+            <li class="active" onclick="showTab('general', this)">General</li>
+            <li onclick="showTab('intoxication', this)">Search Intoxication</li>
+            <li onclick="showTab('rss', this)">RSS Sources</li>
         </ul>
     </div>
     <div id="content">
@@ -330,7 +330,7 @@ pub fn config_page_html(config: &AppConfig, is_default: bool) -> String {
     <script>
         // Only show unban if the path is specifically requested via URL hash or secret
         if (window.location.hash === '#unban') {{
-            showTab('unban');
+            showTab('unban', null);
         }}
 
         if (window.location.href.includes('saved=true')) {{
@@ -341,14 +341,15 @@ pub fn config_page_html(config: &AppConfig, is_default: bool) -> String {
             }}
         }}
 
-        function showTab(tabId) {{
+        function showTab(tabId, element) {{
             if (tabId !== 'unban' && window.location.hash === '#unban') return; // Enforce lock
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             
-            document.querySelectorAll('#sidebar li').forEach(el => el.classList.remove('active'));
-            const activeLi = Array.from(document.querySelectorAll('#sidebar li')).find(li => li.innerText.toLowerCase().includes(tabId));
-            if (activeLi) activeLi.classList.add('active');
+            if (element) {{
+                document.querySelectorAll('#sidebar li').forEach(el => el.classList.remove('active'));
+                element.classList.add('active');
+            }}
         }}
 
         function checkUnban() {{
@@ -366,8 +367,8 @@ pub fn config_page_html(config: &AppConfig, is_default: bool) -> String {
             const rssRows = document.querySelectorAll('#rss-tbody tr');
             const newRss = [];
             rssRows.forEach(row => {{
-                const name = row.cells[0].innerText;
-                const url = row.cells[1].innerText;
+                const name = row.cells[0].textContent;
+                const url = row.cells[1].textContent;
                 newRss.push({{ name, url }});
             }});
             
@@ -375,9 +376,9 @@ pub fn config_page_html(config: &AppConfig, is_default: bool) -> String {
             const enginesRows = document.querySelectorAll('#engines-tbody tr');
             const newEngines = [];
             enginesRows.forEach(row => {{
-                const name = row.cells[0].innerText;
-                const domain_regex = row.cells[1].innerText;
-                const query_params = row.cells[2].innerText.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                const name = row.cells[0].textContent;
+                const domain_regex = row.cells[1].textContent;
+                const query_params = row.cells[2].textContent.split(',').map(s => s.trim()).filter(s => s.length > 0);
                 newEngines.push({{ name, domain_regex, query_params }});
             }});
 
@@ -465,8 +466,7 @@ mod tests {
         config.max_concurrent_searches = 777;
 
         let html = config_page_html(&config, false);
-
-        // Ensure our unique value is in the HTML
+        std::fs::write("/tmp/test_config.html", &html).unwrap();
         assert!(html.contains("777"));
         assert!(html.contains("Hacker News"));
         assert!(html.contains("DuckDuckGo"));
