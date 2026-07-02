@@ -10,7 +10,11 @@ pub fn get_competitors() -> Vec<Competitor> {
     let mut competitors = Vec::new();
     let mut seen = std::collections::HashSet::new();
 
-    if let Ok(output) = Command::new("gio").arg("mime").arg("x-scheme-handler/http").output() {
+    if let Ok(output) = Command::new("gio")
+        .arg("mime")
+        .arg("x-scheme-handler/http")
+        .output()
+    {
         let stdout = String::from_utf8_lossy(&output.stdout);
         for line in stdout.lines() {
             let line = line.trim();
@@ -21,20 +25,25 @@ pub fn get_competitors() -> Vec<Competitor> {
                     line
                 };
                 let desktop = desktop.trim();
-                
-                if desktop == "juanita-banana.desktop" || desktop == "juanita-banana-local.desktop" {
+
+                if desktop == "juanita-banana.desktop" || desktop == "juanita-banana-local.desktop"
+                {
                     continue;
                 }
-                
+
                 if !seen.insert(desktop.to_string()) {
                     continue;
                 }
 
                 let paths = [
                     format!("/usr/share/applications/{}", desktop),
-                    format!("{}/.local/share/applications/{}", std::env::var("HOME").unwrap_or_default(), desktop)
+                    format!(
+                        "{}/.local/share/applications/{}",
+                        std::env::var("HOME").unwrap_or_default(),
+                        desktop
+                    ),
                 ];
-                
+
                 for path in &paths {
                     if let Ok(content) = std::fs::read_to_string(path) {
                         let mut name = String::new();
@@ -66,26 +75,30 @@ pub fn get_competitors() -> Vec<Competitor> {
 pub fn competitors_page_html() -> String {
     let competitors = get_competitors();
     let mut grid_html = String::new();
-    
+
     for c in competitors {
         let mut img_src = String::from("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤮</text></svg>");
-        
+
         let icon_paths = [
             format!("/usr/share/pixmaps/{}.png", c.icon),
             format!("/usr/share/icons/hicolor/48x48/apps/{}.png", c.icon),
             format!("/usr/share/icons/hicolor/scalable/apps/{}.svg", c.icon),
         ];
-        
+
         for p in &icon_paths {
             if let Ok(bytes) = std::fs::read(p) {
                 use base64::Engine;
                 let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
-                let mime = if p.ends_with(".svg") { "image/svg+xml" } else { "image/png" };
+                let mime = if p.ends_with(".svg") {
+                    "image/svg+xml"
+                } else {
+                    "image/png"
+                };
                 img_src = format!("data:{};base64,{}", mime, b64);
                 break;
             }
         }
-        
+
         grid_html.push_str(&format!(r#"
             <div class="competitor-card" onclick="window.location.href='juanita://set-competitor?desktop={}'">
                 <img class="icon" src="{}" alt="{}" />
@@ -94,7 +107,8 @@ pub fn competitors_page_html() -> String {
         "#, c.desktop_file, img_src, c.name, c.name));
     }
 
-    format!(r#"
+    format!(
+        r#"
 <!DOCTYPE html>
 <html>
 <head>
@@ -179,5 +193,7 @@ pub fn competitors_page_html() -> String {
     <button class="back-btn" onclick="window.location.href='juanita://config'">I changed my mind, take me back</button>
 </body>
 </html>
-    "#, grid_html)
+    "#,
+        grid_html
+    )
 }

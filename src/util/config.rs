@@ -113,8 +113,8 @@ impl AppConfig {
 }
 
 pub fn is_default_browser() -> bool {
-    let exe_path = std::env::current_exe()
-        .unwrap_or_else(|_| std::path::PathBuf::from("juanita-banana"));
+    let exe_path =
+        std::env::current_exe().unwrap_or_else(|_| std::path::PathBuf::from("juanita-banana"));
     let is_system_install = exe_path.starts_with("/usr/");
     let desktop_filename = if is_system_install {
         "juanita-banana.desktop"
