@@ -112,7 +112,30 @@ impl AppConfig {
     }
 }
 
-pub fn config_page_html(config: &AppConfig) -> String {
+pub fn is_default_browser() -> bool {
+    let exe_path = std::env::current_exe()
+        .unwrap_or_else(|_| std::path::PathBuf::from("juanita-banana"));
+    let is_system_install = exe_path.starts_with("/usr/");
+    let desktop_filename = if is_system_install {
+        "juanita-banana.desktop"
+    } else {
+        "juanita-banana-local.desktop"
+    };
+
+    if let Ok(output) = std::process::Command::new("xdg-settings")
+        .arg("check")
+        .arg("default-web-browser")
+        .arg(desktop_filename)
+        .output()
+    {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        stdout.trim() == "yes"
+    } else {
+        false
+    }
+}
+
+pub fn config_page_html(config: &AppConfig, is_default: bool) -> String {
     let mut engines_html = String::new();
     for engine in &config.search_engines {
         engines_html.push_str(&format!(
@@ -135,6 +158,12 @@ pub fn config_page_html(config: &AppConfig) -> String {
     let min_delay = config.min_delay_ms;
     let max_delay = config.max_delay_ms;
     let noise_amount = config.noise_queries_amount;
+
+    let default_btn = if is_default {
+        r#"<button disabled style="background: #444; color: #888; cursor: not-allowed;">Already Default Browser</button>"#
+    } else {
+        r#"<button onclick="if(confirm('Really this piece of shit?')) { window.location.href='juanita://make-default'; }">Make Default Browser</button>"#
+    };
 
     format!(
         r#"
@@ -229,7 +258,7 @@ pub fn config_page_html(config: &AppConfig) -> String {
             <h2>General Settings</h2>
             <div style="margin-top: 20px;">
                 <p>Make Juanita Banana your default browser to open links from other apps automatically.</p>
-                <button onclick="if(confirm('Really this piece of shit?')) {{ window.location.href='juanita://make-default'; }}">Make Default Browser</button>
+                {default_btn}
             </div>
         </div>
         <div id="intoxication" class="tab-content">
@@ -302,6 +331,14 @@ pub fn config_page_html(config: &AppConfig) -> String {
         // Only show unban if the path is specifically requested via URL hash or secret
         if (window.location.hash === '#unban') {{
             showTab('unban');
+        }}
+
+        if (window.location.href.includes('saved=true')) {{
+            const btn = document.querySelector('button[onclick="saveConfig()"]');
+            if(btn) {{
+                btn.innerText = "Saved!";
+                setTimeout(() => {{ btn.innerText = "Save Configuration"; }}, 3000);
+            }}
         }}
 
         function showTab(tabId) {{
@@ -427,7 +464,7 @@ mod tests {
         let mut config = AppConfig::default();
         config.max_concurrent_searches = 777;
 
-        let html = config_page_html(&config);
+        let html = config_page_html(&config, false);
 
         // Ensure our unique value is in the HTML
         assert!(html.contains("777"));

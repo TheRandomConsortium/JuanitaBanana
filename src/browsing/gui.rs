@@ -295,7 +295,8 @@ pub fn run(banlist: SharedBanList) {
                             if uri_str.starts_with("juanita://config") {
                                 use webkit2gtk::PolicyDecisionExt;
                                 decision.ignore();
-                                let config_html = crate::util::config::config_page_html(&config);
+                                let is_default = crate::util::config::is_default_browser();
+                                let config_html = crate::util::config::config_page_html(&config, is_default);
                                 let base_uri = uri_str.replace("juanita://config", "juanita://config-page");
                                 webview_nav.load_html(&config_html, Some(&base_uri));
                                 return true;
@@ -309,7 +310,7 @@ pub fn run(banlist: SharedBanList) {
                                         println!("[CONFIG] Configuration saved successfully.");
                                     }
                                 }
-                                webview_nav.load_uri("juanita://config");
+                                webview_nav.load_uri("juanita://config?saved=true");
                                 return true;
                             }
                             if uri_str.starts_with("juanita://make-default") {
