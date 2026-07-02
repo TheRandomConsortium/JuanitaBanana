@@ -38,6 +38,9 @@ pub fn run(banlist: SharedBanList) {
     let rx_banlist = banlist.clone();
     let app_rx = app.clone();
 
+    let pending_urls: Rc<RefCell<Vec<(String, bool)>>> = Rc::new(RefCell::new(Vec::new()));
+    let pending_rx = pending_urls.clone();
+
     rx.attach(None, move |(url, is_external)| {
         if let Some(wv) = gw_rx.borrow().as_ref() {
             if is_external {
@@ -61,6 +64,8 @@ pub fn run(banlist: SharedBanList) {
                 }
             }
             wv.load_uri(&url);
+        } else {
+            pending_rx.borrow_mut().push((url, is_external));
         }
         gtk::glib::ControlFlow::Continue
     });
@@ -68,6 +73,7 @@ pub fn run(banlist: SharedBanList) {
     let banlist_clone = banlist.clone();
     let gw_activate = global_webview.clone();
     let tx_activate = tx.clone();
+    let pending_activate = pending_urls.clone();
 
     app.connect_activate(move |app| {
         let banlist = banlist_clone.clone();
@@ -94,6 +100,11 @@ pub fn run(banlist: SharedBanList) {
             .build();
 
         *gw_activate.borrow_mut() = Some(webview.clone());
+
+        let mut pending = pending_activate.borrow_mut();
+        for (url, is_external) in pending.drain(..) {
+            let _ = tx_activate.send((url, is_external));
+        }
 
         let downloads = Rc::new(RefCell::new(crate::util::downloads::DownloadManager::new()));
         let downloads_ctx = downloads.clone();
