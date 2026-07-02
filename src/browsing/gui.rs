@@ -28,46 +28,6 @@ pub fn run(banlist: SharedBanList) {
         let web_context = WebContext::default().unwrap();
         let ucm = UserContentManager::new();
 
-        let downloads = Rc::new(RefCell::new(crate::util::downloads::DownloadManager::new()));
-        let downloads_ctx = downloads.clone();
-        
-        web_context.connect_download_started(move |_context, download| {
-            let id = format!("{}", rand::thread_rng().gen::<u64>());
-            
-            let downloads_ctx_dest = downloads_ctx.clone();
-            let id_dest = id.clone();
-            download.connect_decide_destination(move |dl, suggested_filename| {
-                let filename = suggested_filename.to_string();
-                let dest_dir = format!("/tmp/juanita-sandbox-{}", id_dest);
-                std::fs::create_dir_all(&dest_dir).ok();
-                
-                let dest_path = format!("{}/{}", dest_dir, filename);
-                dl.set_destination(&format!("file://{}", dest_path));
-                
-                downloads_ctx_dest.borrow_mut().active_downloads.insert(id_dest.clone(), (dest_path, filename.clone(), false));
-                
-                std::process::Command::new("notify-send")
-                    .arg("Juanita Banana 🍌")
-                    .arg(&format!("Downloading: {}", filename))
-                    .spawn().ok();
-                
-                true
-            });
-            
-            let downloads_fin = downloads_ctx.clone();
-            let id_fin = id.clone();
-            download.connect_finished(move |_| {
-                if let Some(entry) = downloads_fin.borrow_mut().active_downloads.get_mut(&id_fin) {
-                    entry.2 = true;
-                    println!("[SANDBOX] Download finished: {}", entry.1);
-                    std::process::Command::new("notify-send")
-                        .arg("Juanita Banana 🍌")
-                        .arg(&format!("Ready in Sandbox: {}", entry.1))
-                        .spawn().ok();
-                }
-            });
-        });
-
         let script = UserScript::new(
             spoof::anti_fingerprint_script(),
             UserContentInjectedFrames::AllFrames,
@@ -85,6 +45,72 @@ pub fn run(banlist: SharedBanList) {
             .user_content_manager(&ucm)
             .settings(&settings)
             .build();
+
+        let (tx, rx) = gtk::glib::MainContext::channel::<String>(gtk::glib::Priority::DEFAULT);
+        let webview_channel = webview.clone();
+        rx.attach(None, move |url| {
+            webview_channel.load_uri(&url);
+            gtk::glib::ControlFlow::Continue
+        });
+
+        let downloads = Rc::new(RefCell::new(crate::util::downloads::DownloadManager::new()));
+        let downloads_ctx = downloads.clone();
+        
+        web_context.connect_download_started(move |_context, download| {
+            let id = format!("{}", rand::thread_rng().gen::<u64>());
+            
+            let downloads_ctx_dest = downloads_ctx.clone();
+            let id_dest = id.clone();
+            download.connect_decide_destination(move |dl, suggested_filename| {
+                let filename = suggested_filename.to_string();
+                let dest_dir = format!("/tmp/juanita-sandbox-{}", id_dest);
+                std::fs::create_dir_all(&dest_dir).ok();
+                
+                let dest_path = format!("{}/{}", dest_dir, filename);
+                dl.set_destination(&format!("file://{}", dest_path));
+                
+                downloads_ctx_dest.borrow_mut().active_downloads.insert(id_dest.clone(), (dest_path, filename.clone(), false, 0.0));
+                
+                std::process::Command::new("notify-send")
+                    .arg("Juanita Banana 🍌")
+                    .arg(&format!("Downloading: {}", filename))
+                    .spawn().ok();
+                
+                true
+            });
+            
+            let downloads_ctx_prog = downloads_ctx.clone();
+            let id_prog = id.clone();
+            download.connect_received_data(move |dl, _data_length| {
+                if let Some(entry) = downloads_ctx_prog.borrow_mut().active_downloads.get_mut(&id_prog) {
+                    entry.3 = dl.estimated_progress();
+                }
+            });
+            
+            let downloads_fin = downloads_ctx.clone();
+            let id_fin = id.clone();
+            let tx_clone = tx.clone();
+            download.connect_finished(move |_| {
+                if let Some(entry) = downloads_fin.borrow_mut().active_downloads.get_mut(&id_fin) {
+                    entry.2 = true;
+                    let filename = entry.1.clone();
+                    println!("[SANDBOX] Download finished: {}", filename);
+                    
+                    let tx_thread = tx_clone.clone();
+                    std::thread::spawn(move || {
+                        if let Ok(out) = std::process::Command::new("notify-send")
+                            .arg("--action=open=View Downloads")
+                            .arg("Juanita Banana 🍌")
+                            .arg(&format!("Ready in Sandbox: {}", filename))
+                            .output() {
+                            if String::from_utf8_lossy(&out.stdout).trim() == "open" {
+                                let _ = tx_thread.send("juanita://downloads".to_string());
+                            }
+                        }
+                    });
+                }
+            });
+        });
 
         let window = ApplicationWindow::builder()
             .application(app)
@@ -221,6 +247,35 @@ pub fn run(banlist: SharedBanList) {
                                         println!("[CONFIG] Configuration saved successfully.");
                                     }
                                 }
+                                webview_nav.load_uri("juanita://config");
+                                return true;
+                            }
+                            if uri_str.starts_with("juanita://make-default") {
+                                use webkit2gtk::PolicyDecisionExt;
+                                decision.ignore();
+                                
+                                // Create desktop file
+                                let base = std::env::var("XDG_DATA_HOME").map(std::path::PathBuf::from).unwrap_or_else(|_| std::path::PathBuf::from(std::env::var("HOME").unwrap_or_default()).join(".local/share"));
+                                let apps_dir = base.join("applications");
+                                std::fs::create_dir_all(&apps_dir).ok();
+                                
+                                let desktop_path = apps_dir.join("juanita-banana.desktop");
+                                let exe_path = std::env::current_exe().unwrap_or_else(|_| std::path::PathBuf::from("juanita-banana"));
+                                
+                                let desktop_content = format!(
+                                    "[Desktop Entry]\nVersion=1.0\nName=Juanita Banana\nGenericName=Web Browser\nComment=Weaponized Privacy Browser\nExec={} %U\nTerminal=false\nX-MultipleArgs=false\nType=Application\nIcon=web-browser\nCategories=Network;WebBrowser;\nMimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/juanita;\nStartupNotify=true",
+                                    exe_path.display()
+                                );
+                                std::fs::write(&desktop_path, desktop_content).ok();
+                                
+                                std::process::Command::new("xdg-settings")
+                                    .arg("set")
+                                    .arg("default-web-browser")
+                                    .arg("juanita-banana.desktop")
+                                    .spawn()
+                                    .ok();
+                                    
+                                println!("[CONFIG] Set as default browser!");
                                 webview_nav.load_uri("juanita://config");
                                 return true;
                             }

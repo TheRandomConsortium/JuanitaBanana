@@ -23,6 +23,7 @@ pub struct AppConfig {
     pub max_concurrent_searches: usize,
     pub min_delay_ms: u64,
     pub max_delay_ms: u64,
+    pub noise_queries_amount: usize,
     pub first_launch_epoch: u64,
 }
 
@@ -59,6 +60,7 @@ impl Default for AppConfig {
             max_concurrent_searches: 2,
             min_delay_ms: 500,
             max_delay_ms: 3000,
+            noise_queries_amount: 20,
             first_launch_epoch: std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap_or_default()
@@ -132,6 +134,7 @@ pub fn config_page_html(config: &AppConfig) -> String {
     let max_concurrent = config.max_concurrent_searches;
     let min_delay = config.min_delay_ms;
     let max_delay = config.max_delay_ms;
+    let noise_amount = config.noise_queries_amount;
 
     format!(
         r#"
@@ -216,12 +219,20 @@ pub fn config_page_html(config: &AppConfig) -> String {
 <body>
     <div id="sidebar">
         <ul>
-            <li class="active" onclick="showTab('intoxication')">Search Intoxication</li>
+            <li class="active" onclick="showTab('general')">General</li>
+            <li onclick="showTab('intoxication')">Search Intoxication</li>
             <li onclick="showTab('rss')">RSS Sources</li>
         </ul>
     </div>
     <div id="content">
-        <div id="intoxication" class="tab-content active">
+        <div id="general" class="tab-content active">
+            <h2>General Settings</h2>
+            <div style="margin-top: 20px;">
+                <p>Make Juanita Banana your default browser to open links from other apps automatically.</p>
+                <button onclick="if(confirm('Really this piece of shit?')) {{ window.location.href='juanita://make-default'; }}">Make Default Browser</button>
+            </div>
+        </div>
+        <div id="intoxication" class="tab-content">
             <div style="margin-bottom: 30px; padding: 15px; background: #2d2d30; border-radius: 5px;">
                 <h3 style="margin-top: 0; display: inline-block;">Intoxication Rules</h3>
                 <span title="⚠️ WARNING: Modifying these values can affect fingerprinting evasion, memory consumption, and make you wait unnecessarily." style="cursor: help; margin-left: 10px; font-size: 1.2em;">⚠️</span>
@@ -234,6 +245,9 @@ pub fn config_page_html(config: &AppConfig) -> String {
                     
                     <label style="display: inline-block; width: 220px; margin-top: 10px;">Max Camouflage Delay (ms):</label>
                     <input type="number" id="max-delay" value="{max_delay}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;">
+
+                    <label style="display: inline-block; width: 220px; margin-top: 10px;">Hidden Queries Amount:</label>
+                    <input type="number" id="noise-amount" value="{noise_amount}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;">
                 </div>
             </div>
 
@@ -336,6 +350,7 @@ pub fn config_page_html(config: &AppConfig) -> String {
             configData.max_concurrent_searches = parseInt(document.getElementById('max-concurrent').value, 10);
             configData.min_delay_ms = parseInt(document.getElementById('min-delay').value, 10);
             configData.max_delay_ms = parseInt(document.getElementById('max-delay').value, 10);
+            configData.noise_queries_amount = parseInt(document.getElementById('noise-amount').value, 10);
             
             // Send config back to rust layer via URI interception
             window.location.href = "juanita://save-config?data=" + encodeURIComponent(JSON.stringify(configData));

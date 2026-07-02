@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::process::Command;
 
 pub struct DownloadManager {
-    // Maps download ID -> (Sandbox Path, Original Filename, Is Finished)
-    pub active_downloads: HashMap<String, (String, String, bool)>,
+    // Maps download ID -> (Sandbox Path, Original Filename, Is Finished, Progress)
+    pub active_downloads: HashMap<String, (String, String, bool, f64)>,
 }
 
 impl DownloadManager {
@@ -15,8 +15,12 @@ impl DownloadManager {
 
     pub fn generate_html(&self) -> String {
         let mut rows = String::new();
-        for (id, (_path, filename, finished)) in &self.active_downloads {
-            let status = if *finished { "Ready" } else { "Downloading..." };
+        for (id, (_path, filename, finished, progress)) in &self.active_downloads {
+            let status = if *finished {
+                "Ready".to_string()
+            } else {
+                format!("Downloading... {:.0}%", progress * 100.0)
+            };
             
             let action_btns = if *finished {
                 format!(r#"
@@ -76,7 +80,7 @@ impl DownloadManager {
     }
 
     pub fn open_sandboxed(&self, id: &str) {
-        if let Some((path, _filename, true)) = self.active_downloads.get(id) {
+        if let Some((path, _filename, true, _)) = self.active_downloads.get(id) {
             let home = std::env::var("HOME").unwrap_or_else(|_| "/home/user".to_string());
             let run_dir = std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/run/user/1000".to_string());
             
@@ -118,7 +122,7 @@ impl DownloadManager {
     }
 
     pub fn make_permanent(&mut self, id: &str) {
-        if let Some((path, filename, true)) = self.active_downloads.get(id) {
+        if let Some((path, filename, true, _)) = self.active_downloads.get(id) {
             let home = std::env::var("HOME").unwrap_or_else(|_| "/home/user".to_string());
             let dest_dir = std::path::Path::new(&home).join("Downloads");
             std::fs::create_dir_all(&dest_dir).ok();
@@ -139,7 +143,7 @@ impl DownloadManager {
     }
 
     pub fn shred(&mut self, id: &str) {
-        if let Some((path, _filename, _)) = self.active_downloads.get(id) {
+        if let Some((path, _filename, _, _)) = self.active_downloads.get(id) {
             let _ = std::fs::remove_file(path);
             if let Some(parent) = std::path::Path::new(path).parent() {
                 let _ = std::fs::remove_dir(parent);

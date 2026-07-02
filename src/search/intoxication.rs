@@ -86,7 +86,7 @@ impl IntoxicationEngine {
                     println!("[INTOX] Intercepted search on {}", rule.name);
 
                     let mut tasks = Vec::new();
-                    let fake_terms = noise.get_keywords(20);
+                    let fake_terms = noise.get_keywords(config.noise_queries_amount);
 
                     for term in fake_terms {
                         // Replace the search terms in the URL
