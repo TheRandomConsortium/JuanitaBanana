@@ -21,13 +21,16 @@ impl DownloadManager {
             } else {
                 format!("Downloading... {:.0}%", progress * 100.0)
             };
-            
+
             let action_btns = if *finished {
-                format!(r#"
+                format!(
+                    r#"
                     <button onclick="window.location.href='juanita://downloads/open?id={}'" style="margin-right: 10px; background: #e0a900; color: #000;">Open in Sandbox</button>
                     <button onclick="window.location.href='juanita://downloads/persist?id={}'" style="background: #28a745;">Make Permanent</button>
                     <button onclick="window.location.href='juanita://downloads/delete?id={}'" style="background: #dc3545; margin-left: 10px;">Shred</button>
-                "#, id, id, id)
+                "#,
+                    id, id, id
+                )
             } else {
                 String::from("<span>Wait...</span>")
             };
@@ -82,8 +85,9 @@ impl DownloadManager {
     pub fn open_sandboxed(&self, id: &str) {
         if let Some((path, _filename, true, _)) = self.active_downloads.get(id) {
             let home = std::env::var("HOME").unwrap_or_else(|_| "/home/user".to_string());
-            let run_dir = std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/run/user/1000".to_string());
-            
+            let run_dir =
+                std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/run/user/1000".to_string());
+
             let status = Command::new("bwrap")
                 .arg("--unshare-net")
                 .arg("--unshare-pid")
@@ -153,4 +157,3 @@ impl DownloadManager {
         self.active_downloads.remove(id);
     }
 }
-

@@ -196,14 +196,21 @@ impl IntoxicationEngine {
 
                         hidden_wv.load_uri(uri);
                     }
-                    IntoxicationTask::RealSearch { uri, signature, session_id } => {
+                    IntoxicationTask::RealSearch {
+                        uri,
+                        signature,
+                        session_id,
+                    } => {
                         if *engine.search_session_id.borrow() == *session_id {
                             println!(
                                 "[INTOX] Rending REAL search after camouflage delay: {}",
                                 uri
                             );
                             *engine.active_count.borrow_mut() -= 1;
-                            engine.allowed_urls.borrow_mut().insert(signature.clone(), Instant::now());
+                            engine
+                                .allowed_urls
+                                .borrow_mut()
+                                .insert(signature.clone(), Instant::now());
                             engine.main_webview.load_uri(uri);
                         } else {
                             println!(

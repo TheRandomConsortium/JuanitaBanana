@@ -28,7 +28,7 @@ EOF
 
 cat > $RPM_ROOT/SPECS/juanita-banana.spec << 'EOF'
 Name:           juanita-banana
-Version:        0.1.0
+Version:        0.2.0
 Release:        1%{?dist}
 Summary:        A browser that fights back
 License:        MPL-2.0
