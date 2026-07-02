@@ -229,6 +229,10 @@ pub fn run(banlist: SharedBanList) {
                 webview_clone.load_uri(text_str);
                 return;
             }
+            if text_str.starts_with("juanita:contribute") || text_str.starts_with("juanita://contribute") {
+                webview_clone.load_uri(text_str);
+                return;
+            }
             let url = crate::browsing::browser::normalize_url(text_str);
             webview_clone.load_uri(&url);
         });
@@ -347,6 +351,90 @@ pub fn run(banlist: SharedBanList) {
 
                                 println!("[CONFIG] Set as default browser!");
                                 webview_nav.load_uri("juanita://config");
+                                return true;
+                            }
+
+                            if uri_str.starts_with("juanita://contribute-page") {
+                                return false; // allow loading the local HTML
+                            }
+
+                            if uri_str.starts_with("juanita://contribute") {
+                                use webkit2gtk::PolicyDecisionExt;
+                                decision.ignore();
+
+                                // Inyectamos la imagen en el binario y la pasamos a base64
+                                // Nota: Asegúrate de tener la dependencia `base64` en tu Cargo.toml
+                                let image_data = include_bytes!("../../assets/monerowallet.png"); // Ajusta el path relativo a main.rs
+                                let b64_image = base64::encode(image_data);
+
+                                // ATENCIÓN: Las llaves de CSS están escapadas como {{ }} para que format! no colapse
+                                let html = format!(r#"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Contribute to Juanita</title>
+    <style>
+        body {{
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }}
+        h1 {{ color: #ffcc00; font-size: 3em; margin-bottom: 10px; }}
+        p {{ font-size: 1.5em; margin-bottom: 30px; }}
+        a {{
+            color: #0098ff;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.2em;
+        }}
+        a:hover {{ text-decoration: underline; }}
+        .monero {{
+            margin-top: 50px;
+            background: #2d2d30;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #444;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }}
+        .monero-title {{ color: #f26822; font-size: 1.5em; font-weight: bold; margin-bottom: 15px; }}
+        .monero-qr {{ margin-bottom: 15px; border-radius: 8px; border: 2px solid #f26822; max-width: 250px; }}
+        .monero-address {{
+            font-family: monospace;
+            background: #000;
+            padding: 10px;
+            border-radius: 5px;
+            color: #0f0;
+            word-break: break-all;
+            max-width: 600px;
+            user-select: all;
+        }}
+    </style>
+</head>
+<body>
+    <h1>🍌 Contribute to Juanita Banana</h1>
+    <p>Please contribute with code!</p>
+    <a href="https://github.com/TheRandomConsortium/JuanitaBanana" target="_blank">View on GitHub</a>
+    
+    <div class="monero">
+        <div class="monero-title">However, we also accept Monero...</div>
+        <img class="monero-qr" src="data:image/png;base64,{}" alt="Monero Wallet QR">
+        <div class="monero-address">48VpnekPQCmSF6QMM6FZFufcAaDSEM8mN7zzGeFuPqqZgYgv3p5V4DFFPJN6vVNgGeD2e4yXmADxcHJiSDbNHJwr3K7vBm6</div>
+    </div>
+</body>
+</html>
+                                "#, b64_image);
+
+                                webview_nav.load_html(&html, Some("juanita://contribute-page/"));
                                 return true;
                             }
 
