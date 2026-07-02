@@ -248,9 +248,9 @@ pub fn config_page_html(config: &AppConfig, is_default: bool) -> String {
 <body>
     <div id="sidebar">
         <ul>
-            <li class="active" onclick="showTab('general')">General</li>
-            <li onclick="showTab('intoxication')">Search Intoxication</li>
-            <li onclick="showTab('rss')">RSS Sources</li>
+            <li id="li-general" class="active" onclick="showTab('general')">General</li>
+            <li id="li-intoxication" onclick="showTab('intoxication')">Search Intoxication</li>
+            <li id="li-rss" onclick="showTab('rss')">RSS Sources</li>
         </ul>
     </div>
     <div id="content">
@@ -347,7 +347,7 @@ pub fn config_page_html(config: &AppConfig, is_default: bool) -> String {
             document.getElementById(tabId).classList.add('active');
             
             document.querySelectorAll('#sidebar li').forEach(el => el.classList.remove('active'));
-            const activeLi = Array.from(document.querySelectorAll('#sidebar li')).find(li => li.innerText.toLowerCase().includes(tabId));
+            const activeLi = document.getElementById('li-' + tabId);
             if (activeLi) activeLi.classList.add('active');
         }}
 
