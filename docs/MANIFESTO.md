@@ -41,6 +41,7 @@ We adamantly refuse to use Google's engine (Blink/Chromium). This browser is ult
 - **iFrame Bypass:** The script is injected into ALL sub-frames, not just the top frame. Trackers routinely spin up invisible iframes to read the clean OS navigator and bypass main-frame protections. This closes that vector.
 - **Timezone / Geolocation Leak:** `Intl.DateTimeFormat().resolvedOptions().timeZone` is overwritten. Even when all other signals are spoofed, the real timezone pinpoints the user's physical location. We freeze it to a neutral value.
 - **Battery API Fingerprinting:** `navigator.getBattery()` is overwritten to always report 100% level and charging status, preventing battery-draining telemetry and device tracking.
+- **Session-Randomized Configurable Spoofing (Planned):** Instead of static values or fully dynamic variables that mutate on every API call (exposing inconsistencies), spoofing parameters will be session-randomized. Values (like screen size range, cores, memory) are randomized once per browser session within logical limits, and are configurable in settings.
 
 ### 2. Search Profile Obfuscation (Search Intoxication)
 
