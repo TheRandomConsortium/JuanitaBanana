@@ -1,0 +1,3 @@
+[submodule "circlejerk-protocol"]
+	path = circlejerk-protocol
+	url = https://github.com/TheRandomConsortium/CircleJerkProtocol.git
