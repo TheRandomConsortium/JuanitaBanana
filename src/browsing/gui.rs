@@ -131,12 +131,22 @@ pub fn run(banlist: SharedBanList) {
                 let dest_path = format!("{}/{}", dest_dir, filename);
                 dl.set_destination(&format!("file://{}", dest_path));
 
-                downloads_ctx_dest.borrow_mut().active_downloads.insert(id_dest.clone(), (dest_path, filename.clone(), false, 0.0, origin_domain.clone()));
+                downloads_ctx_dest.borrow_mut().active_downloads.insert(
+                    id_dest.clone(),
+                    (
+                        dest_path,
+                        filename.clone(),
+                        false,
+                        0.0,
+                        origin_domain.clone(),
+                    ),
+                );
 
                 std::process::Command::new("notify-send")
                     .arg("Juanita Banana 🍌")
                     .arg(format!("Downloading: {}", filename))
-                    .spawn().ok();
+                    .spawn()
+                    .ok();
 
                 true
             });
@@ -144,7 +154,11 @@ pub fn run(banlist: SharedBanList) {
             let downloads_ctx_prog = downloads_ctx.clone();
             let id_prog = id.clone();
             download.connect_received_data(move |dl, _data_length| {
-                if let Some(entry) = downloads_ctx_prog.borrow_mut().active_downloads.get_mut(&id_prog) {
+                if let Some(entry) = downloads_ctx_prog
+                    .borrow_mut()
+                    .active_downloads
+                    .get_mut(&id_prog)
+                {
                     entry.3 = dl.estimated_progress();
                 }
             });
@@ -164,7 +178,8 @@ pub fn run(banlist: SharedBanList) {
                             .arg("--action=open=View Downloads")
                             .arg("Juanita Banana 🍌")
                             .arg(format!("Ready in Sandbox: {}", filename))
-                            .output() {
+                            .output()
+                        {
                             if String::from_utf8_lossy(&out.stdout).trim() == "open" {
                                 let _ = tx_thread.send(("juanita://downloads".to_string(), false));
                             }
@@ -204,41 +219,42 @@ pub fn run(banlist: SharedBanList) {
         let noise_provider = Rc::new(RssNoiseProvider::new(&config));
         let intox_engine = IntoxicationEngine::new(&web_context, &webview, &config);
 
+        let expected_unban: Rc<RefCell<Option<(String, i32)>>> = Rc::new(RefCell::new(None));
+        let internal_pages = Rc::new(crate::browsing::internal_pages::get_internal_pages());
+
         let webview_clone = webview.clone();
         let url_entry_clone = url_entry.clone();
         let intox_engine_entry = intox_engine.clone(); // Clone for entry closure
+        let expected_unban_activate = expected_unban.clone();
+        let downloads_activate = downloads.clone();
+        let banlist_activate = banlist.clone();
+        let internal_pages_activate = internal_pages.clone();
 
         url_entry.connect_activate(move |entry| {
             let text = entry.text();
             let text_str = text.as_str();
             intox_engine_entry.cancel_pending(); // User is initiating a new navigation!
-            if text_str == "juanita:history" || text_str == "juanita://history" {
-                let history_html = "<html><head><style>body { background: #000; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: monospace; font-size: 3rem; }</style></head><body><div style=\"font-size: 10rem\">🖕</div><div>history? what history?</div></body></html>";
-                webview_clone.load_html(history_html, Some("juanita://history-page/"));
-                return;
+
+            let ctx = crate::browsing::internal_pages::PageContext {
+                webview: webview_clone.clone(),
+                downloads: downloads_activate.clone(),
+                banlist: banlist_activate.clone(),
+                expected_unban: expected_unban_activate.clone(),
+                config: AppConfig::load(),
+            };
+
+            let mut handled = false;
+            for page in internal_pages_activate.iter() {
+                if page.matches_input(text_str) {
+                    page.handle_input(text_str, &ctx);
+                    handled = true;
+                    break;
+                }
             }
-            if text_str.starts_with("juanita:config") || text_str.starts_with("juanita://config") {
-                webview_clone.load_uri(text_str);
-                return;
+            if !handled {
+                let url = crate::browsing::browser::normalize_url(text_str);
+                webview_clone.load_uri(&url);
             }
-            if text_str.starts_with("juanita:unban") || text_str.starts_with("juanita://unban") || text_str.starts_with("juanita://submit-unban") {
-                webview_clone.load_uri(text_str);
-                return;
-            }
-            if text_str.starts_with("juanita:downloads") || text_str.starts_with("juanita://downloads") {
-                webview_clone.load_uri(text_str);
-                return;
-            }
-            if text_str.starts_with("juanita:contribute") || text_str.starts_with("juanita://contribute") {
-                webview_clone.load_uri(text_str);
-                return;
-            }
-            if text_str.starts_with("juanita:about") || text_str.starts_with("juanita://about") {
-                webview_clone.load_uri(text_str);
-                return;
-            }
-            let url = crate::browsing::browser::normalize_url(text_str);
-            webview_clone.load_uri(&url);
         });
 
         let webview_clone2 = webview.clone();
@@ -258,7 +274,9 @@ pub fn run(banlist: SharedBanList) {
         let banlist_nav = banlist.clone();
         let url_entry_nav = url_entry_clone.clone();
         webview.connect_load_changed(move |wv, load_event| {
-            if load_event == webkit2gtk::LoadEvent::Started || load_event == webkit2gtk::LoadEvent::Committed {
+            if load_event == webkit2gtk::LoadEvent::Started
+                || load_event == webkit2gtk::LoadEvent::Committed
+            {
                 if let Some(uri) = wv.uri() {
                     url_entry_nav.set_text(uri.as_str());
                 }
@@ -266,7 +284,10 @@ pub fn run(banlist: SharedBanList) {
         });
 
         let webview_nav = webview.clone();
-        let expected_unban: Rc<RefCell<Option<(String, i32)>>> = Rc::new(RefCell::new(None));
+        let expected_unban_policy = expected_unban.clone();
+        let downloads_policy = downloads.clone();
+        let banlist_policy = banlist.clone();
+        let internal_pages_policy = internal_pages.clone();
 
         let webview_create = webview.clone();
         webview.connect_create(move |_wv, nav_action| {
@@ -289,413 +310,37 @@ pub fn run(banlist: SharedBanList) {
 
                             intox_engine.cancel_pending();
 
-                            if uri_str == "juanita:history" || uri_str == "juanita://history" || uri_str == "juanita://history/" {
-                                use webkit2gtk::PolicyDecisionExt;
-                                decision.ignore();
-                                let history_html = "<html><head><style>body { background: #000; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: monospace; font-size: 3rem; }</style></head><body><div style=\"font-size: 10rem\">🖕</div><div>history? what history?</div></body></html>";
-                                webview_nav.load_html(history_html, Some("juanita://history-page/"));
-                                return true;
-                            }
-                            if uri_str.starts_with("juanita://config-page") {
-                                return false; // Prevent infinite loop: let load_html apply the base URI
-                            }
+                            let ctx = crate::browsing::internal_pages::PageContext {
+                                webview: webview_nav.clone(),
+                                downloads: downloads_policy.clone(),
+                                banlist: banlist_policy.clone(),
+                                expected_unban: expected_unban_policy.clone(),
+                                config: AppConfig::load(),
+                            };
 
-                            if uri_str.starts_with("juanita://config") {
-                                use webkit2gtk::PolicyDecisionExt;
-                                decision.ignore();
-                                let is_default = crate::util::config::is_default_browser();
-                                let config_html = crate::util::config::config_page_html(&config, is_default);
-                                let base_uri = uri_str.replace("juanita://config", "juanita://config-page");
-                                webview_nav.load_html(&config_html, Some(&base_uri));
-                                return true;
-                            }
-                            if let Some(data_str) = uri_str.strip_prefix("juanita://save-config?data=") {
-                                use webkit2gtk::PolicyDecisionExt;
-                                decision.ignore();
-                                if let Ok(decoded) = urlencoding::decode(data_str) {
-                                    if let Ok(new_config) = serde_json::from_str::<crate::util::config::AppConfig>(&decoded) {
-                                        new_config.save();
-                                        println!("[CONFIG] Configuration saved successfully.");
+                            let mut page_handled = false;
+                            for page in internal_pages_policy.iter() {
+                                if page.matches_policy(uri_str) {
+                                    if page.ignore_policy(uri_str) {
+                                        use webkit2gtk::PolicyDecisionExt;
+                                        decision.ignore();
+                                    }
+                                    if page.handle_policy(uri_str, &ctx) {
+                                        page_handled = true;
+                                        break;
                                     }
                                 }
-                                webview_nav.load_uri("juanita://config?saved=true");
-                                return true;
                             }
-                            if uri_str.starts_with("juanita://make-default") {
-                                use webkit2gtk::PolicyDecisionExt;
-                                decision.ignore();
-
-                                // Check if running from a system install (e.g. /usr/bin)
-                                let exe_path = std::env::current_exe().unwrap_or_else(|_| std::path::PathBuf::from("juanita-banana"));
-                                let is_system_install = exe_path.starts_with("/usr/");
-
-                                let desktop_filename = if is_system_install {
-                                    "juanita-banana.desktop".to_string()
-                                } else {
-                                    // Create a local dev desktop file so we don't shadow the system RPM one
-                                    let base = std::env::var("XDG_DATA_HOME").map(std::path::PathBuf::from).unwrap_or_else(|_| std::path::PathBuf::from(std::env::var("HOME").unwrap_or_default()).join(".local/share"));
-                                    let apps_dir = base.join("applications");
-                                    std::fs::create_dir_all(&apps_dir).ok();
-
-                                    let desktop_path = apps_dir.join("juanita-banana-local.desktop");
-                                    let desktop_content = format!(
-                                        "[Desktop Entry]\nVersion=1.0\nName=Juanita Banana (Local)\nGenericName=Web Browser\nComment=Weaponized Privacy Browser\nExec={} %U\nTerminal=false\nX-MultipleArgs=false\nType=Application\nIcon=web-browser\nCategories=Network;WebBrowser;\nMimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/juanita;\nStartupNotify=true",
-                                        exe_path.display()
-                                    );
-                                    std::fs::write(&desktop_path, desktop_content).ok();
-                                    "juanita-banana-local.desktop".to_string()
-                                };
-
-                                std::process::Command::new("xdg-settings")
-                                    .arg("set")
-                                    .arg("default-web-browser")
-                                    .arg(&desktop_filename)
-                                    .spawn()
-                                    .ok();
-
-                                println!("[CONFIG] Set as default browser!");
-                                webview_nav.load_uri("juanita://config");
-                                return true;
-                            }
-
-                            if uri_str.starts_with("juanita://contribute-page") {
-                                return false; // allow loading the local HTML
-                            }
-
-                            if uri_str.starts_with("juanita://contribute") {
-                                use webkit2gtk::PolicyDecisionExt;
-                                decision.ignore();
-                                let image_data = include_bytes!("../../assets/monerowallet.png");
-                                let b64_image = base64::encode(image_data);
-                                let html = format!(r#"
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Contribute to Juanita</title>
-    <style>
-        body {{
-            background: #1e1e1e;
-            color: #d4d4d4;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            text-align: center;
-        }}
-        h1 {{ color: #ffcc00; font-size: 3em; margin-bottom: 10px; }}
-        p {{ font-size: 1.5em; margin-bottom: 30px; }}
-        a {{
-            color: #0098ff;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 1.2em;
-        }}
-        a:hover {{ text-decoration: underline; }}
-        .monero {{
-            margin-top: 50px;
-            background: #2d2d30;
-            padding: 20px;
-            border-radius: 10px;
-            border: 1px solid #444;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }}
-        .monero-title {{ color: #f26822; font-size: 1.5em; font-weight: bold; margin-bottom: 15px; }}
-        .monero-qr {{ margin-bottom: 15px; border-radius: 8px; border: 2px solid #f26822; max-width: 250px; }}
-        .monero-address {{
-            font-family: monospace;
-            background: #000;
-            padding: 10px;
-            border-radius: 5px;
-            color: #0f0;
-            word-break: break-all;
-            max-width: 600px;
-            user-select: all;
-        }}
-    </style>
-</head>
-<body>
-    <h1>🍌 Contribute to Juanita Banana</h1>
-    <p>Please contribute with code!</p>
-    <a href="https://github.com/TheRandomConsortium/JuanitaBanana" target="_blank">View on GitHub</a>
-    
-    <div class="monero">
-        <div class="monero-title">However, we also accept Monero...</div>
-        <img class="monero-qr" src="data:image/png;base64,{}" alt="Monero Wallet QR">
-        <div class="monero-address">48VpnekPQCmSF6QMM6FZFufcAaDSEM8mN7zzGeFuPqqZgYgv3p5V4DFFPJN6vVNgGeD2e4yXmADxcHJiSDbNHJwr3K7vBm6</div>
-    </div>
-</body>
-</html>
-                                "#, b64_image);
-
-                                webview_nav.load_html(&html, Some("juanita://contribute-page/"));
-                                return true;
-                            }
-                            if uri_str.starts_with("juanita://about-page") {
-                                return false;
-                            }
-
-                            if uri_str.starts_with("juanita://about") {
-                                use webkit2gtk::PolicyDecisionExt;
-                                decision.ignore();
-
-                                let icon_bytes = include_bytes!("../../assets/icon.png"); 
-                                let b64_icon = base64::encode(icon_bytes);
-
-                                let mut rng = rand::thread_rng();
-                                let width = 256;
-                                let height = 256;
-                                let pixel_data_size = width * height * 4;
-                                let mut bmp = Vec::with_capacity(54 + pixel_data_size);
-
-                                bmp.extend_from_slice(b"BM");
-                                let file_size = (54 + pixel_data_size) as u32;
-                                bmp.extend_from_slice(&file_size.to_le_bytes());
-                                bmp.extend_from_slice(&[0, 0, 0, 0]);
-                                bmp.extend_from_slice(&(54u32).to_le_bytes());
-
-                                bmp.extend_from_slice(&(40u32).to_le_bytes());
-                                bmp.extend_from_slice(&(width as u32).to_le_bytes());
-                                bmp.extend_from_slice(&(height as i32).to_le_bytes());
-                                bmp.extend_from_slice(&(1u16).to_le_bytes());
-                                bmp.extend_from_slice(&(32u16).to_le_bytes());
-                                bmp.extend_from_slice(&(0u32).to_le_bytes());
-                                bmp.extend_from_slice(&(pixel_data_size as u32).to_le_bytes());
-                                bmp.extend_from_slice(&(2835u32).to_le_bytes());
-                                bmp.extend_from_slice(&(2835u32).to_le_bytes());
-                                bmp.extend_from_slice(&(0u32).to_le_bytes());
-                                bmp.extend_from_slice(&(0u32).to_le_bytes());
-
-                                let mut raw_pixels = vec![0u8; pixel_data_size];
-                                rand::Rng::fill(&mut rng, &mut raw_pixels[..]);
-                                bmp.extend_from_slice(&raw_pixels);
-
-                                let b64_noise = base64::encode(&bmp);
-
-                                let html = format!(r#"
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>About Juanita Banana</title>
-    <style>
-        body {{
-            background: #0a0a0a;
-            color: #d4d4d4;
-            font-family: 'Courier New', Courier, monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            text-align: center;
-        }}
-        h1 {{ color: #ff3333; font-size: 3em; margin-bottom: 5px; }}
-        h2 {{ color: #888; font-size: 1.5em; margin-top: 0; margin-bottom: 50px; font-weight: normal; }}
-        p.question {{ font-size: 1.8em; color: #ffcc00; margin-bottom: 10px; font-weight: bold; }}
-        p.statement {{ font-size: 1.5em; color: #fff; margin-bottom: 40px; }}
-        .manifesto-link {{
-            color: #0098ff;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 1.2em;
-            border: 1px solid #444;
-            padding: 15px 30px;
-            background: #111;
-            border-radius: 5px;
-            transition: all 0.2s ease-in-out;
-            font-family: sans-serif;
-        }}
-        .manifesto-link:hover {{ background: #0098ff; color: #000; border-color: #0098ff; }}
-        .footer-grid {{
-            display: flex;
-            gap: 120px;
-            margin-top: 80px;
-        }}
-        .footer-item {{
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: #555;
-            font-size: 1.5em;
-            font-weight: bold;
-        }}
-        .footer-item span {{ margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }}
-        .footer-item img {{
-            width: 256px;
-            height: 256px;
-            border: 2px solid #222;
-            border-radius: 4px;
-            object-fit: cover;
-            background: #000;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.8);
-        }}
-        .footer-item.random-consortium img {{
-            image-rendering: pixelated;
-        }}
-    </style>
-</head>
-<body>
-    <h1>Who are we?</h1>
-    <h2>Who cares? Might as well be no one.</h2>
-    
-    <p class="question">The real question is who are you?</p>
-    <p class="statement">Another bootlicker feeding the corporate web or a sovereign user?</p>
-    
-    <a class="manifesto-link" href="https://github.com/TheRandomConsortium/JuanitaBanana/blob/main/docs/MANIFESTO.md" target="_blank">
-        Read the full manifesto at github.com/docs/MANIFESTO.md
-    </a>
-    
-    <div class="footer-grid">
-        <div class="footer-item">
-            <span>Juanita Banana</span>
-            <img src="data:image/png;base64,{}" alt="Derpy Banana">
-        </div>
-        <div class="footer-item random-consortium">
-            <span>TheRandomConsortium</span>
-            <img src="data:image/bmp;base64,{}" alt="Static Noise">
-        </div>
-    </div>
-</body>
-</html>
-                                "#, b64_icon, b64_noise);
-
-                                webview_nav.load_html(&html, Some("juanita://about-page/"));
-                                return true;
-                            }
-
-                            if uri_str.starts_with("juanita://choose-competitor") {
-                                use webkit2gtk::PolicyDecisionExt;
-                                decision.ignore();
-                                let html = crate::util::competitors::competitors_page_html();
-                                webview_nav.load_html(&html, Some("juanita://competitors-page/"));
-                                return true;
-                            }
-
-                            if uri_str.starts_with("juanita://competitors-page") {
-                                return false; // allow loading the local HTML
-                            }
-
-                            if let Some(desktop_str) = uri_str.strip_prefix("juanita://set-competitor?desktop=") {
-                                use webkit2gtk::PolicyDecisionExt;
-                                decision.ignore();
-                                let _ = std::process::Command::new("xdg-settings")
-                                    .arg("set")
-                                    .arg("default-web-browser")
-                                    .arg(desktop_str)
-                                    .output();
-                                webview_nav.load_uri("juanita://config");
-                                return true;
-                            }
-
-                            if uri_str.starts_with("juanita://downloads-page") {
-                                return false; // allow loading the local HTML
-                            }
-
-                            if uri_str.starts_with("juanita://downloads/open?id=") {
-                                use webkit2gtk::PolicyDecisionExt;
-                                decision.ignore();
-                                let id = uri_str.trim_start_matches("juanita://downloads/open?id=");
-                                downloads.borrow().open_sandboxed(id);
-                                webview_nav.load_uri("juanita://downloads");
-                                return true;
-                            }
-
-                            if uri_str.starts_with("juanita://downloads/persist?id=") {
-                                use webkit2gtk::PolicyDecisionExt;
-                                decision.ignore();
-                                let id = uri_str.trim_start_matches("juanita://downloads/persist?id=");
-                                downloads.borrow_mut().make_permanent(id);
-                                webview_nav.load_uri("juanita://downloads");
-                                return true;
-                            }
-
-                            if uri_str.starts_with("juanita://downloads/delete?id=") {
-                                use webkit2gtk::PolicyDecisionExt;
-                                decision.ignore();
-                                let id = uri_str.trim_start_matches("juanita://downloads/delete?id=");
-                                downloads.borrow_mut().shred(id);
-                                webview_nav.load_uri("juanita://downloads");
-                                return true;
-                            }
-
-                            if uri_str.starts_with("juanita://downloads") {
-                                use webkit2gtk::PolicyDecisionExt;
-                                decision.ignore();
-                                let html = downloads.borrow().generate_html();
-                                webview_nav.load_html(&html, Some("juanita://downloads-page/"));
-                                return true;
-                            }
-
-                            if uri_str.starts_with("juanita://unban-page") {
-                                return false; // allow loading the local HTML
-                            }
-
-                            if let Some(domain_query) = uri_str.strip_prefix("juanita://unban?domain=") {
-                                use webkit2gtk::PolicyDecisionExt;
-                                decision.ignore();
-                                use crate::util::ban::{EquationProvider, BasicIntegralEquationProvider};
-                                let provider = BasicIntegralEquationProvider;
-                                let (equation, answer) = provider.generate_challenge();
-
-                                let domain = domain_query.to_string();
-                                *expected_unban.borrow_mut() = Some((domain.clone(), answer));
-
-                                let unban_html = crate::util::ban::unban_page(&domain, &equation);
-                                let base_uri = uri_str.replace("juanita://unban", "juanita://unban-page");
-                                webview_nav.load_html(&unban_html, Some(&base_uri));
-                                return true;
-                            } else if uri_str.starts_with("juanita://unban") {
-                                use webkit2gtk::PolicyDecisionExt;
-                                decision.ignore();
-                                let domains = banlist_nav.borrow().banned_domains.clone();
-                                let list_html = crate::util::ban::unban_list_page(&domains);
-                                webview_nav.load_html(&list_html, Some("juanita://unban-page/"));
-                                return true;
-                            }
-
-                            if let Some(query) = uri_str.strip_prefix("juanita://submit-unban?") {
-                                use webkit2gtk::PolicyDecisionExt;
-                                decision.ignore();
-
-                                // parse domain=X&answer=Y
-                                let parts: Vec<&str> = query.split('&').collect();
-                                let mut domain = String::new();
-                                let mut answer = String::new();
-                                for p in parts {
-                                    if let Some(d) = p.strip_prefix("domain=") {
-                                        domain = d.to_string();
-                                    }
-                                    if let Some(a) = p.strip_prefix("answer=") {
-                                        answer = a.to_string();
-                                    }
-                                }
-
-                                if let Some((expected_domain, expected_ans)) = expected_unban.borrow().as_ref() {
-                                    if *expected_domain == domain && answer == expected_ans.to_string() {
-                                        println!("[UNBAN] User solved the math! Unbanning {}", domain);
-                                        let mut bl = banlist_nav.borrow_mut();
-                                        bl.unban(&domain);
-                                        bl.save();
-                                        webview_nav.load_uri(&format!("https://{}", domain));
-                                        return true;
-                                    }
-                                }
-
-                                println!("[UNBAN] Incorrect math or tampered domain. Access denied.");
-                                let banned_html = crate::util::ban::banned_page(&domain);
-                                webview_nav.load_html(&banned_html, Some("juanita://banned"));
+                            if page_handled {
                                 return true;
                             }
 
                             // Check for Search Intoxication
-                            if intox_engine.check_and_poison_search(uri_str, &config, &*noise_provider) {
+                            if intox_engine.check_and_poison_search(
+                                uri_str,
+                                &config,
+                                &*noise_provider,
+                            ) {
                                 use webkit2gtk::PolicyDecisionExt;
                                 decision.ignore();
                                 return true;

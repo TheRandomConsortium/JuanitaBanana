@@ -85,6 +85,23 @@ pub fn anti_fingerprint_script() -> &'static str {
         Intl.DateTimeFormat.prototype = _origDateTimeFormat.prototype;
         Intl.DateTimeFormat.supportedLocalesOf = _origDateTimeFormat.supportedLocalesOf;
 
+        // ── Battery API Spoofing ─────────────────────────────
+        navigator.getBattery = function() {
+            return Promise.resolve({
+                charging: true,
+                chargingTime: 0,
+                dischargingTime: Infinity,
+                level: 1.0,
+                addEventListener: function() {},
+                removeEventListener: function() {},
+                dispatchEvent: function() { return true; },
+                onchargingchange: null,
+                onchargingtimechange: null,
+                ondischargingtimechange: null,
+                onlevelchange: null
+            });
+        };
+
         console.log('[JuanitaBanana] Anti-fingerprint active 🍌');
     })();
     "#
@@ -113,5 +130,9 @@ mod tests {
         // Timezone
         assert!(script.contains("Intl.DateTimeFormat"));
         assert!(script.contains("Europe/London"));
+
+        // Battery
+        assert!(script.contains("navigator.getBattery = function()"));
+        assert!(script.contains("charging: true"));
     }
 }

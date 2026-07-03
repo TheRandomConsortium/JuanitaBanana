@@ -67,6 +67,7 @@ Read the full manifesto → [`docs/MANIFESTO.md`](docs/MANIFESTO.md)
 - **Canvas:** Intercepts `toDataURL()` / `toBlob()` — trackers get a prerendered image, not your canvas
 - **Viewport:** `screen.*` and `window.inner*` report randomized dimensions. Layout is unaffected.
 - **Timezone:** `Intl.DateTimeFormat().resolvedOptions().timeZone` is overwritten to a neutral value (UTC) to prevent geographical location leaks.
+- **Battery:** Overrides `navigator.getBattery()` to always report 100% charging and charging status.
 - **WebGL:** Vendor/renderer strings replaced with Juanita Banana GPU
 - **Navigator:** hardwareConcurrency, deviceMemory, platform — all spoofed
 - **User-Agent:** Honest by default (`JuanitaBanana/0.1`). In the future, a config toggle will allow switching to a rotating mode that cycles daily through a curated list of genuine, modern User-Agents to blend into the crowd perfectly.
@@ -90,7 +91,7 @@ Read the full manifesto → [`docs/MANIFESTO.md`](docs/MANIFESTO.md)
 - Detects AI-generated content disclosures → injects warning in the article title
 
 ### 🔮 Future Arsenal
-GTM poisoning · Meta Pixel contamination · Cookie garbage fill · Beacon API interception · Tor integration · Password manager · P2P search pool · GDPR Aggressive Unsubscribe
+GTM poisoning · Meta Pixel contamination · Cookie garbage fill · Beacon API interception · Tor integration · Password manager · P2P Circle Jerk Swarm · GDPR Aggressive Unsubscribe
 
 See [`docs/FUNCTIONALITIES.md`](docs/FUNCTIONALITIES.md) for full status.
 

@@ -19,7 +19,7 @@
 | **Navigator API Spoofing** | ✅ Done | Fake values for `hardwareConcurrency`, `deviceMemory`, `platform`, `vendor`, `userAgent`, `webdriver=false`, `languages`, and `plugins` mock array. |
 | **iFrame Sub-frame Injection** | ✅ Done | Script injected into ALL frames via `UserContentInjectedFrames::AllFrames`. Trackers spin up invisible iframes to read the clean OS navigator — this closes that bypass. |
 | **Intl / Timezone Leak** | ✅ Done | Overwrites `Intl.DateTimeFormat().resolvedOptions().timeZone`. Without this, the real timezone exposes physical location even when all other signals are spoofed. |
-| **Battery API Spoofing** | 📋 Planned | Override `navigator.getBattery()` to always report 100% charging. |
+| **Battery API Spoofing** | ✅ Done | Override `navigator.getBattery()` to always report 100% charging and charging status. |
 | **Font Enumeration Protection** | 📋 Planned | Override canvas text measurements and CSS font loading to report a standard, fake set of fonts. |
 | **Web Audio API Spoofing** | 🔭 Future | Procedurally generated acoustic signatures (Soviet 1980s sound card) to poison oscillator fingerprinting. |
 | **Sensor API Poisoning** | 🔭 Future | Inject synthetic accelerometer/gyroscope data simulating constant freefall or spiral walking. |
