@@ -43,6 +43,16 @@ We adamantly refuse to use Google's engine (Blink/Chromium). This browser is ult
 - **Battery API Fingerprinting:** `navigator.getBattery()` is overwritten to always report 100% level and charging status, preventing battery-draining telemetry and device tracking.
 - **Session-Randomized Configurable Spoofing (Planned):** Instead of static values or fully dynamic variables that mutate on every API call (exposing inconsistencies), spoofing parameters will be session-randomized. Values (like screen size range, cores, memory) are randomized once per browser session within logical limits, and are configurable in settings.
 
+### § The Disco Ball Philosophy (Why We Do Not Send DNT)
+
+> We do **not** send the `DNT` (Do Not Track) header signal on purpose. We refuse to plead with trackers for our privacy.
+>
+> Pleading with trackers via a DNT signal is useless — they ignore it anyway. Furthermore, it marks the browser as "trying to hide."
+>
+> Our objective is **not** to blend in, to hide, or to be a quiet grey dot. Our objective is to be a **motherfucking disco ball with neon signs**. We want to be tracked, but we want the tracker's database to be filled with absolute, premium-grade, statistically-perfect **bullshit**.
+> 
+> Let them track the banana. The profile they build will be a hall of mirrors.
+
 ### 2. Search Profile Obfuscation (Search Intoxication)
 
 For every real search the user makes, the browser will execute 20 additional searches on heterogeneous topics so that the user's search profile becomes statistically useless for any data broker.

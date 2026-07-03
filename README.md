@@ -42,6 +42,12 @@ The modern web has turned the browser into a data collection terminal. Canvas AP
 > *We are making the user's data profile useless as a signal.*
 > *Intent: anti-fingerprinting. Not sabotage.*
 
+### § The Disco Ball Philosophy (Why We Do Not Send DNT)
+
+> We do **not** send the `DNT` (Do Not Track) header signal on purpose. We refuse to plead with trackers.
+>
+> Our objective is **not** to blend in, to hide, or to be a quiet grey dot. Our objective is to be a **motherfucking disco ball with neon signs**. We want to be tracked, but we want the tracker's database to be filled with absolute, premium-grade, statistically-perfect **bullshit**.
+
 ### § The Corporate Clause
 
 > "Our mascot is a derpy banana with curly hair. When your fingerprinting fails, you will have to look at it. When your quarterly metrics crash, you will have to explain it. When your profiling model collapses, you will have to project it in your board meeting.
