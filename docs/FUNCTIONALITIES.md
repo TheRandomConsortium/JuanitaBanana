@@ -20,6 +20,7 @@
 | **iFrame Sub-frame Injection** | ✅ Done | Script injected into ALL frames via `UserContentInjectedFrames::AllFrames`. Trackers spin up invisible iframes to read the clean OS navigator — this closes that bypass. |
 | **Intl / Timezone Leak** | ✅ Done | Overwrites `Intl.DateTimeFormat().resolvedOptions().timeZone`. Without this, the real timezone exposes physical location even when all other signals are spoofed. |
 | **Battery API Spoofing** | ✅ Done | Override `navigator.getBattery()` to always report 100% charging and charging status. |
+| **Session-Randomized Spoofing** | 📋 Planned | Make spoofed parameters (memory, cores, dimensions, platform) configurable and session-randomized. Values remain static within a session to prevent inconsistency tracking, but mutate on launch within logical boundaries. |
 | **Font Enumeration Protection** | 📋 Planned | Override canvas text measurements and CSS font loading to report a standard, fake set of fonts. |
 | **Web Audio API Spoofing** | 🔭 Future | Procedurally generated acoustic signatures (Soviet 1980s sound card) to poison oscillator fingerprinting. |
 | **Sensor API Poisoning** | 🔭 Future | Inject synthetic accelerometer/gyroscope data simulating constant freefall or spiral walking. |
