@@ -96,6 +96,9 @@ Meta's pixel records every pageview, every purchase, every scroll and links it t
 #### Alibaba / AliExpress Tracking Suite
 Alibaba has its own analytics stack (`aplus.yunpik.com`, `log.mmstat.com`) with aggressive fingerprinting. **Strategy:** Same interception as GTM/Meta — block real beacons, send synthetic data.
 
+#### CIAM / Identity Middleware Interception (e.g. Dru-ID)
+Customer Identity & Access Management (CIAM) services (like `dru-id.com`) act as tracking/identity middleware, hijacking the user's session right from the login step and recording all user events matching schema.org standards. **Strategy:** Algorithmic Parallel Session Poisoning. Once a CIAM tracking middleware endpoint is detected, the browser launches a sandboxed background page sharing the user's authenticated session state. This parallel session algorithmically navigates the website in the background, firing random schema.org events (simulated purchases, scroll depth indicators, and clicks) to completely pollute the telemetry collected by the identity broker.
+
 #### Cookie Poisoning
 Tracking cookies (non-functional ones) will be filled with garbage data for the duration of the session. Upon leaving the page (or closing the tab), they are completely wiped. The tracker maintains a cookie that serves absolutely no purpose.
 
