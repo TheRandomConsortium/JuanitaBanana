@@ -40,6 +40,7 @@
 | **Meta Pixel Contamination** | 🔭 Future | Intercept `fbq` calls, block real payload, send random events (fake purchases) to ruin lookalike audiences. |
 | **Beacon API Interception** | 🔭 Future | Override `navigator.sendBeacon()` to modify outgoing data with noise. |
 | **Alibaba Tracking Suite Poisoning** | 🔭 Future | Intercept `aplus.yunpik.com` / `log.mmstat.com` beacons. |
+| **CIAM Parallel Session Poisoning** | 🔭 Future | Detect identity trackers (e.g., `dru-id.com`) and launch a sandboxed background page to algorithmically navigate and fire fake schema.org events (simulated purchases, scroll actions) using the authenticated cookies to poison the captured profile. Includes a manual **"Parallel Browse" right-click context menu option** to deploy this background traverse manually on any arbitrary site. |
 
 ---
 
