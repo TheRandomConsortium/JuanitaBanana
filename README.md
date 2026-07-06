@@ -82,10 +82,11 @@ Read the full manifesto → [`docs/MANIFESTO.md`](docs/MANIFESTO.md)
 - Every real search fires 20 background searches from a heterogeneous pool
 - Future: P2P gossip protocol — your fake searches are real searches from other users
 
-### 📣 Ad Profile Obfuscation
-- Ads are hidden from view but interacted with in background
-- If you click on everything, you are nobody
-- **Anti-Ad Blockers (Full-Screen Ads):** Replaces aggressive ad-block walls with a warning banner, respecting internal site timers to prevent breaking functionality while refusing to show the ad itself.
+### 📣 Ad Profile Obfuscation (Inverse Advertising Framework)
+- **Concealment and Blind Interaction:** Ads are hidden and surgically removed from the DOM. The browser monkeypatches prototype setters, fetch, and XHR APIs to catch background tracking intents.
+- **Sequential Queuing:** Simulates realistic interaction (scrolling, hovers, clicks) in background WebKit WebView clones. Processing is strictly sequential (1-by-1) to replicate natural human behavior.
+- **Manual Reporting & Verification:** Right-click context menu "Mark as Ad" featuring a candidate URL selector dialog to prevent false positive blocks of legitimate sites.
+- **Anti-Ad Blockers (Full-Screen Ads):** Replaces aggressive ad-block walls with a warning banner, respecting internal site timers to prevent breaking functionality while refusing to show the ad itself (Planned).
 
 ### 🚫 The Ban System
 - One click BAN from the navbar

@@ -48,7 +48,8 @@
 
 | Feature | Status | Notes |
 |---|---|---|
-| **Blind Background Interaction** | 🔭 Future | Ads are hidden visually but the browser simulates interaction (clicks, scrolls) in the background so the interest profile gets completely contaminated. |
+| **Blind Background Interaction** | ✅ Done | Intercepts ads dynamically via DOM prototype setters and Fetch/XMLHttpRequest monkeypatching. Removes elements from screen and executes sequential (1-by-1) simulated interactions (scrolling, hovers, clicks) in a headless WebKit WebView to pollute target profile metrics. |
+| **Manual Ad Reporting & Verification** | ✅ Done | Context-menu action allowing users to mark elements as ads. Presents a verification dialog listing candidate URLs (to prevent false positive blocking of main websites) before learning the domain and triggering surgery/poisoning. |
 | **Anti-Ad Blockers (Full-Screen Ads)** | 🔭 Future | Replaces aggressive ad-block walls with a warning banner, respecting internal site timers to prevent breaking functionality while refusing to show the ad itself. |
 
 ---
