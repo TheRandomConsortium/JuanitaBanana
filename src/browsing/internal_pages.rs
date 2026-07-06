@@ -85,7 +85,7 @@ impl InternalPage for ConfigPage {
     fn handle_policy(&self, uri: &str, ctx: &PageContext) -> bool {
         if uri.starts_with("juanita://config") {
             let is_default = crate::util::config::is_default_browser();
-            let config_html = crate::util::config::config_page_html(&ctx.config, is_default);
+            let config_html = crate::util::config_html::config_page_html(&ctx.config, is_default);
             let base_uri = uri.replace("juanita://config", "juanita://config-page");
             ctx.webview.load_html(&config_html, Some(&base_uri));
             return true;
