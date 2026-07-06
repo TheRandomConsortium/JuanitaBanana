@@ -82,5 +82,47 @@ sed -i "s/VERSION_PLACEHOLDER/$NEW_VERSION/" $RPM_ROOT/SPECS/juanita-banana.spec
 echo "Building RPM..."
 rpmbuild -bb $RPM_ROOT/SPECS/juanita-banana.spec
 
-echo "Done! RPM is available at:"
-find $RPM_ROOT/RPMS -name "juanita-banana*.rpm"
+REPO_DIR="$HOME/juanita-repo"
+mkdir -p "$REPO_DIR"
+
+echo "Copying new RPM to local repository at $REPO_DIR..."
+find $RPM_ROOT/RPMS -name "juanita-banana-${NEW_VERSION}*.rpm" -exec cp {} "$REPO_DIR/" \;
+
+echo "Cleaning up older RPM versions in local repository (keeping the latest 3)..."
+pushd "$REPO_DIR" > /dev/null
+ls -t juanita-banana-*.rpm 2>/dev/null | tail -n +4 | xargs -I {} rm -f {}
+popd > /dev/null
+
+echo "Cleaning up older RPM versions in rpmbuild RPMS (keeping the latest 3)..."
+pushd $RPM_ROOT/RPMS/x86_64 > /dev/null
+ls -t juanita-banana-*.rpm 2>/dev/null | tail -n +4 | xargs -I {} rm -f {}
+popd > /dev/null
+
+echo "Updating DNF repository metadata..."
+if command -v createrepo_c >/dev/null 2>&1; then
+    createrepo_c "$REPO_DIR"
+elif command -v createrepo >/dev/null 2>&1; then
+    createrepo "$REPO_DIR"
+else
+    echo "Warning: 'createrepo_c' or 'createrepo' is not installed."
+    echo "Please install it: sudo dnf install -y createrepo_c"
+fi
+
+cat > juanita.repo << EOF
+[juanita-banana]
+name=Juanita Banana Local Repository
+baseurl=file://$REPO_DIR
+enabled=1
+gpgcheck=0
+metadata_expire=0
+EOF
+
+echo "Done! RPM is available in the local repository at $REPO_DIR"
+echo ""
+echo "To use this as a local DNF repository:"
+echo "  1. If not already done, install createrepo_c:"
+echo "     sudo dnf install -y createrepo_c"
+echo "  2. Copy the repo file to your system configuration:"
+echo "     sudo cp juanita.repo /etc/yum.repos.d/"
+echo "  3. Update/Install via DNF:"
+echo "     sudo dnf upgrade --refresh juanita-banana"

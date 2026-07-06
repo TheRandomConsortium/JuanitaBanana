@@ -78,6 +78,7 @@ pub fn run(banlist: SharedBanList) {
     app.connect_activate(move |app| {
         let banlist = banlist_clone.clone();
 
+        let config = AppConfig::load();
         let web_context = WebContext::default().unwrap();
         let ucm = UserContentManager::new();
 
@@ -90,6 +91,16 @@ pub fn run(banlist: SharedBanList) {
         );
         ucm.add_script(&script);
 
+        ucm.register_script_message_handler("juanita");
+        let ad_script = UserScript::new(
+            &spoof::ad_intoxication_script(&config),
+            UserContentInjectedFrames::AllFrames,
+            UserScriptInjectionTime::Start,
+            &[],
+            &[],
+        );
+        ucm.add_script(&ad_script);
+
         let settings = webkit2gtk::Settings::builder()
             .user_agent("JuanitaBanana/0.1 (FOSS; Not-Google; Linux)")
             .build();
@@ -98,6 +109,43 @@ pub fn run(banlist: SharedBanList) {
             .user_content_manager(&ucm)
             .settings(&settings)
             .build();
+
+        let ad_intox_engine = Rc::new(crate::search::ad_intoxication::AdIntoxicationEngine::new(
+            &web_context,
+            &webview,
+            &config,
+        ));
+
+        let ad_engine_msg = ad_intox_engine.clone();
+        ucm.connect_script_message_received(
+            Some("juanita"),
+            move |_manager, js_result: &webkit2gtk::JavascriptResult| {
+                if let Some(val) = js_result.js_value() {
+                    let json_str = val.to_string();
+                    if let Ok(msg_val) = serde_json::from_str::<serde_json::Value>(&json_str) {
+                        if msg_val["type"] == "ad_detected" {
+                            let page_url = msg_val["page_url"].as_str().unwrap_or("").to_string();
+                            let selector = msg_val["selector"].as_str().unwrap_or("").to_string();
+                            let ad_url = msg_val["ad_url"].as_str().unwrap_or("").to_string();
+                            ad_engine_msg.queue_ad(crate::search::ad_intoxication::AdTask {
+                                page_url,
+                                selector,
+                                ad_url,
+                            });
+                        } else if msg_val["type"] == "right_click_target" {
+                            if let Ok(info) = serde_json::from_value::<
+                                crate::browsing::gui_plugin::RightClickInfo,
+                            >(msg_val.clone())
+                            {
+                                crate::browsing::gui_plugin::LAST_RIGHT_CLICK.with(|rc| {
+                                    *rc.borrow_mut() = Some(info);
+                                });
+                            }
+                        }
+                    }
+                }
+            },
+        );
 
         *gw_activate.borrow_mut() = Some(webview.clone());
 
@@ -215,6 +263,11 @@ pub fn run(banlist: SharedBanList) {
         vbox.pack_start(&webview, true, true, 0);
         window.add(&vbox);
 
+        // Set up custom actions & context menu plugin
+        use crate::browsing::gui_plugin::{AdIntoxicationPlugin, GuiPlugin};
+        let plugin = AdIntoxicationPlugin;
+        plugin.setup(&window, &webview, &ad_intox_engine);
+
         let config = AppConfig::load();
         let noise_provider = Rc::new(RssNoiseProvider::new(&config));
         let intox_engine = IntoxicationEngine::new(&web_context, &webview, &config);
@@ -288,6 +341,7 @@ pub fn run(banlist: SharedBanList) {
         let downloads_policy = downloads.clone();
         let banlist_policy = banlist.clone();
         let internal_pages_policy = internal_pages.clone();
+        let ad_intox_engine_policy = ad_intox_engine.clone();
 
         let webview_create = webview.clone();
         webview.connect_create(move |_wv, nav_action| {
@@ -307,6 +361,24 @@ pub fn run(banlist: SharedBanList) {
                     if let Some(req) = nav_decision.request() {
                         if let Some(uri) = req.uri() {
                             let uri_str = uri.as_str();
+
+                            // Intercept navigation to ad domains in main webview
+                            if ad_intox_engine_policy.is_ad_domain(uri_str) {
+                                println!(
+                                    "[AD_INTOX] Intercepted ad navigation in main window to: {}",
+                                    uri_str
+                                );
+                                ad_intox_engine_policy.queue_ad(
+                                    crate::search::ad_intoxication::AdTask {
+                                        page_url: uri_str.to_string(),
+                                        selector: "body".to_string(),
+                                        ad_url: uri_str.to_string(),
+                                    },
+                                );
+                                use webkit2gtk::PolicyDecisionExt;
+                                decision.ignore();
+                                return true;
+                            }
 
                             intox_engine.cancel_pending();
 
