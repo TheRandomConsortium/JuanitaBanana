@@ -1,3 +1,6 @@
 [submodule "circlejerk-protocol"]
 	path = circlejerk-protocol
 	url = https://github.com/TheRandomConsortium/CircleJerkProtocol.git
+[submodule "juanita-companion"]
+	path = juanita-companion
+	url = https://github.com/TheRandomConsortium/JuanitaBananaCompanion.git

@@ -21,7 +21,7 @@
 | **Intl / Timezone Leak** | ✅ Done | Overwrites `Intl.DateTimeFormat().resolvedOptions().timeZone`. Without this, the real timezone exposes physical location even when all other signals are spoofed. |
 | **Battery API Spoofing** | ✅ Done | Override `navigator.getBattery()` to always report 100% charging and charging status. |
 | **Session-Randomized Spoofing** | 📋 Planned | Make spoofed parameters (memory, cores, dimensions, platform) configurable and session-randomized. Values remain static within a session to prevent inconsistency tracking, but mutate on launch within logical boundaries. |
-| **Font Enumeration Protection** | 📋 Planned | Override canvas text measurements and CSS font loading to report a standard, fake set of fonts. |
+| **Font Enumeration Protection** | ✅ Done | Overrides canvas text measurements and CSS font loading to report that only `Webdings` and `Monospace` are installed (until session-randomized font pools are implemented). |
 | **Web Audio API Spoofing** | 🔭 Future | Procedurally generated acoustic signatures (Soviet 1980s sound card) to poison oscillator fingerprinting. |
 | **Sensor API Poisoning** | 🔭 Future | Inject synthetic accelerometer/gyroscope data simulating constant freefall or spiral walking. |
 | **Typing Biometrics Corruption** | 🔭 Future | Introduce random millisecond jitter in `keydown`/`keyup` events to destroy typing cadence AI profiling. |
@@ -61,7 +61,7 @@
 | **Local Search Noise** | ✅ Done | Fires a configurable amount (default 20, exposed as `noise_queries_amount` in config) of background searches from a local heterogeneous pool using dynamic RSS n-grams for every real user search, effectively poisoning the data profile. |
 | **P2P Gossip Protocol** | 🔭 Future | Decentralized sharing of anonymized searches to use real user data as noise for everyone. |
 | **Dumb Pipe TTL Server** | 🔭 Future | Minimalist server for search pool as an alternative to Gossip Protocol. |
-| **Background Captcha Solver** | 📋 Planned | **IMPORTANT**: Detects when a hidden WebView encounters a Captcha or a "Consent to Cookies" wall (e.g. Google's Consent screen, which currently hijacks the real search and causes double-poisoning). We will code automated solver strategies (e.g. simple auto-click, local AI heuristics). If all automated strategies fail, it triggers a humiliating fallback popup featuring the Juanita Banana icon stating: *"Woohoo [SearchEngine] got a Boo Boo and seems to think solving a captcha will help them"*, displays the captcha, and offers a secondary button: *"Or maybe you prefer to ban?"*. |
+| **Background Captcha Solver** | 🔨 WIP | Interoperates with the [Juanita Companion](https://github.com/TheRandomConsortium/JuanitaBananaCompanion) Android app via foreground heartbeat polling. Intercepts reCAPTCHA v3 challenges, extracts QR code payloads, and signals Android Accessibility Services to auto-click verify. |
 
 ---
 

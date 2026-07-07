@@ -76,6 +76,7 @@ Read the full manifesto → [`docs/MANIFESTO.md`](docs/MANIFESTO.md)
 - **Battery:** Overrides `navigator.getBattery()` to always report 100% charging and charging status.
 - **WebGL:** Vendor/renderer strings replaced with Juanita Banana GPU
 - **Navigator:** hardwareConcurrency, deviceMemory, platform — all spoofed
+- **Fonts:** Overrides canvas text measurement and CSS font loading APIs to report that only `Webdings` and `Monospace` are installed.
 - **User-Agent:** Honest by default (`JuanitaBanana/0.1`). In the future, a config toggle will allow switching to a rotating mode that cycles daily through a curated list of genuine, modern User-Agents to blend into the crowd perfectly.
 
 ### 🔍 Search Profile Obfuscation
@@ -87,6 +88,7 @@ Read the full manifesto → [`docs/MANIFESTO.md`](docs/MANIFESTO.md)
 - **Sequential Queuing:** Simulates realistic interaction (scrolling, hovers, clicks) in background WebKit WebView clones. Processing is strictly sequential (1-by-1) to replicate natural human behavior.
 - **Manual Reporting & Verification:** Right-click context menu "Mark as Ad" featuring a candidate URL selector dialog to prevent false positive blocks of legitimate sites.
 - **Anti-Ad Blockers (Full-Screen Ads):** Replaces aggressive ad-block walls with a warning banner, respecting internal site timers to prevent breaking functionality while refusing to show the ad itself (Planned).
+- **Automated CAPTCHA Solver:** Integration with [Juanita Companion](https://github.com/TheRandomConsortium/JuanitaBananaCompanion) Android companion app. Uses foreground heartbeat polling to pull reCAPTCHA v3 QR codes and automatically trigger Android Accessibility Services to click verify.
 
 ### 🚫 The Ban System
 - One click BAN from the navbar
@@ -139,6 +141,17 @@ cargo build --release
 | **Gecko** (Firefox) | C++ + Rust | No public embedding API for desktop. |
 | **Servo** | **Rust** | Linux Foundation. Our true long-term goal. Currently shelved due to critical HTTP/2 `SendRequest` bugs with modern SPAs. |
 | **WebKitGTK** | C++ | Apple/GNOME engine. Pragmatic, open-source fallback. Fast and reliable. |
+
+## 🛑 Supported Platforms (The "Code It Yourself" Clause)
+
+**We build software for sovereign operating systems. We do not support corporate spyware or walled gardens.**
+
+### Desktop Suite (Juanita Banana & Circle Jerk Protocol)
+* **Supported:** Linux.
+* **Considered:** BSD (Real BSD, not Apple's proprietary bastardization).
+* **Rejected:** Windows & macOS.
+
+**Do NOT open issues requesting Windows or Mac ports.** Running a hyper-paranoid, anti-telemetry privacy suite on an operating system that keylogs you by default is a paradox. If you want that shit, fork the repo and code it yourself. And no, BSD being on the table is not an excuse to beg for a Darwin port *"because it's essentially the same"*. It is not.
 
 ## Contributing
 
