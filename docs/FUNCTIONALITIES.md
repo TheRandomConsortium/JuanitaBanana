@@ -61,7 +61,7 @@
 | **Local Search Noise** | ✅ Done | Fires a configurable amount (default 20, exposed as `noise_queries_amount` in config) of background searches from a local heterogeneous pool using dynamic RSS n-grams for every real user search, effectively poisoning the data profile. |
 | **P2P Gossip Protocol** | 🔭 Future | Decentralized sharing of anonymized searches to use real user data as noise for everyone. |
 | **Dumb Pipe TTL Server** | 🔭 Future | Minimalist server for search pool as an alternative to Gossip Protocol. |
-| **Background Captcha Solver** | 🔨 WIP | Interoperates with the [Juanita Companion](https://github.com/TheRandomConsortium/JuanitaBananaCompanion) Android app via foreground heartbeat polling. Intercepts reCAPTCHA v3 challenges, extracts QR code payloads, and signals Android Accessibility Services to auto-click verify. |
+| **Background Captcha Solver** | 🔨 WIP | Detects when a hidden WebView encounters a Captcha or a "Consent to Cookies" wall. Automated solving strategies include simple auto-click, local VLM heuristics, and integration with the [Juanita Companion](https://github.com/TheRandomConsortium/JuanitaBananaCompanion) Android app (via foreground heartbeat polling to pull reCAPTCHA v3 QR codes and trigger Android Accessibility auto-click). If all automated strategies fail, it triggers a humiliating fallback popup featuring the Juanita Banana icon stating: *"Woohoo [SearchEngine] got a Boo Boo and seems to think solving a captcha will help them"*, displays the captcha, and offers a secondary button: *"Or maybe you prefer to ban?"*. |
 
 ---
 

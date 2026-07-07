@@ -88,7 +88,7 @@ Read the full manifesto → [`docs/MANIFESTO.md`](docs/MANIFESTO.md)
 - **Sequential Queuing:** Simulates realistic interaction (scrolling, hovers, clicks) in background WebKit WebView clones. Processing is strictly sequential (1-by-1) to replicate natural human behavior.
 - **Manual Reporting & Verification:** Right-click context menu "Mark as Ad" featuring a candidate URL selector dialog to prevent false positive blocks of legitimate sites.
 - **Anti-Ad Blockers (Full-Screen Ads):** Replaces aggressive ad-block walls with a warning banner, respecting internal site timers to prevent breaking functionality while refusing to show the ad itself (Planned).
-- **Automated CAPTCHA Solver:** Integration with [Juanita Companion](https://github.com/TheRandomConsortium/JuanitaBananaCompanion) Android companion app. Uses foreground heartbeat polling to pull reCAPTCHA v3 QR codes and automatically trigger Android Accessibility Services to click verify.
+- **Automated CAPTCHA Solver:** Detects CAPTCHA/consent screens in hidden WebViews. Solving strategies include auto-clicking, local VLM heuristics, and integration with the [Juanita Companion](https://github.com/TheRandomConsortium/JuanitaBananaCompanion) Android app (using foreground heartbeat polling to pull reCAPTCHA v3 QR codes and trigger Android Accessibility verify clicks). If all automated strategies fail, a humiliating fallback popup is displayed offering a domain ban.
 
 ### 🚫 The Ban System
 - One click BAN from the navbar
