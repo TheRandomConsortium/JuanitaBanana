@@ -22,6 +22,8 @@
 | **Battery API Spoofing** | ✅ Done | Override `navigator.getBattery()` to always report 100% charging and charging status. |
 | **Session-Randomized Spoofing** | 📋 Planned | Make spoofed parameters (memory, cores, dimensions, platform) configurable and session-randomized. Values remain static within a session to prevent inconsistency tracking, but mutate on launch within logical boundaries. |
 | **Font Enumeration Protection** | ✅ Done | Overrides canvas text measurements and CSS font loading to report that only `Webdings` and `Monospace` are installed (until session-randomized font pools are implemented). |
+| **Prototype toString Protection** | 📋 Planned | Override `Function.prototype.toString` to return standard native function representation (`function () { [native code] }`) when called on any spoofed/overridden APIs, avoiding detection by bot detectors verifying `toString` outputs. |
+| **Proxy-based API Hooking** | 📋 Planned | Migrate all manually overridden/monkeypatched properties and methods to use ES6 `Proxy` wrappers, creating a more uniform, robust, and clean interception system. |
 | **Web Audio API Spoofing** | 🔭 Future | Procedurally generated acoustic signatures (Soviet 1980s sound card) to poison oscillator fingerprinting. |
 | **Sensor API Poisoning** | 🔭 Future | Inject synthetic accelerometer/gyroscope data simulating constant freefall or spiral walking. |
 | **Typing Biometrics Corruption** | 🔭 Future | Introduce random millisecond jitter in `keydown`/`keyup` events to destroy typing cadence AI profiling. |
