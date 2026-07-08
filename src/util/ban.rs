@@ -119,6 +119,13 @@ pub fn unban_list_page(domains: &std::collections::HashSet<String>) -> String {
     )
 }
 
+pub fn toxic_warning_script(config: &crate::util::config::AppConfig) -> String {
+    include_str!("../../scripts/toxic_warning.js").replace(
+        "TOXIC_THRESHOLD_PLACEHOLDER",
+        &config.toxic_threshold.to_string(),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -140,5 +147,13 @@ mod tests {
         let html = unban_page("example.com", &eq);
         assert!(html.contains("example.com"));
         assert!(html.contains("Evaluate: ∫"));
+    }
+
+    #[test]
+    fn test_toxic_warning_script_generation() {
+        let config = crate::util::config::AppConfig::default();
+        let js = toxic_warning_script(&config);
+        assert!(js.contains("const threshold = 5;"));
+        assert!(js.contains("juanita-toxic-marquee"));
     }
 }

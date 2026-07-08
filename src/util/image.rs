@@ -11,6 +11,11 @@ pub fn get_icon_b64() -> String {
     base64::engine::general_purpose::STANDARD.encode(bytes)
 }
 
+pub fn get_juanita_throwing_papers_b64() -> String {
+    let bytes = include_bytes!("../../assets/juanita_throwing_papers.png");
+    base64::engine::general_purpose::STANDARD.encode(bytes)
+}
+
 pub fn generate_random_noise_bmp_b64() -> String {
     let mut rng = rand::thread_rng();
     let width = 256;
