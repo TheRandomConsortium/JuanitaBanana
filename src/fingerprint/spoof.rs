@@ -102,6 +102,30 @@ pub fn anti_fingerprint_script() -> &'static str {
             });
         };
 
+        // ── Font Enumeration Protection ──────────────────────
+        const _origMeasureText = CanvasRenderingContext2D.prototype.measureText;
+        CanvasRenderingContext2D.prototype.measureText = function(text) {
+            const originalFont = this.font;
+            let forcedFont = 'monospace';
+            if (originalFont.toLowerCase().includes('webdings')) {
+                forcedFont = 'webdings';
+            }
+            let size = '10px';
+            const sizeMatch = originalFont.match(/(\d+(?:\.\d+)?(?:px|em|pt|rem))/i);
+            if (sizeMatch) { size = sizeMatch[1]; }
+            this.font = size + ' ' + forcedFont;
+            const metrics = _origMeasureText.call(this, text);
+            this.font = originalFont;
+            return metrics;
+        };
+
+        if (window.FontFaceSet && FontFaceSet.prototype.check) {
+            FontFaceSet.prototype.check = function(font) {
+                const lower = font.toLowerCase();
+                return lower.includes('webdings') || lower.includes('monospace') || lower.includes('mono') || lower.includes('sans-serif') || lower.includes('serif');
+            };
+        }
+
         console.log('[JuanitaBanana] Anti-fingerprint active 🍌');
     })();
     "#
@@ -365,6 +389,10 @@ mod tests {
         // Battery
         assert!(script.contains("navigator.getBattery = function()"));
         assert!(script.contains("charging: true"));
+
+        // Fonts
+        assert!(script.contains("CanvasRenderingContext2D.prototype.measureText"));
+        assert!(script.contains("FontFaceSet.prototype.check"));
     }
 
     #[test]
