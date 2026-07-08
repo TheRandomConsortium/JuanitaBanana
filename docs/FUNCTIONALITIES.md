@@ -74,7 +74,7 @@
 | **Persistent Ban List** | ✅ Done | Domains saved to `~/.local/share/juanita-banana/banlist.bin` (cryptographically signed). |
 | **Local Static Ban Page** | ✅ Done | Banned domains route to a local HTML error page. |
 | **UI Ban Button** | ✅ Done | GTK HeaderBar button. Bans current domain and loads ban page immediately. |
-| **Toxic Site Warning** | 🔭 Future | Inject an annoying marquee across sites identified as toxic. |
+| **Toxic Site Warning** | ✅ Done | Injects a fixed bottom marquee warning users when a site exceeds the `toxic_threshold` of combined ads and trackers, with a button to ban the domain immediately. *Future improvement: implement smarter heuristics (e.g., distinguishing raw volume vs content ratios like news articles vs ad blocks) instead of a simple flat threshold.* |
 | **Contextual Guilt Trip Overlay** | 🔭 Future | Inject a semi-transparent, non-blocking contextual meme (e.g. Ceiling Cat for NSFW) over the entire page to induce guilt. Configurable. |
 | **Mathematical Unban** | ✅ Done | Requires solving a randomly generated integral challenge in `juanita://unban?domain=...` to unban a site. Fully integrated with `BanList` and Vengeful Mode. |
 
