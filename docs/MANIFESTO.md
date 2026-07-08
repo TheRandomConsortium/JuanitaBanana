@@ -102,6 +102,10 @@ Customer Identity & Access Management (CIAM) services (like `dru-id.com`) act as
 #### Cookie Poisoning
 Tracking cookies (non-functional ones) will be filled with garbage data for the duration of the session. Upon leaving the page (or closing the tab), they are completely wiped. The tracker maintains a cookie that serves absolutely no purpose.
 
+#### Cookie Containers (Planned/Future)
+A container-based cookie segregation model (similar to Firefox Multi-Account Containers) is planned. This will be optional, since Juanita Banana does not attempt to hide, but rather poison and contaminate trackers. In fact, mixing cookies is often *more* toxic, contributing to a more polluted data profile. Additionally, cookie containers will only be implemented if multi-tab support is introduced, as they make no sense under the browser's current single-tab, single-session strategy.
+
+
 #### Beacon API Interception
 `navigator.sendBeacon()` is the preferred mechanism for trackers to send data upon page exit (impossible to cancel with fetch abort). **Strategy:** Override `navigator.sendBeacon` to intercept, modify the outgoing data with noise, and send it.
 

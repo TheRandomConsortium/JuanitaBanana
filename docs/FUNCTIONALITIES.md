@@ -38,6 +38,7 @@
 | **User-Agent Override** | ✅ Done | Honest UA: `JuanitaBanana/0.1 (FOSS; Not-Google; Linux)` via WebKit's network settings. |
 | **User-Agent Spoofing Toggle** | 📋 Planned | A config toggle to switch between honest UA and daily rotation of genuine modern UAs. |
 | **Cookie Poisoning** | 🔭 Future | Fill non-essential tracking cookies with garbage data during session, wipe on exit. |
+| **Cookie Containers** | 🔭 Future | Optional cookie segregation. Mixing cookies is often more toxic/polluting. Only implemented if/when multi-tab support is added (makes no sense with current single-tab, single-session strategy). |
 | **Google Tag Manager Poisoning** | 🔭 Future | Intercept `dataLayer.push()` and inject fake events before downstream dispatch. |
 | **Meta Pixel Contamination** | 🔭 Future | Intercept `fbq` calls, block real payload, send random events (fake purchases) to ruin lookalike audiences. |
 | **Beacon API Interception** | 🔭 Future | Override `navigator.sendBeacon()` to modify outgoing data with noise. |
