@@ -3,7 +3,7 @@ use crate::util::config::AppConfig;
 use crate::util::downloads::DownloadManager;
 use std::cell::RefCell;
 use std::rc::Rc;
-use webkit2gtk::{WebView, WebViewExt};
+use webkit2gtk::{UserContentManagerExt, WebView, WebViewExt};
 
 pub struct PageContext {
     pub webview: WebView,
@@ -23,6 +23,7 @@ pub trait InternalPage {
 
 pub fn get_internal_pages() -> Vec<Box<dyn InternalPage>> {
     vec![
+        Box::new(HomePage),
         Box::new(HistoryPage),
         Box::new(ConfigPage),
         Box::new(ContributePage),
@@ -95,7 +96,38 @@ impl InternalPage for ConfigPage {
             if let Ok(decoded) = urlencoding::decode(data_str) {
                 if let Ok(new_config) = serde_json::from_str::<AppConfig>(&decoded) {
                     new_config.save();
-                    println!("[CONFIG] Configuration saved successfully.");
+                    println!("[CONFIG] Configuration saved successfully. Reloading scripts.");
+
+                    if let Some(ucm) = ctx.webview.user_content_manager() {
+                        ucm.remove_all_scripts();
+
+                        let fp_script = webkit2gtk::UserScript::new(
+                            crate::fingerprint::spoof::anti_fingerprint_script(),
+                            webkit2gtk::UserContentInjectedFrames::AllFrames,
+                            webkit2gtk::UserScriptInjectionTime::Start,
+                            &[],
+                            &[],
+                        );
+                        ucm.add_script(&fp_script);
+
+                        let ad_script = webkit2gtk::UserScript::new(
+                            &crate::search::ad_intoxication::ad_intoxication_script(&new_config),
+                            webkit2gtk::UserContentInjectedFrames::AllFrames,
+                            webkit2gtk::UserScriptInjectionTime::Start,
+                            &[],
+                            &[],
+                        );
+                        ucm.add_script(&ad_script);
+
+                        let toxic_script = webkit2gtk::UserScript::new(
+                            &crate::util::ban::toxic_warning_script(&new_config),
+                            webkit2gtk::UserContentInjectedFrames::TopFrame,
+                            webkit2gtk::UserScriptInjectionTime::Start,
+                            &[],
+                            &[],
+                        );
+                        ucm.add_script(&toxic_script);
+                    }
                 }
             }
             ctx.webview.load_uri("juanita://config?saved=true");
@@ -383,5 +415,47 @@ impl InternalPage for UnbanPage {
         }
 
         false
+    }
+}
+
+// 8. Home Page
+struct HomePage;
+impl InternalPage for HomePage {
+    fn matches_input(&self, input: &str) -> bool {
+        input.starts_with("juanita:home") || input.starts_with("juanita://home")
+    }
+
+    fn handle_input(&self, input: &str, ctx: &PageContext) {
+        ctx.webview.load_uri(input);
+    }
+
+    fn matches_policy(&self, uri: &str) -> bool {
+        uri.starts_with("juanita://home") && !uri.starts_with("juanita://home-page")
+    }
+
+    fn ignore_policy(&self, _uri: &str) -> bool {
+        true
+    }
+
+    fn handle_policy(&self, _uri: &str, ctx: &PageContext) -> bool {
+        let b64_image = crate::util::image::get_juanita_throwing_papers_b64();
+        let html_template = include_str!("../../templates/home.html");
+        let html = html_template.replace("{b64_image}", &b64_image);
+        ctx.webview.load_html(&html, Some("juanita://home-page/"));
+        true
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_home_page_matching() {
+        let page = HomePage;
+        assert!(page.matches_input("juanita:home"));
+        assert!(page.matches_input("juanita://home"));
+        assert!(page.matches_policy("juanita://home"));
+        assert!(!page.matches_policy("juanita://home-page/"));
     }
 }

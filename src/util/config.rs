@@ -31,6 +31,7 @@ pub struct AppConfig {
     pub ad_domains: Vec<String>,
     pub ad_intox_regex: String,
     pub ad_intox_max_depth: usize,
+    pub toxic_threshold: usize,
 }
 
 impl Default for AppConfig {
@@ -101,6 +102,7 @@ impl Default for AppConfig {
                 "flurry.com".to_string(),
                 "petametric.com".to_string(),
             ],
+            toxic_threshold: 5,
         }
     }
 }

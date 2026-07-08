@@ -36,6 +36,7 @@ pub fn config_page_html(config: &AppConfig, is_default: bool) -> String {
     let jitter_max = config.ad_jitter_max_secs;
     let intox_max_depth = config.ad_intox_max_depth;
     let intox_regex = config.ad_intox_regex.replace('"', "&quot;");
+    let toxic_threshold = config.toxic_threshold;
 
     let default_btn = if is_default {
         r#"<button disabled style="background: #444; color: #888; cursor: not-allowed;">Already Default Browser</button>
@@ -194,7 +195,10 @@ pub fn config_page_html(config: &AppConfig, is_default: bool) -> String {
                 <input type="number" id="ad-intox-max-depth" value="{intox_max_depth}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
                 
                 <label style="display: inline-block; width: 250px; margin-top: 10px;">Ad Surgery Regex Pattern:</label>
-                <input type="text" id="ad-intox-regex" value="{intox_regex}" style="width: 350px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;">
+                <input type="text" id="ad-intox-regex" value="{intox_regex}" style="width: 350px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
+
+                <label style="display: inline-block; width: 250px; margin-top: 10px;">Toxic Warning Threshold:</label>
+                <input type="number" id="toxic-threshold" value="{toxic_threshold}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;">
             </div>
 
             <h2>Learned Ad Domains</h2>
@@ -310,6 +314,7 @@ pub fn config_page_html(config: &AppConfig, is_default: bool) -> String {
             configData.ad_jitter_max_secs = parseInt(document.getElementById('ad-jitter-max').value, 10);
             configData.ad_intox_max_depth = parseInt(document.getElementById('ad-intox-max-depth').value, 10);
             configData.ad_intox_regex = document.getElementById('ad-intox-regex').value;
+            configData.toxic_threshold = parseInt(document.getElementById('toxic-threshold').value, 10);
 
             const adRows = document.querySelectorAll('#ad-domains-tbody tr');
             const newAdDomains = [];
@@ -379,7 +384,8 @@ pub fn config_page_html(config: &AppConfig, is_default: bool) -> String {
         ad_domains_html = ad_domains_html,
         json_data = json_data,
         intox_max_depth = intox_max_depth,
-        intox_regex = intox_regex
+        intox_regex = intox_regex,
+        toxic_threshold = toxic_threshold
     )
 }
 
@@ -392,9 +398,11 @@ mod tests {
     fn test_config_page_html() {
         let mut config = AppConfig::default();
         config.max_concurrent_searches = 777;
+        config.toxic_threshold = 999;
 
         let html = config_page_html(&config, false);
         assert!(html.contains("777"));
+        assert!(html.contains("999"));
         assert!(html.contains("Hacker News"));
         assert!(html.contains("DuckDuckGo"));
     }

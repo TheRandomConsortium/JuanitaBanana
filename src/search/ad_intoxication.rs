@@ -316,3 +316,31 @@ impl Clone for AdIntoxicationEngine {
         }
     }
 }
+
+pub fn ad_intoxication_script(config: &AppConfig) -> String {
+    let domains_json =
+        serde_json::to_string(&config.ad_domains).unwrap_or_else(|_| "[]".to_string());
+    let regex_json =
+        serde_json::to_string(&config.ad_intox_regex).unwrap_or_else(|_| "\"\"".to_string());
+    let max_depth = config.ad_intox_max_depth;
+    include_str!("../../scripts/ad_intoxication.js")
+        .replace("AD_DOMAINS_PLACEHOLDER", &domains_json)
+        .replace("AD_REGEX_PLACEHOLDER", &regex_json)
+        .replace("AD_MAX_DEPTH_PLACEHOLDER", &max_depth.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ad_intoxication_script_generation() {
+        let config = AppConfig::default();
+        let js = ad_intoxication_script(&config);
+        assert!(js.contains("doubleclick.net"));
+        assert!(js.contains("googleads.g.doubleclick.net"));
+        assert!(js.contains("sendRightClick"));
+        assert!(js.contains("right_click_target"));
+        assert!(js.contains("observer.disconnect"));
+    }
+}

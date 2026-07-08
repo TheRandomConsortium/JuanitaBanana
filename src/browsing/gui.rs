@@ -93,13 +93,22 @@ pub fn run(banlist: SharedBanList) {
 
         ucm.register_script_message_handler("juanita");
         let ad_script = UserScript::new(
-            &spoof::ad_intoxication_script(&config),
+            &crate::search::ad_intoxication::ad_intoxication_script(&config),
             UserContentInjectedFrames::AllFrames,
             UserScriptInjectionTime::Start,
             &[],
             &[],
         );
         ucm.add_script(&ad_script);
+
+        let toxic_script = UserScript::new(
+            &crate::util::ban::toxic_warning_script(&config),
+            UserContentInjectedFrames::TopFrame,
+            UserScriptInjectionTime::Start,
+            &[],
+            &[],
+        );
+        ucm.add_script(&toxic_script);
 
         let settings = webkit2gtk::Settings::builder()
             .user_agent("JuanitaBanana/0.1 (FOSS; Not-Google; Linux)")
@@ -117,6 +126,8 @@ pub fn run(banlist: SharedBanList) {
         ));
 
         let ad_engine_msg = ad_intox_engine.clone();
+        let banlist_msg = banlist.clone();
+        let webview_msg = webview.clone();
         ucm.connect_script_message_received(
             Some("juanita"),
             move |_manager, js_result: &webkit2gtk::JavascriptResult| {
@@ -140,6 +151,16 @@ pub fn run(banlist: SharedBanList) {
                                 crate::browsing::gui_plugin::LAST_RIGHT_CLICK.with(|rc| {
                                     *rc.borrow_mut() = Some(info);
                                 });
+                            }
+                        } else if msg_val["type"] == "ban_domain" {
+                            if let Some(domain) = msg_val["domain"].as_str() {
+                                let mut bl = banlist_msg.borrow_mut();
+                                bl.ban(domain);
+                                bl.save();
+                                println!("[BAN] Banned domain: {}", domain);
+                                let banned_html =
+                                    crate::util::ban::banned_page(&format!("https://{}", domain));
+                                webview_msg.load_html(&banned_html, Some("juanita://banned/"));
                             }
                         }
                     }
@@ -431,7 +452,7 @@ pub fn run(banlist: SharedBanList) {
             false
         });
 
-        webview.load_uri("https://duckduckgo.com");
+        webview.load_uri("juanita://home");
         window.show_all();
     });
 
