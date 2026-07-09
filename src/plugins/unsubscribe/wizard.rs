@@ -28,7 +28,7 @@ pub fn show_unsubscribe_wizard(
     let wizard = Dialog::with_buttons(
         Some("Aggressive Unsubscribe Wizard 🍌"),
         Some(window),
-        DialogFlags::MODAL | DialogFlags::DESTROY_WITH_PARENT,
+        DialogFlags::DESTROY_WITH_PARENT,
         &[],
     );
     wizard.set_default_size(600, 450);
@@ -100,6 +100,23 @@ pub fn show_unsubscribe_wizard(
 
     let emails_box = GtkBox::new(Orientation::Vertical, 5);
     page3.pack_start(&emails_box, true, true, 0);
+
+    let user_account_box = GtkBox::new(Orientation::Vertical, 5);
+    let lbl_email = Label::new(Some("Your registered email on this domain (optional):"));
+    lbl_email.set_halign(gtk::Align::Start);
+    let entry_user_email = Entry::new();
+    let lbl_username = Label::new(Some(
+        "Your registered username/handle on this domain (optional):",
+    ));
+    lbl_username.set_halign(gtk::Align::Start);
+    let entry_user_username = Entry::new();
+
+    user_account_box.pack_start(&lbl_email, false, false, 0);
+    user_account_box.pack_start(&entry_user_email, false, false, 0);
+    user_account_box.pack_start(&lbl_username, false, false, 0);
+    user_account_box.pack_start(&entry_user_username, false, false, 0);
+    page3.pack_start(&user_account_box, false, false, 10);
+
     notebook.append_page(&page3, None::<&Label>);
 
     // Page 4: Send Notice Preview / Dispatch
@@ -211,6 +228,8 @@ pub fn show_unsubscribe_wizard(
         &combo_ddg,
         &combo_notified,
         &dpo_email_entry,
+        &entry_user_email,
+        &entry_user_username,
         &spinner,
         &emails_box,
         &text_preview,

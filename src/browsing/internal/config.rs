@@ -50,7 +50,7 @@ impl InternalPage for ConfigPage {
 
             if let Some(pass) = get_query_param(uri, "unlock_pass") {
                 // Try to decrypt the database
-                match crate::unsubscribe::db::SecureDbManager::new(&pass) {
+                match crate::unsubscribe::db::SecureDbManager::new_responsive(&pass) {
                     Ok(mut manager) => match manager.open_connection() {
                         Ok(conn) => {
                             let profile = crate::unsubscribe::db::get_user_details(&conn);
@@ -133,7 +133,9 @@ impl InternalPage for ConfigPage {
 
             let mut success = false;
             if !pass.is_empty() {
-                if let Ok(mut manager) = crate::unsubscribe::db::SecureDbManager::new(&pass) {
+                if let Ok(mut manager) =
+                    crate::unsubscribe::db::SecureDbManager::new_responsive(&pass)
+                {
                     if let Ok(conn) = manager.open_connection() {
                         let _ = crate::unsubscribe::db::save_user_details(&conn, &name, &id);
 

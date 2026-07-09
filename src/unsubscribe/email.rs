@@ -6,15 +6,29 @@ pub fn build_gdpr_notice(
     full_name: &str,
     national_id: &str,
     email_associated: &str,
+    username_associated: &str,
     domain: &str,
 ) -> (String, String) {
     // Subject line
     let subject = format!("FORMAL NOTICE OF DATA ERASURE, REVOCATION OF CONSENT AND EXERCISE OF THE RIGHT TO BE FORGOTTEN (GDPR ARTICLE 17) - {}", domain);
 
+    let identity_str = if !email_associated.is_empty() && !username_associated.is_empty() {
+        format!(
+            "email address '{}' and username/handle '{}'",
+            email_associated, username_associated
+        )
+    } else if !email_associated.is_empty() {
+        format!("email address '{}'", email_associated)
+    } else if !username_associated.is_empty() {
+        format!("username/handle '{}'", username_associated)
+    } else {
+        "my registered credentials".to_string()
+    };
+
     // Body template based on docs/GDPR_ARTICLE_17_TEMPLATE.md
     let body = format!(
         "TO: DATA PROTECTION OFFICER (DPO) / DATA PRIVACY DEPARTMENT\n\n\
-        Pursuant to the General Data Protection Regulation (EU) 2016/679 (GDPR), I, {}, holding ID/PASSPORT NUMBER {}, identified on your platform via the email address {}, hereby serve you with this formal notification to terminate any and all data processing agreements, whether explicit, implicit, or derived from your standard \"Terms and Conditions.\"\n\n\
+        Pursuant to the General Data Protection Regulation (EU) 2016/679 (GDPR), I, {}, holding ID/PASSPORT NUMBER {}, identified on your platform via {}, hereby serve you with this formal notification to terminate any and all data processing agreements, whether explicit, implicit, or derived from your standard \"Terms and Conditions.\"\n\n\
         Your current operational model, predicated on cognitive asymmetry and the systematic betrayal of user trust, constitutes a profound breach of the integrity expected of a data controller. Your role inversion—treating the data subject not as a customer, but as a mere asset for extractive modeling—is fundamentally incompatible with my digital sovereignty. Your business model is not an \"experience\"; it is a persistent violation of the autonomy guaranteed under European law.\n\n\
         Consequently, and in strict adherence to Article 17 (Right to Erasure/Right to be Forgotten) and Article 21 (Right to Object) of the GDPR, you are hereby instructed to execute the following actions immediately:\n\n\
         1. PERMANENT ERASURE: You are directed to delete, irreversibly and without delay, all personal data, behavioral patterns, historical session logs, and profile attributes associated with my identity from your internal databases and those of all downstream third-party processors or \"partners\" with whom my data has been shared.\n\n\
@@ -25,7 +39,7 @@ pub fn build_gdpr_notice(
         Regards,\n\n\
         {}\n\n\
         (Exercising my absolute right to digital sovereignty against your extractive models)",
-        full_name, national_id, email_associated, full_name
+        full_name, national_id, identity_str, full_name
     );
 
     (subject, body)
@@ -79,12 +93,18 @@ mod tests {
 
     #[test]
     fn test_build_gdpr_notice() {
-        let (subject, body) =
-            build_gdpr_notice("Juan Perez", "12345678X", "juan@example.com", "spammer.com");
+        let (subject, body) = build_gdpr_notice(
+            "Juan Perez",
+            "12345678X",
+            "juan@example.com",
+            "jperez_handle",
+            "spammer.com",
+        );
         assert!(subject.contains("spammer.com"));
         assert!(body.contains("Juan Perez"));
         assert!(body.contains("12345678X"));
         assert!(body.contains("juan@example.com"));
+        assert!(body.contains("jperez_handle"));
         assert!(body.contains("Article 17"));
     }
 

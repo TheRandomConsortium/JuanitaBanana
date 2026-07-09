@@ -65,6 +65,7 @@ function saveConfig() {
     configData.ad_intox_max_depth = parseInt(document.getElementById('ad-intox-max-depth').value, 10);
     configData.ad_intox_regex = document.getElementById('ad-intox-regex').value;
     configData.toxic_threshold = parseInt(document.getElementById('toxic-threshold').value, 10);
+    configData.deep_crawl_max_pages = parseInt(document.getElementById('deep-crawl-max-pages').value, 10);
 
     const adRows = document.querySelectorAll('#ad-domains-tbody tr');
     const newAdDomains = [];

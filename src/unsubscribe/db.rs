@@ -45,6 +45,43 @@ impl SecureDbManager {
         Self::file_path().exists()
     }
 
+    pub fn new_responsive(password: &str) -> Result<Self, String> {
+        let (tx, rx) = std::sync::mpsc::channel();
+        let pass_str = password.to_string();
+        std::thread::spawn(move || {
+            let res = Self::new(&pass_str);
+            let _ = tx.send(res);
+        });
+
+        let mut result = None;
+        if gtk::is_initialized_main_thread() {
+            loop {
+                match rx.try_recv() {
+                    Ok(res) => {
+                        result = Some(res);
+                        break;
+                    }
+                    Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                        break;
+                    }
+                    Err(std::sync::mpsc::TryRecvError::Empty) => {
+                        while gtk::events_pending() {
+                            gtk::main_iteration();
+                        }
+                        std::thread::sleep(std::time::Duration::from_millis(15));
+                    }
+                }
+            }
+        }
+
+        match result {
+            Some(res) => res,
+            None => rx
+                .recv()
+                .map_err(|e| format!("Channel receive error: {}", e))?,
+        }
+    }
+
     pub fn new(password: &str) -> Result<Self, String> {
         let enc_path = Self::file_path();
         let mut key = [0u8; 32];
@@ -157,13 +194,18 @@ impl SecureDbManager {
             "ALTER TABLE email_config ADD COLUMN pop_pass TEXT NOT NULL DEFAULT ''",
             [],
         );
+        let _ = conn.execute(
+            "ALTER TABLE passwords ADD COLUMN email TEXT NOT NULL DEFAULT ''",
+            [],
+        );
 
         conn.execute(
             "CREATE TABLE IF NOT EXISTS passwords (
                 id INTEGER PRIMARY KEY,
                 domain TEXT NOT NULL,
                 username TEXT NOT NULL,
-                password TEXT NOT NULL
+                password TEXT NOT NULL,
+                email TEXT NOT NULL DEFAULT ''
             )",
             [],
         )
@@ -340,6 +382,49 @@ pub fn save_pop_config(conn: &Connection, config: &PopConfig) -> Result<(), Stri
     }
     Ok(())
 }
+pub fn get_credentials_for_domain(
+    conn: &Connection,
+    domain: &str,
+) -> Option<(String, String, String)> {
+    let mut stmt = conn
+        .prepare("SELECT username, password, email FROM passwords WHERE domain = ?1 OR ?1 LIKE '%' || domain OR domain LIKE '%' || ?1 LIMIT 1")
+        .ok()?;
+    let mut rows = stmt.query([domain]).ok()?;
+    if let Some(row) = rows.next().ok()? {
+        let username: String = row.get(0).ok()?;
+        let password: String = row.get(1).ok()?;
+        let email: String = row.get(2).ok()?;
+        Some((username, password, email))
+    } else {
+        None
+    }
+}
+
+pub fn save_credentials_for_domain(
+    conn: &Connection,
+    domain: &str,
+    username: &str,
+    email: &str,
+) -> Result<(), String> {
+    let mut stmt = conn
+        .prepare("SELECT id FROM passwords WHERE domain = ?1 LIMIT 1")
+        .map_err(|e| e.to_string())?;
+    let exists = stmt.exists([domain]).map_err(|e| e.to_string())?;
+    if exists {
+        conn.execute(
+            "UPDATE passwords SET username = ?2, email = ?3 WHERE domain = ?1",
+            [domain, username, email],
+        )
+        .map_err(|e| format!("Failed to update credentials: {}", e))?;
+    } else {
+        conn.execute(
+            "INSERT INTO passwords (domain, username, password, email) VALUES (?1, ?2, '', ?3)",
+            [domain, username, email],
+        )
+        .map_err(|e| format!("Failed to insert credentials: {}", e))?;
+    }
+    Ok(())
+}
 
 #[cfg(test)]
 mod tests {
@@ -396,6 +481,14 @@ mod tests {
         // Ensure SMTP config wasn't overwritten by POP config save
         let smtp_loaded_again = get_smtp_config(&conn).unwrap();
         assert_eq!(smtp_loaded_again.server, "smtp.example.com");
+
+        // Save & Load Domain Credentials
+        assert!(get_credentials_for_domain(&conn, "google.com").is_none());
+        save_credentials_for_domain(&conn, "google.com", "my_user", "my_email@gmail.com").unwrap();
+        let creds = get_credentials_for_domain(&conn, "google.com").unwrap();
+        assert_eq!(creds.0, "my_user");
+        assert_eq!(creds.1, ""); // password is blank
+        assert_eq!(creds.2, "my_email@gmail.com");
 
         manager.save_and_close(conn).unwrap();
         assert!(manager.enc_path.exists());

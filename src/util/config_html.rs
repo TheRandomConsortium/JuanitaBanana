@@ -56,6 +56,7 @@ pub fn config_page_html(
     let intox_max_depth = config.ad_intox_max_depth.to_string();
     let intox_regex = config.ad_intox_regex.replace('"', "&quot;");
     let toxic_threshold = config.toxic_threshold.to_string();
+    let deep_crawl_max_pages = config.deep_crawl_max_pages.to_string();
 
     let default_btn = if is_default {
         r#"<button disabled style="background: #444; color: #888; cursor: not-allowed;">Already Default Browser</button>
@@ -207,6 +208,7 @@ pub fn config_page_html(
         .replace("{intox_max_depth}", &intox_max_depth)
         .replace("{intox_regex}", &intox_regex)
         .replace("{toxic_threshold}", &toxic_threshold)
+        .replace("{deep_crawl_max_pages}", &deep_crawl_max_pages)
         .replace("{secure_db_html}", &secure_db_html)
 }
 

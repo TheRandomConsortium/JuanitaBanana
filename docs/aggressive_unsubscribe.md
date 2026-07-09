@@ -72,8 +72,11 @@ The wizard is implemented using a GTK `Notebook` containing the following wizard
 
 ## Background Email Crawler (`crawler.rs`)
 *   **Thread Safety:** The crawler spawns a worker thread using `std::thread::spawn` and uses thread-safe GLib channels (`MainContext::channel`) to safely post results back to the GTK main loop without blocking UI rendering.
-*   **Parsing Strategy:** Scans HTML text using regular expressions to harvest e-mails. It filters out common image extension noise (e.g., `.png`, `.svg`) to prevent false positives.
-*   **Heuristic Subpage Crawling:** If emails are not found on the homepage, the crawler follows links containing keywords like `privacy`, `contact`, `legal`, or `terms` up to a depth of 6 pages.
+*   **Dual-Tier Crawling Strategy:**
+    1.  *Quick Crawl:* A shallow search focusing on the homepage and high-probability internal links (e.g. keywords like `privacy`, `contact`, `legal`).
+    2.  *Deep Crawl (Fallback):* If Quick Crawl yields no results, recursively traverses internal links up to a user-configurable maximum page limit (`deep_crawl_max_pages` in `juanita://config`, default: 25).
+*   **Parsing Strategy:** Scans HTML text using regular expressions to harvest e-mails. It filters out common image, media, and archive extension noise (e.g., `.png`, `.jpg`, `.pdf`, `.zip`) to prevent false positives.
+*   **Non-HTML Legal Document Scanning (Roadmap):** Future versions will include support for scanning non-HTML legal texts (such as linked PDFs, plain text `.txt` files, and Word documents). When detected, these files will be fetched, parsed with local text extraction libraries (such as `pdf-extract` or custom plaintext decoders), and searched for hidden contact emails or DPO addresses.
 
 ---
 

@@ -1,5 +1,5 @@
 use gtk::prelude::*;
-use gtk::{ApplicationWindow, Dialog, DialogFlags, Entry, Label, ResponseType};
+use gtk::{ApplicationWindow, Dialog, DialogFlags, Entry, Label, ResponseType, Spinner};
 use std::cell::RefCell;
 use std::rc::Rc;
 use webkit2gtk::{WebView, WebViewExt};
@@ -7,6 +7,45 @@ use webkit2gtk::{WebView, WebViewExt};
 use super::wizard;
 use crate::browsing::gui_plugin::GuiPlugin;
 use crate::unsubscribe::db::{self, SecureDbManager};
+
+fn decrypt_db_with_spinner(
+    parent: &ApplicationWindow,
+    pass: &str,
+) -> Result<SecureDbManager, String> {
+    let dialog = Dialog::with_buttons(
+        Some("Decrypting Database"),
+        Some(parent),
+        DialogFlags::MODAL | DialogFlags::DESTROY_WITH_PARENT,
+        &[],
+    );
+    let content = dialog.content_area();
+    content.set_margin_start(15);
+    content.set_margin_end(15);
+    content.set_margin_top(15);
+    content.set_margin_bottom(15);
+    content.set_spacing(10);
+
+    let label = Label::new(Some("Deriving key using Argon2id...\nPlease wait."));
+    content.pack_start(&label, false, false, 0);
+
+    let spinner = Spinner::new();
+    spinner.start();
+    content.pack_start(&spinner, true, true, 0);
+
+    dialog.show_all();
+
+    while gtk::events_pending() {
+        gtk::main_iteration();
+    }
+
+    let res = SecureDbManager::new_responsive(pass);
+
+    unsafe {
+        dialog.destroy();
+    }
+
+    res
+}
 
 pub struct AggressiveUnsubscribePlugin;
 
@@ -107,7 +146,7 @@ pub fn show_unsubscribe_wizard_flow(window: &ApplicationWindow, webview: &WebVie
             if pass.is_empty() {
                 return;
             }
-            match SecureDbManager::new(&pass) {
+            match decrypt_db_with_spinner(window, &pass) {
                 Ok(mut mgr) => match mgr.open_connection() {
                     Ok(conn) => {
                         db_manager = Some(mgr);
@@ -165,7 +204,7 @@ pub fn show_unsubscribe_wizard_flow(window: &ApplicationWindow, webview: &WebVie
                 unsafe {
                     pass_dialog.destroy();
                 }
-                match SecureDbManager::new(&pass) {
+                match decrypt_db_with_spinner(window, &pass) {
                     Ok(mut mgr) => match mgr.open_connection() {
                         Ok(conn) => {
                             db_manager = Some(mgr);

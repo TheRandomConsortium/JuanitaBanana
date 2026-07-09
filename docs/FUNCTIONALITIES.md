@@ -105,6 +105,7 @@
 | Feature | Status | Notes |
 |---|---|---|
 | **Aggressive Unsubscribe (GDPR Art. 17)** | ✅ Done | Local crawler to extract contact emails, send formal Right to be Forgotten requests, and generate PDF complaints if ignored. |
+| **Non-HTML Legal Document Scanning** | 📋 Planned | Scan linked PDFs, Word documents, and text files for contact/DPO emails using local text extraction libraries. |
 | **Future Auto-reporting Option** | 📋 Planned | Auto-reporting of reincident domains to Supervisory Authorities by parsing inbox confirmation emails via POP/IMAP and auto-submitting complaints. |
 | **POP3 Mail Client & Secure Sandbox (`juanita://mail`)** | 📋 Planned | Fetch incoming email via POP3, display it natively in Juanita with contextual *Add Ban* / *Unsubscribe* banners, and open attachments in an isolated Bubblewrap (`bwrap`) secure sandbox. |
 
