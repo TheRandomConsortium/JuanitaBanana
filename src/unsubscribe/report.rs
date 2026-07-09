@@ -179,11 +179,10 @@ Signed,
         match sign_pdf_cades_in_memory(&pdf_bytes, &cert_blob, &password) {
             Ok(p7m_bytes) => {
                 // Build .p7m path next to where the PDF would have been
-                let stem = cert_name
-                    .trim_end_matches(".p12")
-                    .trim_end_matches(".pfx");
+                let stem = cert_name.trim_end_matches(".p12").trim_end_matches(".pfx");
                 let p7m_name = format!("{}.pdf.p7m", stem);
-                let p7m_path = dest_path.parent()
+                let p7m_path = dest_path
+                    .parent()
                     .unwrap_or_else(|| std::path::Path::new("/tmp"))
                     .join(p7m_name);
                 fs::write(&p7m_path, p7m_bytes)
@@ -217,8 +216,7 @@ fn sign_pdf_cades_in_memory(
     use openssl::stack::Stack;
 
     // Decode PKCS#12 — happens entirely in RAM
-    let p12 = Pkcs12::from_der(cert_blob)
-        .map_err(|e| format!("Invalid PKCS#12 blob: {}", e))?;
+    let p12 = Pkcs12::from_der(cert_blob).map_err(|e| format!("Invalid PKCS#12 blob: {}", e))?;
     let parsed = p12
         .parse2(password)
         .map_err(|e| format!("Wrong certificate password or corrupt cert: {}", e))?;

@@ -1,3 +1,7 @@
+mod certs;
+
+pub use certs::{get_digital_certificate, save_digital_certificate};
+
 use argon2::{Algorithm, Argon2, Params, Version};
 use chacha20poly1305::{aead::Aead, KeyInit, XChaCha20Poly1305};
 use rand::Rng;
@@ -436,9 +440,5 @@ pub fn save_credentials_for_domain(
     Ok(())
 }
 
-pub use crate::unsubscribe::db_certs::{get_digital_certificate, save_digital_certificate};
-
 #[cfg(test)]
-#[path = "db_tests.rs"]
 mod tests;
-

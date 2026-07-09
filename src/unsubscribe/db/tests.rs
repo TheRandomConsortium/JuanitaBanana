@@ -1,16 +1,11 @@
-//! Integration tests for the db + db_certs modules.
-//! Kept here to stay within the 500-line limit of db.rs.
-
 use std::fs;
 use std::path::PathBuf;
 
-use crate::unsubscribe::db::{
-    get_credentials_for_domain, get_pop_config, get_smtp_config, get_user_details,
-    save_credentials_for_domain, save_pop_config, save_smtp_config, save_user_details,
-    PopConfig, SecureDbManager, SmtpConfig,
-};
-use crate::unsubscribe::db_certs::{
-    delete_digital_certificate, get_digital_certificate, save_digital_certificate,
+use super::certs::delete_digital_certificate;
+use super::{
+    get_credentials_for_domain, get_digital_certificate, get_pop_config, get_smtp_config,
+    get_user_details, save_credentials_for_domain, save_digital_certificate, save_pop_config,
+    save_smtp_config, save_user_details, PopConfig, SecureDbManager, SmtpConfig,
 };
 
 #[test]

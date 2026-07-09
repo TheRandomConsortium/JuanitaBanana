@@ -105,7 +105,9 @@
 | Feature | Status | Notes |
 |---|---|---|
 | **Aggressive Unsubscribe (GDPR Art. 17)** | ✅ Done | Local crawler to extract contact emails, send formal Right to be Forgotten requests, and generate PDF complaints if ignored. |
+| **CAdES Digital Signing (eIDAS)** | ✅ Done | GDPR Art. 77 complaints can be digitally signed in-RAM (private key never touches disk) using any eIDAS-qualified PKCS#12 certificate (FNMT, idCAT, Izenpe, Camerfirma, D-Trust, etc.), producing a legally valid `.p7m` envelope (ETSI TS 101 903 / RFC 5652) accepted by all EU national DPAs. Certificate is stored in the same Argon2id + XChaCha20-Poly1305 encrypted vault. |
 | **Non-HTML Legal Document Scanning** | 📋 Planned | Scan linked PDFs, Word documents, and text files for contact/DPO emails using local text extraction libraries. |
+| **DPA Online Form Auto-Submission** | 📋 Planned | Auto-submit the signed `.p7m` complaint directly to the national DPA's online portal by parsing their HTML submission forms and auto-filling pre-populated fields from the generated report. Target authorities: AEPD, Garante, CNIL, BfDI, ICO, DPC, APD/GBA, EDPB. |
 | **Future Auto-reporting Option** | 📋 Planned | Auto-reporting of reincident domains to Supervisory Authorities by parsing inbox confirmation emails via POP/IMAP and auto-submitting complaints. |
 | **POP3 Mail Client & Secure Sandbox (`juanita://mail`)** | 📋 Planned | Fetch incoming email via POP3, display it natively in Juanita with contextual *Add Ban* / *Unsubscribe* banners, and open attachments in an isolated Bubblewrap (`bwrap`) secure sandbox. |
 
