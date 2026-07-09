@@ -190,7 +190,7 @@ impl AdIntoxicationEngine {
                                 const adUrl = `{}`;
                                 let el = null;
                                 try {{
-                                    if (selector) {{
+                                     if (selector) {{
                                         el = document.querySelector(selector);
                                     }}
                                 }} catch(e) {{
@@ -228,7 +228,7 @@ impl AdIntoxicationEngine {
                                 }}
 
                                 el.scrollIntoView({{ behavior: 'smooth', block: 'center' }});
-                                
+
                                 const hoverEvents = ['mouseover', 'mouseenter', 'mousemove'];
                                 hoverEvents.forEach(evt => {{
                                     el.dispatchEvent(new MouseEvent(evt, {{

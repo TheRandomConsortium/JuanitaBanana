@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Juanita Banana - Config</title>
+    <style>
+        body {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+        #sidebar {
+            width: 250px;
+            background: #252526;
+            padding: 20px 0;
+            border-right: 1px solid #333;
+        }
+        #sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #sidebar li {
+            padding: 15px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #333;
+        }
+        #sidebar li:hover, #sidebar li.active {
+            background: #37373d;
+        }
+        #content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #444;
+        }
+        th {
+            background-color: #2d2d30;
+        }
+        h2 {
+            border-bottom: 2px solid #007acc;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 3px;
+            margin-top: 20px;
+        }
+        button:hover {
+            background: #0098ff;
+        }
+        /* The unban section is completely hidden from sidebar */
+        #unban-section { display: none; }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <ul>
+            <li id="li-general" class="active" onclick="showTab('general')">General</li>
+            <li id="li-intoxication" onclick="showTab('intoxication')">Search Intoxication</li>
+            <li id="li-ad-intox" onclick="showTab('ad-intox')">Ad Intoxication</li>
+            <li id="li-rss" onclick="showTab('rss')">RSS Sources</li>
+            <li id="li-secure-db" onclick="showTab('secure-db')">Secure DB & Email</li>
+        </ul>
+    </div>
+    <div id="content">
+        <div id="general" class="tab-content active">
+            <h2>General Settings</h2>
+            <div style="margin-top: 20px;">
+                <p>Make Juanita Banana your default browser to open links from other apps automatically.</p>
+                {default_btn}
+            </div>
+            <div style="margin-top: 30px; padding: 15px; background: #2d2d30; border-radius: 5px;">
+                <h3 style="margin-top: 0;">Unsubscribe Crawler Settings</h3>
+                <label style="display: inline-block; width: 250px;">Deep Crawl Max Pages:</label>
+                <input type="number" id="deep-crawl-max-pages" value="{deep_crawl_max_pages}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;">
+            </div>
+        </div>
+        <div id="intoxication" class="tab-content">
+            <div style="margin-bottom: 30px; padding: 15px; background: #2d2d30; border-radius: 5px;">
+                <h3 style="margin-top: 0; display: inline-block;">Intoxication Rules</h3>
+                <span title="⚠️ WARNING: Modifying these values can affect fingerprinting evasion, memory consumption, and make you wait unnecessarily." style="cursor: help; margin-left: 10px; font-size: 1.2em;">⚠️</span>
+                <div style="margin-top: 10px;">
+                    <label style="display: inline-block; width: 220px;">Max Concurrent Searches:</label>
+                    <input type="number" id="max-concurrent" value="{max_concurrent}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
+                    
+                    <label style="display: inline-block; width: 220px; margin-top: 10px;">Min Camouflage Delay (ms):</label>
+                    <input type="number" id="min-delay" value="{min_delay}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
+                    
+                    <label style="display: inline-block; width: 220px; margin-top: 10px;">Max Camouflage Delay (ms):</label>
+                    <input type="number" id="max-delay" value="{max_delay}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;">
+
+                    <label style="display: inline-block; width: 220px; margin-top: 10px;">Hidden Queries Amount:</label>
+                    <input type="number" id="noise-amount" value="{noise_amount}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;">
+                </div>
+            </div>
+
+            <h2>Search Engine Rules</h2>
+            <p>Define which search queries to intercept and poison.</p>
+            <table>
+                <thead>
+                    <tr><th>Name</th><th>Domain Regex</th><th>Query Params (comma-sep)</th><th>Action</th></tr>
+                </thead>
+                <tbody id="engines-tbody">
+                    {engines_html}
+                </tbody>
+            </table>
+            <div style="margin-top: 15px;">
+                <input type="text" id="new-engine-name" placeholder="Name" style="padding: 5px; width: 100px;">
+                <input type="text" id="new-engine-regex" placeholder="Regex" style="padding: 5px; width: 150px;">
+                <input type="text" id="new-engine-params" placeholder="Params (e.g. q,oq)" style="padding: 5px; width: 150px;">
+                <button onclick="addEngine()" style="margin-top: 0; padding: 6px 15px;">Add</button>
+            </div>
+        </div>
+
+        <div id="ad-intox" class="tab-content">
+            <h2>Ad Intoxication Settings</h2>
+             <div style="margin-bottom: 30px; padding: 15px; background: #2d2d30; border-radius: 5px;">
+                <label style="display: inline-block; width: 250px;">Ad Click Probability (0.0 to 1.0):</label>
+                <input type="number" step="0.01" min="0" max="1" id="ad-click-prob" value="{click_prob}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
+                
+                <label style="display: inline-block; width: 250px; margin-top: 10px;">Min Jitter Delay (seconds):</label>
+                <input type="number" id="ad-jitter-min" value="{jitter_min}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
+                
+                <label style="display: inline-block; width: 250px; margin-top: 10px;">Max Jitter Delay (seconds):</label>
+                <input type="number" id="ad-jitter-max" value="{jitter_max}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
+
+                <label style="display: inline-block; width: 250px; margin-top: 10px;">Max Surgery Depth:</label>
+                <input type="number" id="ad-intox-max-depth" value="{intox_max_depth}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
+                
+                <label style="display: inline-block; width: 250px; margin-top: 10px;">Ad Surgery Regex Pattern:</label>
+                <input type="text" id="ad-intox-regex" value="{intox_regex}" style="width: 350px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
+
+                <label style="display: inline-block; width: 250px; margin-top: 10px;">Toxic Warning Threshold:</label>
+                <input type="number" id="toxic-threshold" value="{toxic_threshold}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;">
+            </div>
+
+            <h2>Learned Ad Domains</h2>
+            <p>Domains checked against resources and link hrefs to detect ad intents.</p>
+            <table>
+                <thead>
+                    <tr><th>Domain</th><th>Action</th></tr>
+                </thead>
+                <tbody id="ad-domains-tbody">
+                    {ad_domains_html}
+                </tbody>
+            </table>
+            <div style="margin-top: 15px;">
+                <input type="text" id="new-ad-domain" placeholder="Domain (e.g. tracking.com)" style="padding: 5px; width: 300px;">
+                <button onclick="addAdDomain()" style="margin-top: 0; padding: 6px 15px;">Add</button>
+            </div>
+        </div>
+
+        <div id="rss" class="tab-content">
+            <h2>Noise Sources (RSS)</h2>
+            <p>RSS feeds used to pull real, trending search queries.</p>
+            <table>
+                <thead>
+                    <tr><th>Name</th><th>URL</th><th>Action</th></tr>
+                </thead>
+                <tbody id="rss-tbody">
+                    {rss_html}
+                </tbody>
+            </table>
+            <div style="margin-top: 15px;">
+                <input type="text" id="new-rss-name" placeholder="Feed Name (e.g. El Pais)" style="padding: 5px;">
+                <input type="text" id="new-rss-url" placeholder="RSS URL" style="padding: 5px; width: 300px;">
+                <button onclick="addRss()" style="margin-top: 0; padding: 6px 15px;">Add</button>
+            </div>
+        </div>
+
+        <div id="secure-db" class="tab-content">
+            <h2>Secure Database & Email Configuration</h2>
+            {secure_db_html}
+        </div>
+
+        <div id="unban" class="tab-content">
+            <h2>Improbable Redemption</h2>
+            <p>Solve the following equation to unban a site: ∫ e^x dx from 0 to ln(3).</p>
+            <input type="text" id="math-answer" placeholder="Answer..." style="padding: 5px;">
+            <button onclick="checkUnban()">Submit</button>
+            <div id="unban-result"></div>
+        </div>
+
+        <button onclick="saveConfig()" style="margin-top: 30px; display: block;">Save Configuration</button>
+    </div>
+
+    <script>
+        {config_js}
+    </script>
+</body>
+</html>
