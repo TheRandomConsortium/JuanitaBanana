@@ -1173,7 +1173,7 @@ dependencies = [
 
 [[package]]
 name = "juanita-banana"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "argon2",
  "base64",
@@ -1184,6 +1184,7 @@ dependencies = [
  "gtk",
  "lazy_static",
  "lettre",
+ "openssl",
  "rand",
  "regex",
  "reqwest",

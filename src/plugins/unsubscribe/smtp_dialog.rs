@@ -1,5 +1,8 @@
 use gtk::prelude::*;
-use gtk::{Dialog, DialogFlags, Entry, Grid, Label, ResponseType};
+use gtk::{
+    Dialog, DialogFlags, Entry, FileChooserAction, FileChooserButton, FileFilter, Grid, Label,
+    ResponseType,
+};
 use rusqlite::Connection;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -76,6 +79,27 @@ pub fn show_smtp_config_dialog<P: IsA<gtk::Window>>(
     p_pass.set_visibility(false);
     grid.attach(&p_pass, 1, 9, 1, 1);
 
+    // --- Certificate Section ---
+    let cert_header = Label::new(Some("Digital Certificate (FNMT / PKCS#12)"));
+    grid.attach(&cert_header, 0, 10, 2, 1);
+
+    grid.attach(&Label::new(Some("Certificate (.p12/.pfx):")), 0, 11, 1, 1);
+    let cert_file_button = FileChooserButton::new("Select Certificate", FileChooserAction::Open);
+    let filter = FileFilter::new();
+    filter.add_pattern("*.p12");
+    filter.add_pattern("*.pfx");
+    cert_file_button.add_filter(filter);
+    grid.attach(&cert_file_button, 1, 11, 1, 1);
+
+    grid.attach(&Label::new(Some("Certificate Password:")), 0, 12, 1, 1);
+    let cert_pass = Entry::new();
+    cert_pass.set_visibility(false);
+    grid.attach(&cert_pass, 1, 12, 1, 1);
+
+    let cert_status = Label::new(Some("Status: No certificate loaded."));
+    cert_status.set_xalign(0.0);
+    grid.attach(&cert_status, 0, 13, 2, 1);
+
     if let Some(cfg) = active_smtp.borrow().as_ref() {
         s_server.set_text(&cfg.server);
         s_port.set_text(&cfg.port.to_string());
@@ -87,6 +111,12 @@ pub fn show_smtp_config_dialog<P: IsA<gtk::Window>>(
         p_port.set_text(&cfg.port.to_string());
         p_user.set_text(&cfg.user);
         p_pass.set_text(&cfg.pass);
+    }
+    if let Some(conn_ref) = shared_conn.borrow().as_ref() {
+        if let Some((name, _, pass)) = db::get_digital_certificate(conn_ref) {
+            cert_status.set_text(&format!("Status: Active certificate: {}", name));
+            cert_pass.set_text(&pass);
+        }
     }
 
     smtp_content.pack_start(&grid, true, true, 0);
@@ -129,6 +159,30 @@ pub fn show_smtp_config_dialog<P: IsA<gtk::Window>>(
                 *active_pop.borrow_mut() = Some(new_cfg.clone());
                 if let Some(conn_ref) = shared_conn.borrow().as_ref() {
                     let _ = db::save_pop_config(conn_ref, &new_cfg);
+                }
+            }
+        }
+
+        // Save Digital Certificate
+        if let Some(path) = cert_file_button.filename() {
+            if let Ok(blob) = std::fs::read(&path) {
+                let name = path
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .to_string();
+                let pass = cert_pass.text().to_string();
+                if let Some(conn_ref) = shared_conn.borrow().as_ref() {
+                    let _ = db::save_digital_certificate(conn_ref, &name, &blob, &pass);
+                }
+            }
+        } else {
+            let pass = cert_pass.text().to_string();
+            if !pass.is_empty() {
+                if let Some(conn_ref) = shared_conn.borrow().as_ref() {
+                    if let Some((name, blob, _)) = db::get_digital_certificate(conn_ref) {
+                        let _ = db::save_digital_certificate(conn_ref, &name, &blob, &pass);
+                    }
                 }
             }
         }

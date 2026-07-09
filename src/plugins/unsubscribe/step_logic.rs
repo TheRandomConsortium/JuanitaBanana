@@ -455,6 +455,7 @@ pub fn handle_next_click(
                     registry_next,
                     user_name_next,
                     user_id_next,
+                    shared_conn_next,
                 );
             }
         }

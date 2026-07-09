@@ -1,3 +1,4 @@
+#![allow(clippy::too_many_arguments)]
 use gtk::prelude::*;
 use gtk::Dialog;
 use std::cell::RefCell;
@@ -15,6 +16,7 @@ pub fn handle_report_generation<P: IsA<gtk::Window>>(
     registry: &Rc<RefCell<UnsubscribeRegistry>>,
     user_name: &str,
     user_id: &str,
+    shared_conn: &Rc<RefCell<Option<rusqlite::Connection>>>,
 ) {
     if recipient.is_empty() || !recipient.contains('@') {
         show_error_dialog(wizard, "Please enter a valid DPO recipient email.");
@@ -28,6 +30,12 @@ pub fn handle_report_generation<P: IsA<gtk::Window>>(
         emails_used = entry.emails_used.clone();
     }
 
+    let digital_cert = if let Some(conn) = shared_conn.borrow().as_ref() {
+        crate::unsubscribe::db::get_digital_certificate(conn)
+    } else {
+        None
+    };
+
     match report::generate_reincidence_report(
         user_name,
         user_id,
@@ -36,6 +44,7 @@ pub fn handle_report_generation<P: IsA<gtk::Window>>(
         &notified_date,
         &emails_used,
         recipient,
+        digital_cert,
     ) {
         Ok(path) => {
             show_info_dialog(

@@ -31,6 +31,7 @@ pub fn show_unsubscribe_wizard(
         DialogFlags::DESTROY_WITH_PARENT,
         &[],
     );
+    wizard.set_type_hint(gtk::gdk::WindowTypeHint::Normal);
     wizard.set_default_size(600, 450);
 
     let content_area = wizard.content_area();
@@ -193,10 +194,17 @@ pub fn show_unsubscribe_wizard(
     button_box.set_halign(gtk::Align::End);
     let btn_back = Button::with_label("Back");
     let btn_next = Button::with_label("Next");
+    let btn_minimize = Button::with_label("Minimize");
     let btn_cancel = Button::with_label("Cancel");
+
+    let wizard_min = wizard.clone();
+    btn_minimize.connect_clicked(move |_| {
+        wizard_min.iconify();
+    });
 
     button_box.pack_start(&btn_back, false, false, 0);
     button_box.pack_start(&btn_next, false, false, 0);
+    button_box.pack_start(&btn_minimize, false, false, 0);
     button_box.pack_start(&btn_cancel, false, false, 0);
     content_area.pack_start(&button_box, false, false, 10);
 

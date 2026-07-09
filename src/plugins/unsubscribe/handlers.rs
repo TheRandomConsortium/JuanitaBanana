@@ -202,6 +202,7 @@ pub fn setup_handlers(
     let user_id_gen = user_id;
     let window_gen = window.clone();
     let wizard_gen = wizard.clone();
+    let shared_conn_gen = shared_conn.clone();
     generate_btn.connect_clicked(move |_| {
         if let Some(domain) = combo_notified_gen.active_text() {
             let domain_str = domain.as_str().to_string();
@@ -214,6 +215,7 @@ pub fn setup_handlers(
                 &registry_gen,
                 &user_name_gen,
                 &user_id_gen,
+                &shared_conn_gen,
             );
         }
     });

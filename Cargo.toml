@@ -1,6 +1,6 @@
 [package]
 name = "juanita-banana"
-version = "1.0.4"
+version = "1.0.5"
 edition = "2021"
 
 # ── Engine Stack ──────────────────────────────────────────────
@@ -30,6 +30,7 @@ argon2 = "0.5"
 chacha20poly1305 = "0.10"
 lettre = { version = "0.11", features = ["smtp-transport"] }
 chrono = "0.4"
+openssl = "0.10"
 
 [profile.release]
 opt-level = 3

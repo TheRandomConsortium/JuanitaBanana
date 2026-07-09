@@ -1,3 +1,4 @@
+#![allow(clippy::too_many_arguments)]
 use std::fs;
 use std::path::PathBuf;
 
@@ -98,6 +99,7 @@ pub fn generate_reincidence_report(
     notified_date: &str,
     emails_used: &[String],
     recipient_email: &str,
+    digital_cert: Option<(String, Vec<u8>, String)>,
 ) -> Result<PathBuf, String> {
     let now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
@@ -157,18 +159,97 @@ Signed,
     // Save to the Downloads folder or user home directory
     let home = std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
     let dest_dir = PathBuf::from(home).join("Descargas");
+    let pdf_name = format!("gdpr-complaint-{}.pdf", domain.replace('.', "-"));
     let dest_path = if dest_dir.exists() {
-        dest_dir.join(format!("gdpr-complaint-{}.pdf", domain.replace('.', "-")))
+        dest_dir.join(&pdf_name)
     } else {
-        PathBuf::from("/tmp").join(format!("gdpr-complaint-{}.pdf", domain.replace('.', "-")))
+        PathBuf::from("/tmp").join(&pdf_name)
     };
 
     let pdf_bytes = generate_pdf_content("FORMAL GDPR ARTICLE 77 COMPLAINT", &report_content);
 
-    fs::write(&dest_path, pdf_bytes)
+    // If a PKCS#12 certificate is available, produce a CAdES .p7m signed envelope.
+    //
+    // All key material is handled entirely in RAM via the openssl Rust crate — the
+    // private key is never serialised to disk (SSDs retain deleted data in flash cells).
+    //
+    // CAdES (CMS Advanced Electronic Signatures, ETSI TS 101 903) is the standard
+    // eIDAS-compliant format accepted by Autofirma and Spanish public administration.
+    if let Some((cert_name, cert_blob, password)) = digital_cert {
+        match sign_pdf_cades_in_memory(&pdf_bytes, &cert_blob, &password) {
+            Ok(p7m_bytes) => {
+                // Build .p7m path next to where the PDF would have been
+                let stem = cert_name
+                    .trim_end_matches(".p12")
+                    .trim_end_matches(".pfx");
+                let p7m_name = format!("{}.pdf.p7m", stem);
+                let p7m_path = dest_path.parent()
+                    .unwrap_or_else(|| std::path::Path::new("/tmp"))
+                    .join(p7m_name);
+                fs::write(&p7m_path, p7m_bytes)
+                    .map_err(|e| format!("Failed to write signed .p7m: {}", e))?;
+                return Ok(p7m_path);
+            }
+            Err(_) => {
+                // Signing failed non-fatally: fall through to writing unsigned PDF
+            }
+        }
+    }
+
+    fs::write(&dest_path, &pdf_bytes)
         .map_err(|e| format!("Failed to write complaint report PDF: {}", e))?;
 
     Ok(dest_path)
+}
+
+/// Signs `pdf_bytes` entirely in RAM using the `openssl` Rust crate.
+///
+/// Parses the PKCS#12 blob, builds a PKCS#7/CMS signed-data structure in-process,
+/// and returns the DER-encoded `.p7m` bytes.  No private key material is ever
+/// written to disk — not even to `/tmp` or `/dev/shm`.
+fn sign_pdf_cades_in_memory(
+    pdf_bytes: &[u8],
+    cert_blob: &[u8],
+    password: &str,
+) -> Result<Vec<u8>, String> {
+    use openssl::pkcs12::Pkcs12;
+    use openssl::pkcs7::{Pkcs7, Pkcs7Flags};
+    use openssl::stack::Stack;
+
+    // Decode PKCS#12 — happens entirely in RAM
+    let p12 = Pkcs12::from_der(cert_blob)
+        .map_err(|e| format!("Invalid PKCS#12 blob: {}", e))?;
+    let parsed = p12
+        .parse2(password)
+        .map_err(|e| format!("Wrong certificate password or corrupt cert: {}", e))?;
+
+    let pkey = parsed
+        .pkey
+        .ok_or_else(|| "No private key found in PKCS#12".to_string())?;
+    let cert = parsed
+        .cert
+        .ok_or_else(|| "No signing certificate found in PKCS#12".to_string())?;
+
+    // Build CA chain stack (also in RAM)
+    let mut chain = Stack::new().map_err(|e| e.to_string())?;
+    if let Some(ca_certs) = parsed.ca {
+        for ca in ca_certs {
+            chain.push(ca).map_err(|e| e.to_string())?;
+        }
+    }
+
+    // PKCS7/CMS sign:
+    //   BINARY  — treat content as raw bytes (required for PDF)
+    //   NOINTERN — don't attempt to include extra certs from the content
+    let flags = Pkcs7Flags::BINARY | Pkcs7Flags::NOINTERN;
+
+    let pkcs7 = Pkcs7::sign(&cert, &pkey, &chain, pdf_bytes, flags)
+        .map_err(|e| format!("CMS signing failed: {}", e))?;
+
+    // Serialise to DER — the standard encoding for .p7m (CAdES)
+    pkcs7
+        .to_der()
+        .map_err(|e| format!("Failed to DER-encode signed envelope: {}", e))
 }
 
 #[cfg(test)]
@@ -185,6 +266,7 @@ mod tests {
             "2026-07-09 12:00:00",
             &["promo@spammer.com".to_string()],
             "dpo@spammer.com",
+            None,
         );
         assert!(res.is_ok());
         let path = res.unwrap();
