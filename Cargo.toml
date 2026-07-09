@@ -1,6 +1,6 @@
 [package]
 name = "juanita-banana"
-version = "0.8.1"
+version = "1.0.6"
 edition = "2021"
 
 # ── Engine Stack ──────────────────────────────────────────────
@@ -25,6 +25,12 @@ bincode = "1.3.3"
 gethostname = "1.1.0"
 sha2 = "0.11.0"
 base64 = "0.22.1"
+rusqlite = { version = "0.31", features = ["bundled"] }
+argon2 = "0.5"
+chacha20poly1305 = "0.10"
+lettre = { version = "0.11", features = ["smtp-transport"] }
+chrono = "0.4"
+openssl = "0.10"
 
 [profile.release]
 opt-level = 3

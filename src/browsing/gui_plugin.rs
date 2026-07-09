@@ -1,4 +1,4 @@
-use crate::search::ad_intoxication::AdIntoxicationEngine;
+use crate::ad_intoxication::AdIntoxicationEngine;
 use gtk::prelude::*;
 use gtk::{ApplicationWindow, ComboBoxText, Dialog, Entry, Label, Scale};
 use std::cell::RefCell;
@@ -151,15 +151,15 @@ impl GuiPlugin for AdIntoxicationPlugin {
                                                 (function() {{
                                                     const uri = "{}";
                                                     const depth = {};
-                                                    
+
                                                     document.querySelectorAll('[data-juanita-temp-hide]').forEach(el => {{
                                                         el.style.display = el.dataset.juanitaOrgDisplay || '';
                                                         delete el.dataset.juanitaTempHide;
                                                         delete el.dataset.juanitaOrgDisplay;
                                                     }});
-                                                    
+
                                                     if (depth === 0) return;
-                                                    
+
                                                     const elements = document.querySelectorAll('iframe, img, a, script');
                                                     elements.forEach(el => {{
                                                         const src = el.getAttribute('src') || '';

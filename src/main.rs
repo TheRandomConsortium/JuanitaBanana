@@ -16,9 +16,12 @@
 // NOTE: Build is fast — dynamically links to system GTK/WebKit.
 // ============================================================
 
+mod ad_intoxication;
 mod browsing;
 mod fingerprint;
+mod plugins;
 mod search;
+mod unsubscribe;
 mod util;
 
 fn main() {

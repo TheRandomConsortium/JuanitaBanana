@@ -185,7 +185,7 @@ pub fn competitors_page_html() -> String {
 <body>
     <h1>Betrayal makes bananas go brown 🍌🍂</h1>
     <p>Choose your new master:</p>
-    
+
     <div class="grid">
         {}
     </div>

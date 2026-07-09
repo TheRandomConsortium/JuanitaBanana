@@ -32,6 +32,7 @@ pub struct AppConfig {
     pub ad_intox_regex: String,
     pub ad_intox_max_depth: usize,
     pub toxic_threshold: usize,
+    pub deep_crawl_max_pages: usize,
 }
 
 impl Default for AppConfig {
@@ -103,6 +104,7 @@ impl Default for AppConfig {
                 "petametric.com".to_string(),
             ],
             toxic_threshold: 5,
+            deep_crawl_max_pages: 25,
         }
     }
 }
