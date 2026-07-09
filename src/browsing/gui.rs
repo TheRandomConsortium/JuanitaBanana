@@ -93,7 +93,7 @@ pub fn run(banlist: SharedBanList) {
 
         ucm.register_script_message_handler("juanita");
         let ad_script = UserScript::new(
-            &crate::search::ad_intoxication::ad_intoxication_script(&config),
+            &crate::ad_intoxication::ad_intoxication_script(&config),
             UserContentInjectedFrames::AllFrames,
             UserScriptInjectionTime::Start,
             &[],
@@ -119,7 +119,7 @@ pub fn run(banlist: SharedBanList) {
             .settings(&settings)
             .build();
 
-        let ad_intox_engine = Rc::new(crate::search::ad_intoxication::AdIntoxicationEngine::new(
+        let ad_intox_engine = Rc::new(crate::ad_intoxication::AdIntoxicationEngine::new(
             &web_context,
             &webview,
             &config,
@@ -138,7 +138,7 @@ pub fn run(banlist: SharedBanList) {
                             let page_url = msg_val["page_url"].as_str().unwrap_or("").to_string();
                             let selector = msg_val["selector"].as_str().unwrap_or("").to_string();
                             let ad_url = msg_val["ad_url"].as_str().unwrap_or("").to_string();
-                            ad_engine_msg.queue_ad(crate::search::ad_intoxication::AdTask {
+                            ad_engine_msg.queue_ad(crate::ad_intoxication::AdTask {
                                 page_url,
                                 selector,
                                 ad_url,
@@ -286,15 +286,19 @@ pub fn run(banlist: SharedBanList) {
 
         // Set up custom actions & context menu plugin
         use crate::browsing::gui_plugin::{AdIntoxicationPlugin, GuiPlugin};
+        use crate::plugins::unsubscribe::AggressiveUnsubscribePlugin;
         let plugin = AdIntoxicationPlugin;
         plugin.setup(&window, &webview, &ad_intox_engine);
+
+        let unsub_plugin = AggressiveUnsubscribePlugin;
+        unsub_plugin.setup(&window, &webview, &ad_intox_engine);
 
         let config = AppConfig::load();
         let noise_provider = Rc::new(RssNoiseProvider::new(&config));
         let intox_engine = IntoxicationEngine::new(&web_context, &webview, &config);
 
         let expected_unban: Rc<RefCell<Option<(String, i32)>>> = Rc::new(RefCell::new(None));
-        let internal_pages = Rc::new(crate::browsing::internal_pages::get_internal_pages());
+        let internal_pages = Rc::new(crate::browsing::internal::get_internal_pages());
 
         let webview_clone = webview.clone();
         let url_entry_clone = url_entry.clone();
@@ -309,7 +313,7 @@ pub fn run(banlist: SharedBanList) {
             let text_str = text.as_str();
             intox_engine_entry.cancel_pending(); // User is initiating a new navigation!
 
-            let ctx = crate::browsing::internal_pages::PageContext {
+            let ctx = crate::browsing::internal::PageContext {
                 webview: webview_clone.clone(),
                 downloads: downloads_activate.clone(),
                 banlist: banlist_activate.clone(),
@@ -389,13 +393,11 @@ pub fn run(banlist: SharedBanList) {
                                     "[AD_INTOX] Intercepted ad navigation in main window to: {}",
                                     uri_str
                                 );
-                                ad_intox_engine_policy.queue_ad(
-                                    crate::search::ad_intoxication::AdTask {
-                                        page_url: uri_str.to_string(),
-                                        selector: "body".to_string(),
-                                        ad_url: uri_str.to_string(),
-                                    },
-                                );
+                                ad_intox_engine_policy.queue_ad(crate::ad_intoxication::AdTask {
+                                    page_url: uri_str.to_string(),
+                                    selector: "body".to_string(),
+                                    ad_url: uri_str.to_string(),
+                                });
                                 use webkit2gtk::PolicyDecisionExt;
                                 decision.ignore();
                                 return true;
@@ -403,7 +405,7 @@ pub fn run(banlist: SharedBanList) {
 
                             intox_engine.cancel_pending();
 
-                            let ctx = crate::browsing::internal_pages::PageContext {
+                            let ctx = crate::browsing::internal::PageContext {
                                 webview: webview_nav.clone(),
                                 downloads: downloads_policy.clone(),
                                 banlist: banlist_policy.clone(),

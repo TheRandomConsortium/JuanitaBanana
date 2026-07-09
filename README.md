@@ -99,8 +99,12 @@ Read the full manifesto → [`docs/MANIFESTO.md`](docs/MANIFESTO.md)
 ### 🤖 AI Slop Detection
 - Detects AI-generated content disclosures → injects warning in the article title
 
+### ⚖️ Weaponized Privacy (GDPR Art. 17)
+- **Aggressive Unsubscribe:** Local background crawler extracts contact emails, dispatches Article 17 erasure requests via SMTP or mailto links, and compiles formal PDF Article 77 DPA complaints if ignored.
+- **Future POP3 Integration & Sandbox (`juanita://mail`):** Fetch incoming email via POP3, display it natively in Juanita with contextual *Add Ban* / *Unsubscribe* banners, and open attachments in an isolated Bubblewrap (`bwrap`) secure sandbox.
+
 ### 🔮 Future Arsenal
-GTM poisoning · Meta Pixel contamination · Cookie garbage fill · Beacon API interception · Tor integration · Password manager · P2P Circle Jerk Swarm · GDPR Aggressive Unsubscribe
+GTM poisoning · Meta Pixel contamination · Cookie garbage fill · Beacon API interception · Tor integration · Password manager · P2P Circle Jerk Swarm
 
 See [`docs/FUNCTIONALITIES.md`](docs/FUNCTIONALITIES.md) for full status.
 

@@ -1,0 +1,200 @@
+use std::fs;
+use std::path::PathBuf;
+
+fn generate_pdf_content(title: &str, text: &str) -> Vec<u8> {
+    let mut stream_content = String::new();
+    stream_content.push_str("BT\n/F1 14 Tf\n50 800 Td\n18 TL\n");
+
+    // Escaping function for PDF strings: escape \, (, )
+    let escape_pdf_str = |s: &str| -> String {
+        s.replace('\\', "\\\\")
+            .replace('(', "\\(")
+            .replace(')', "\\)")
+    };
+
+    // Title line
+    stream_content.push_str(&format!("({}) Tj T*\n", escape_pdf_str(title)));
+    stream_content.push_str("/F1 9 Tf\n0 -20 Td\n12 TL\n"); // adjust position and font size for body
+
+    for line in text.lines() {
+        if line.trim().is_empty() {
+            stream_content.push_str("T*\n");
+        } else {
+            // Split long lines to wrap them to avoid cutoffs
+            let words = line.split_whitespace();
+            let mut current_line = String::new();
+            for word in words {
+                if current_line.len() + word.len() + 1 > 90 {
+                    stream_content
+                        .push_str(&format!("({}) Tj T*\n", escape_pdf_str(&current_line)));
+                    current_line = word.to_string();
+                } else {
+                    if !current_line.is_empty() {
+                        current_line.push(' ');
+                    }
+                    current_line.push_str(word);
+                }
+            }
+            if !current_line.is_empty() {
+                stream_content.push_str(&format!("({}) Tj T*\n", escape_pdf_str(&current_line)));
+            }
+        }
+    }
+    stream_content.push_str("ET");
+
+    let stream_bytes = stream_content.as_bytes();
+    let stream_len = stream_bytes.len();
+
+    let mut pdf = Vec::new();
+    pdf.extend_from_slice(b"%PDF-1.4\n");
+
+    let mut offsets = Vec::new();
+
+    let mut write_obj = |pdf: &mut Vec<u8>, num: usize, content: &[u8]| {
+        offsets.push(pdf.len());
+        pdf.extend_from_slice(format!("{} 0 obj\n", num).as_bytes());
+        pdf.extend_from_slice(content);
+        pdf.extend_from_slice(b"\nendobj\n");
+    };
+
+    write_obj(&mut pdf, 1, b"<< /Type /Catalog /Pages 2 0 R >>");
+    write_obj(&mut pdf, 2, b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
+    write_obj(&mut pdf, 3, b"<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 595.27 841.89] /Contents 5 0 R >>");
+    write_obj(
+        &mut pdf,
+        4,
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    );
+
+    let stream_obj_header = format!("<< /Length {} >>\nstream\n", stream_len);
+    let mut stream_obj_data = Vec::new();
+    stream_obj_data.extend_from_slice(stream_obj_header.as_bytes());
+    stream_obj_data.extend_from_slice(stream_bytes);
+    stream_obj_data.extend_from_slice(b"\nendstream");
+    write_obj(&mut pdf, 5, &stream_obj_data);
+
+    let xref_offset = pdf.len();
+    pdf.extend_from_slice(b"xref\n");
+    pdf.extend_from_slice(format!("0 {}\n", offsets.len() + 1).as_bytes());
+    pdf.extend_from_slice(b"0000000000 65535 f \n");
+    for offset in &offsets {
+        pdf.extend_from_slice(format!("{:010} 00000 n \n", offset).as_bytes());
+    }
+
+    pdf.extend_from_slice(b"trailer\n");
+    pdf.extend_from_slice(format!("<< /Size {} /Root 1 0 R >>\n", offsets.len() + 1).as_bytes());
+    pdf.extend_from_slice(b"startxref\n");
+    pdf.extend_from_slice(format!("{}\n", xref_offset).as_bytes());
+    pdf.extend_from_slice(b"%%EOF\n");
+
+    pdf
+}
+
+pub fn generate_reincidence_report(
+    full_name: &str,
+    national_id: &str,
+    contact_email: &str,
+    domain: &str,
+    notified_date: &str,
+    emails_used: &[String],
+    recipient_email: &str,
+) -> Result<PathBuf, String> {
+    let now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+
+    let report_content = format!(
+"================================================================================
+FORMAL COMPLAINT UNDER ARTICLE 77 OF THE GENERAL DATA PROTECTION REGULATION (GDPR)
+================================================================================
+
+TO: DATA PROTECTION SUPERVISORY AUTHORITY
+
+DATE OF COMPLAINT: {now}
+
+1. COMPLAINANT DETAILS
+-----------------------
+Full Name: {full_name}
+National ID/Passport: {national_id}
+Contact Email Address: {contact_email}
+
+2. DETAILS OF THE RESPONDENT (DATA CONTROLLER)
+-----------------------------------------------
+Domain/Entity: {domain}
+Recipient Email Address: {recipient_email}
+Emails Used for Initial Request: {emails_used}
+
+3. DESCRIPTION OF THE INFRACTION / NON-COMPLIANCE
+--------------------------------------------------
+On {notified_date}, the Complainant formally exercised the Right to Erasure (Article 17) and Right to Object (Article 21) of the GDPR, instructing the Respondent to permanently delete all personal data and cease processing or communications.
+
+Despite the receipt of this request and the expiration of the statutory one-month period specified under Article 12(3) of the GDPR, the Respondent has willfully ignored the request and continues to process the Complainant's personal data and/or send unsolicited communications.
+
+4. REQUESTED ACTIONS
+--------------------
+The Complainant requests that the Supervisory Authority:
+1. Initiate an investigation into the Respondent's data handling practices.
+2. Issue an order compelling the Respondent to execute the erasure request immediately.
+3. Impose administrative fines as set out in Article 83 of the GDPR for flagrant non-compliance.
+
+5. EVIDENCE OF CORRESPONDENCE
+-----------------------------
+- Initial request sent on: {notified_date}
+- Target Recipient: {recipient_email}
+- Spammed account: {contact_email}
+
+Signed,
+{full_name}
+(Exercising absolute digital sovereignty)",
+        now = now,
+        full_name = full_name,
+        national_id = national_id,
+        contact_email = contact_email,
+        domain = domain,
+        recipient_email = recipient_email,
+        emails_used = emails_used.join(", "),
+        notified_date = notified_date
+    );
+
+    // Save to the Downloads folder or user home directory
+    let home = std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
+    let dest_dir = PathBuf::from(home).join("Descargas");
+    let dest_path = if dest_dir.exists() {
+        dest_dir.join(format!("gdpr-complaint-{}.pdf", domain.replace('.', "-")))
+    } else {
+        PathBuf::from("/tmp").join(format!("gdpr-complaint-{}.pdf", domain.replace('.', "-")))
+    };
+
+    let pdf_bytes = generate_pdf_content("FORMAL GDPR ARTICLE 77 COMPLAINT", &report_content);
+
+    fs::write(&dest_path, pdf_bytes)
+        .map_err(|e| format!("Failed to write complaint report PDF: {}", e))?;
+
+    Ok(dest_path)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_generate_reincidence_report() {
+        let res = generate_reincidence_report(
+            "Juan Perez",
+            "12345678X",
+            "juan@example.com",
+            "spammer.com",
+            "2026-07-09 12:00:00",
+            &["promo@spammer.com".to_string()],
+            "dpo@spammer.com",
+        );
+        assert!(res.is_ok());
+        let path = res.unwrap();
+        assert!(path.exists());
+        assert_eq!(path.extension().unwrap(), "pdf");
+
+        let content = fs::read(&path).unwrap();
+        assert!(content.starts_with(b"%PDF-1.4"));
+
+        // clean up test file
+        fs::remove_file(path).ok();
+    }
+}

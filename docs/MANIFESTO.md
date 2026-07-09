@@ -139,6 +139,7 @@ The result: your fake searches are the real searches of other users — maximum 
 
 #### Weaponized Privacy (GDPR Art. 17)
 - **Aggressive Unsubscribe Button** — A local crawler that scans subdomains, legal texts, and footers to extract contact emails. It automatically sends formal legal requests demanding the deletion of all personal data (Right to be Forgotten, GDPR Article 17) and keeps a local registry of unsubscribed services. If a service fails to respond or comply, the tool generates a PDF with a formal complaint ready to be sent to European data protection authorities. Requires a local form with the user's data (EU citizens only).
+- **POP3 Incoming Integration & Sandbox (Planned)** — Utilizes the user's encrypted POP3 incoming credentials to fetch emails directly in a native `juanita://mail` browser page. Contextual banners are injected for quick actions (*Add Ban* / *Unsubscribe*), and attachments are safely opened in an isolated Bubblewrap (`bwrap`) secure sandbox to prevent host-level compromise.
 
 ### ⚠️ The Circle Jerk Protocol integration (Ecosystem upgrade)
 The browser's upcoming architecture features direct integration with the `circlejerk-cli` daemon and the P2P swarm, transforming it into `juanita-circlejerk`.
