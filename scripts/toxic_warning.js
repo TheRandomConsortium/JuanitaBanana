@@ -78,14 +78,26 @@
             }
         `;
         document.head.appendChild(style);
-        marqueeEl.innerHTML = `
-            <div class="marquee-content-wrapper">
-                <div class="marquee-text-container">
-                    <span class="marquee-text" id="juanita-marquee-text"></span>
-                </div>
-                <button class="ban-btn" id="juanita-ban-btn">⚠️ Ban Domain</button>
-            </div>
-        `;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'marquee-content-wrapper';
+
+        const textContainer = document.createElement('div');
+        textContainer.className = 'marquee-text-container';
+        const textSpan = document.createElement('span');
+        textSpan.className = 'marquee-text';
+        textSpan.id = 'juanita-marquee-text';
+        textContainer.appendChild(textSpan);
+
+        const banBtn = document.createElement('button');
+        banBtn.className = 'ban-btn';
+        banBtn.id = 'juanita-ban-btn';
+        banBtn.textContent = '⚠️ Ban Domain';
+
+        wrapper.appendChild(textContainer);
+        wrapper.appendChild(banBtn);
+        marqueeEl.appendChild(wrapper);
+
         document.body.appendChild(marqueeEl);
         document.getElementById('juanita-ban-btn').addEventListener('click', () => {
             if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.juanita) {

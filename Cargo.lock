@@ -1173,7 +1173,7 @@ dependencies = [
 
 [[package]]
 name = "juanita-banana"
-version = "1.0.6"
+version = "1.0.7"
 dependencies = [
  "argon2",
  "base64",
