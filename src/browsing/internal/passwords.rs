@@ -135,6 +135,68 @@ tr:hover td{{background:#1f1f1f}}
 .del-btn{{background:#7f1d1d;color:#fca5a5;border:none;border-radius:6px;
   padding:4px 10px;cursor:pointer;font-size:.8rem}}
 .del-btn:hover{{background:#991b1b}}
+.disclaimer-trigger {{
+  text-align: center;
+  margin-top: 40px;
+  font-size: .8rem;
+  color: #555;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.2s;
+}}
+.disclaimer-trigger:hover {{
+  color: #888;
+}}
+.modal {{
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.85);
+  align-items: center;
+  justify-content: center;
+}}
+.modal.show {{
+  display: flex;
+}}
+.modal-content {{
+  background: #161616;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 520px;
+  width: 90%;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  font-size: .875rem;
+  line-height: 1.5;
+}}
+.modal-content h2 {{
+  font-size: 1.1rem;
+  margin-bottom: 16px;
+  color: #fff;
+}}
+.modal-content p {{
+  margin-bottom: 14px;
+  color: #b0b0b0;
+}}
+.modal-content p strong {{
+  color: #fff;
+}}
+.close-modal {{
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  font-size: 1.5rem;
+  color: #777;
+  cursor: pointer;
+}}
+.close-modal:hover {{
+  color: #fff;
+}}
 </style>
 </head>
 <body>
@@ -156,7 +218,24 @@ tr:hover td{{background:#1f1f1f}}
   </thead>
   <tbody id="cred-body">{rows}</tbody>
 </table>
+
+<div class="disclaimer-trigger" onclick="toggleDisclaimer()">ℹ️ Security & Privacy Philosophy</div>
+
+<div id="disclaimer-modal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal" onclick="toggleDisclaimer()">&times;</span>
+    <h2>Security Philosophy & Privacy Disclaimer</h2>
+    <p><strong>No password generator or rotation prompts:</strong> We will never nag you to rotate passwords or suggest "secure" passwords. Both are annoying security theater. Rotation targets human memory bottlenecks, while auto-generated passwords assume your compromised account on a compromised server hasn't already been drained of value. Passwords are a legacy design flaw. Physical, cryptographically signed hardware keys (not Google's QR surveillance-bait), throwaway identities, refusing to save confidential data on other people's hardware, and reducing your attack surface are the only real defenses.</p>
+    <p><strong>No third-party leak checks:</strong> We do not query "Have I Been Pwned" or any other leak checkers. They do not know everything, and querying them leaks metadata. Most importantly: <em>we do not see your data, we do not check your data, we do not share your data, and we do not care about your data.</em></p>
+  </div>
+</div>
+
 <script>
+function toggleDisclaimer() {{
+  var m = document.getElementById('disclaimer-modal');
+  m.classList.toggle('show');
+}}
+
 function deleteRow(domain){{
   if(!confirm('Delete credentials for '+domain+'?'))return;
   if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.juanita){{
