@@ -468,20 +468,21 @@ pub fn save_full_credentials(
     Ok(())
 }
 
-/// Return all saved credentials as (domain, username, email) — password intentionally excluded
-/// from the listing to avoid keeping it in memory longer than needed for autofill.
-pub fn list_all_credentials(conn: &Connection) -> Vec<(String, String, String)> {
-    let mut stmt =
-        match conn.prepare("SELECT domain, username, email FROM passwords ORDER BY domain") {
-            Ok(s) => s,
-            Err(_) => return vec![],
-        };
+/// Return all saved credentials as (domain, username, password, email)
+pub fn list_all_credentials(conn: &Connection) -> Vec<(String, String, String, String)> {
+    let mut stmt = match conn
+        .prepare("SELECT domain, username, password, email FROM passwords ORDER BY domain")
+    {
+        Ok(s) => s,
+        Err(_) => return vec![],
+    };
     let rows: Vec<_> = stmt
         .query_map([], |row| {
             Ok((
                 row.get::<_, String>(0).unwrap_or_default(),
                 row.get::<_, String>(1).unwrap_or_default(),
                 row.get::<_, String>(2).unwrap_or_default(),
+                row.get::<_, String>(3).unwrap_or_default(),
             ))
         })
         .map(|mapped| mapped.flatten().collect())

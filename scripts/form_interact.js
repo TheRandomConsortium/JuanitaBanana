@@ -2,6 +2,7 @@
   'use strict';
   if(window.__juanita_form_interact)return;
   window.__juanita_form_interact=true;
+  if(window.location.protocol==='juanita:')return;
 
   function onFocus(e){
     var el = e.target;

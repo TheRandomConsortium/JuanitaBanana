@@ -10,6 +10,7 @@ use webkit2gtk::{
 };
 
 use crate::browsing::browser::SharedBanList;
+use crate::debug_log;
 use crate::fingerprint::spoof;
 use crate::search::intoxication::IntoxicationEngine;
 use crate::search::noise::RssNoiseProvider;
@@ -27,10 +28,10 @@ pub fn run(banlist: SharedBanList) {
     let pending_open = pending_urls.clone();
 
     app.connect_open(move |app, files, _hint| {
-        println!("[DEBUG GUI] connect_open: processing {} files", files.len());
+        debug_log!(raw: GUI, "connect_open: processing {} files", files.len());
         for file in files {
             let uri = file.uri();
-            println!("[DEBUG GUI] connect_open file URI: {}", uri);
+            debug_log!(raw: GUI, "connect_open file URI: {}", uri);
             pending_open.borrow_mut().push((uri.to_string(), true));
         }
         app.activate();
@@ -45,9 +46,11 @@ pub fn run(banlist: SharedBanList) {
 
     gtk::glib::spawn_future_local(async move {
         while let Ok((url, is_external)) = rx.recv().await {
-            println!(
-                "[DEBUG GUI] rx channel received URL: {}, is_external = {}",
-                url, is_external
+            debug_log!(
+                GUI,
+                "rx channel received URL: {}, is_external = {}",
+                url,
+                is_external
             );
             if let Some(wv) = gw_rx.borrow().as_ref() {
                 if is_external {
@@ -70,13 +73,10 @@ pub fn run(banlist: SharedBanList) {
                         continue;
                     }
                 }
-                println!("[DEBUG GUI] webview loading URL: {}", url);
+                debug_log!(GUI, "webview loading URL: {}", url);
                 wv.load_uri(&url);
             } else {
-                println!(
-                    "[DEBUG GUI] webview not yet ready, pushing to pending: {}",
-                    url
-                );
+                debug_log!(GUI, "webview not yet ready, pushing to pending: {}", url);
                 pending_rx.borrow_mut().push((url, is_external));
             }
         }
@@ -173,14 +173,11 @@ pub fn run(banlist: SharedBanList) {
         *gw_activate.borrow_mut() = Some(webview.clone());
 
         let has_pending = !pending_activate.borrow().is_empty();
-        println!(
-            "[DEBUG GUI] connect_activate: has_pending = {}",
-            has_pending
-        );
+        debug_log!(raw: GUI, "connect_activate: has_pending = {}", has_pending);
         {
             let mut pending = pending_activate.borrow_mut();
             for (url, is_external) in pending.drain(..) {
-                println!("[DEBUG GUI] draining pending URL: {}", url);
+                debug_log!(GUI, "draining pending URL: {}", url);
                 let _ = tx_activate.send_blocking((url, is_external));
             }
         }
@@ -459,7 +456,7 @@ pub fn run(banlist: SharedBanList) {
         });
 
         if !has_pending {
-            println!("[DEBUG GUI] No pending activation, loading home page");
+            debug_log!(raw: GUI, "No pending activation, loading home page");
             webview.load_uri("juanita://home");
         }
         window.show_all();

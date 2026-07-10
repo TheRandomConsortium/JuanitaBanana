@@ -1,69 +1,87 @@
 use crate::browsing::internal::{InternalPage, PageContext};
+use lazy_static::lazy_static;
+use rand::Rng;
+use std::collections::HashMap;
+use std::sync::Mutex;
 use webkit2gtk::WebViewExt;
 
 pub struct PasswordsPage;
 
-const LOCKED_HTML: &str = r#"<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Passwords — Juanita Banana</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#0d0d0d;color:#e0e0e0;font-family:system-ui,-apple-system,sans-serif;
-  display:flex;align-items:center;justify-content:center;height:100vh}
-.card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;
-  padding:40px 48px;max-width:380px;width:100%;text-align:center}
-.icon{font-size:3rem;margin-bottom:16px}
-h1{font-size:1.3rem;font-weight:700;margin-bottom:8px}
-p{font-size:.875rem;color:#888;margin-bottom:24px}
-input{width:100%;background:#111;border:1px solid #333;border-radius:8px;
-  padding:10px 14px;color:#e0e0e0;font-size:.9rem;outline:none;margin-bottom:12px}
-input:focus{border-color:#3b82f6}
-button{width:100%;background:#3b82f6;color:#fff;border:none;border-radius:8px;
-  padding:10px;font-size:.9rem;font-weight:700;cursor:pointer}
-button:hover{background:#2563eb}
-</style>
-</head>
-<body>
-<div class="card">
-  <div class="icon">🔐</div>
-  <h1>Password Vault</h1>
-  <p>Enter your master password to view saved credentials.</p>
-  <form method="get" action="juanita://passwords">
-    <input type="password" name="unlock_pass" placeholder="Master password" autofocus>
-    <button type="submit">Unlock</button>
-  </form>
-</div>
-</body>
-</html>"#;
+const LOCKED_HTML: &str = include_str!("../../../templates/passwords_locked.html");
+
+// ── In-memory session store ─────────────────────────────────────────────────
+// Maps opaque random token → master password.  The token travels in URLs;
+// the master password never appears in a URL, log, or browser history.
+lazy_static! {
+    static ref SESSION: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
+}
+
+fn new_session(master_pass: &str) -> String {
+    let token: String = rand::thread_rng()
+        .sample_iter(&rand::distributions::Alphanumeric)
+        .take(32)
+        .map(char::from)
+        .collect();
+    if let Ok(mut map) = SESSION.lock() {
+        // Only one active session at a time
+        map.clear();
+        map.insert(token.clone(), master_pass.to_string());
+    }
+    token
+}
+
+fn resolve_session(token: &str) -> Option<String> {
+    SESSION.lock().ok().and_then(|map| map.get(token).cloned())
+}
+
+pub fn clear_session() {
+    if let Ok(mut map) = SESSION.lock() {
+        map.clear();
+    }
+}
+
+// ── HTML helpers ────────────────────────────────────────────────────────────
 
 fn vault_html(
-    creds: &[(String, String, String)],
-    unlock_pass: &str,
+    creds: &[(String, String, String, String)],
+    session_token: &str,
     error: Option<&str>,
 ) -> String {
     let rows: String = if creds.is_empty() {
-        "<tr><td colspan='4' style='text-align:center;color:#555;padding:24px'>No saved credentials yet.</td></tr>".to_string()
+        "<tr><td colspan='5' style='text-align:center;color:#555;padding:24px'>No saved credentials yet.</td></tr>".to_string()
     } else {
         creds
             .iter()
             .enumerate()
-            .map(|(i, (domain, user, email))| {
+            .map(|(i, (domain, user, password, email))| {
                 let domain_esc = html_escape(domain);
                 let user_esc = html_escape(user);
                 let email_esc = html_escape(email);
+                let password_esc = html_escape(password);
                 format!(
                     "<tr id='row-{i}'>\
                   <td>{domain_esc}</td>\
                   <td>{user_esc}</td>\
                   <td>{email_esc}</td>\
-                  <td><button class='del-btn' onclick='deleteRow(\"{domain_esc}\")'>✕</button></td>\
+                  <td>\
+                    <div style='display:flex; align-items:center; gap:8px;'>\
+                      <input type='password' id='pass-field-{i}' value='{password_esc}' readonly \
+                             style='background:transparent; border:none; color:#e0e0e0; font-family:monospace; width:120px; outline:none;'>\
+                      <button class='eye-btn' onclick='togglePass({i})' style='background:transparent; border:none; cursor:pointer; color:#888; font-size:1.1rem; padding:0 4px;'>👁️</button>\
+                    </div>\
+                  </td>\
+                  <td>\
+                    <div style='display:flex; gap:6px;'>\
+                      <button class='edit-btn' data-domain='{domain_esc}' data-user='{user_esc}' data-email='{email_esc}' data-pass='{password_esc}' onclick='editRow(this)'>✏️</button>\
+                      <button class='del-btn' onclick='deleteRow(\"{domain_esc}\")'>✕</button>\
+                    </div>\
+                  </td>\
                 </tr>",
                     i = i,
                     domain_esc = domain_esc,
                     user_esc = user_esc,
-                    email_esc = email_esc
+                    email_esc = email_esc,
+                    password_esc = password_esc
                 )
             })
             .collect()
@@ -74,190 +92,10 @@ fn vault_html(
         None => String::new(),
     };
 
-    let unlock_pass_esc = html_escape(unlock_pass);
-
-    format!(
-        r#"<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Passwords — Juanita Banana</title>
-<style>
-*{{box-sizing:border-box;margin:0;padding:0}}
-body{{background:#0d0d0d;color:#e0e0e0;font-family:system-ui,-apple-system,sans-serif;padding:32px}}
-h1{{font-size:1.4rem;font-weight:700;margin-bottom:24px;display:flex;align-items:center;gap:10px}}
-.error{{background:#450a0a;border:1px solid #7f1d1d;border-radius:8px;
-  padding:10px 16px;margin-bottom:16px;font-size:.85rem;color:#fca5a5}}
-.add-form {{
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 24px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-}}
-.add-form input {{
-  background: #111;
-  border: 1px solid #333;
-  border-radius: 6px;
-  padding: 8px 12px;
-  color: #e0e0e0;
-  font-size: .85rem;
-  outline: none;
-  flex: 1;
-  min-width: 150px;
-}}
-.add-form input:focus {{
-  border-color: #3b82f6;
-}}
-.add-form button {{
-  background: #3b82f6;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-size: .85rem;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-}}
-.add-form button:hover {{
-  background: #2563eb;
-}}
-table{{width:100%;border-collapse:collapse;background:#1a1a1a;border-radius:10px;overflow:hidden}}
-th{{background:#222;padding:10px 16px;text-align:left;font-size:.8rem;
-  color:#888;text-transform:uppercase;letter-spacing:.05em}}
-td{{padding:10px 16px;border-top:1px solid #222;font-size:.875rem}}
-tr:hover td{{background:#1f1f1f}}
-.del-btn{{background:#7f1d1d;color:#fca5a5;border:none;border-radius:6px;
-  padding:4px 10px;cursor:pointer;font-size:.8rem}}
-.del-btn:hover{{background:#991b1b}}
-.disclaimer-trigger {{
-  text-align: center;
-  margin-top: 40px;
-  font-size: .8rem;
-  color: #555;
-  cursor: pointer;
-  text-decoration: underline;
-  transition: color 0.2s;
-}}
-.disclaimer-trigger:hover {{
-  color: #888;
-}}
-.modal {{
-  display: none;
-  position: fixed;
-  z-index: 1000;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0,0,0,0.85);
-  align-items: center;
-  justify-content: center;
-}}
-.modal.show {{
-  display: flex;
-}}
-.modal-content {{
-  background: #161616;
-  border: 1px solid #333;
-  border-radius: 12px;
-  padding: 32px;
-  max-width: 520px;
-  width: 90%;
-  position: relative;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  font-size: .875rem;
-  line-height: 1.5;
-}}
-.modal-content h2 {{
-  font-size: 1.1rem;
-  margin-bottom: 16px;
-  color: #fff;
-}}
-.modal-content p {{
-  margin-bottom: 14px;
-  color: #b0b0b0;
-}}
-.modal-content p strong {{
-  color: #fff;
-}}
-.close-modal {{
-  position: absolute;
-  top: 16px;
-  right: 20px;
-  font-size: 1.5rem;
-  color: #777;
-  cursor: pointer;
-}}
-.close-modal:hover {{
-  color: #fff;
-}}
-</style>
-</head>
-<body>
-<h1>🔐 Password Vault</h1>
-{error_html}
-
-<form method="get" action="juanita://passwords" class="add-form">
-  <input type="hidden" name="unlock_pass" value="{unlock_pass_esc}">
-  <input type="text" name="add_domain" placeholder="Domain (e.g. github.com)" required>
-  <input type="text" name="add_username" placeholder="Username" required>
-  <input type="text" name="add_email" placeholder="Email (optional)">
-  <input type="password" name="add_password" placeholder="Password" required>
-  <button type="submit">Add Credential</button>
-</form>
-
-<table>
-  <thead>
-    <tr><th>Domain</th><th>Username</th><th>Email</th><th></th></tr>
-  </thead>
-  <tbody id="cred-body">{rows}</tbody>
-</table>
-
-<div class="disclaimer-trigger" onclick="toggleDisclaimer()">ℹ️ Security & Privacy Philosophy</div>
-
-<div id="disclaimer-modal" class="modal">
-  <div class="modal-content">
-    <span class="close-modal" onclick="toggleDisclaimer()">&times;</span>
-    <h2>Security Philosophy & Privacy Disclaimer</h2>
-    <p><strong>No password generator or rotation prompts:</strong> We will never nag you to rotate passwords or suggest "secure" passwords. Both are security theater. Pseudo-complex rules (enforcing uppercase, lowercase, numbers, and symbols) target human memory bottlenecks rather than machine computation, forcing users to write them down or save them in central vaults that represent a single point of failure. A GPU cracking cluster does not care if your password looks clunky—it only cares about length and raw entropy (out-of-vocabulary combinations). Furthermore, automatic rotations assume your compromised account on a compromised server hasn't already been drained of value. Passwords are a legacy design flaw. Physical, cryptographically signed hardware keys (not Google's QR surveillance-bait), throwaway identities, refusing to save confidential data on other people's hardware, and reducing your attack surface are the only real defenses.</p>
-    <p><strong>No third-party leak checks:</strong> We do not query "Have I Been Pwned" or any other leak checkers. They do not know everything, and querying them leaks metadata. Most importantly: <em>we do not see your data, we do not check your data, we do not share your data, and we do not care about your data.</em></p>
-  </div>
-</div>
-
-<script>
-function toggleDisclaimer() {{
-  var m = document.getElementById('disclaimer-modal');
-  m.classList.toggle('show');
-}}
-
-function deleteRow(domain){{
-  if(!confirm('Delete credentials for '+domain+'?'))return;
-  if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.juanita){{
-    window.webkit.messageHandlers.juanita.postMessage(JSON.stringify({{
-      type:'delete_credential',domain:domain
-    }}));
-  }}
-  // Remove row optimistically
-  var rows=document.querySelectorAll('#cred-body tr');
-  for(var i=0;i<rows.length;i++){{
-    if(rows[i].cells[0]&&rows[i].cells[0].textContent===domain){{
-      rows[i].remove();break;
-    }}
-  }}
-}}
-</script>
-</body>
-</html>"#,
-        rows = rows,
-        error_html = error_html,
-        unlock_pass_esc = unlock_pass_esc
-    )
+    include_str!("../../../templates/passwords_vault.html")
+        .replace("{rows}", &rows)
+        .replace("{error_html}", &error_html)
+        .replace("{unlock_pass_esc}", session_token)
 }
 
 fn html_escape(s: &str) -> String {
@@ -301,51 +139,24 @@ impl InternalPage for PasswordsPage {
         let uri_clone = uri.to_string();
         let webview_clone = ctx.webview.clone();
 
-        match parse_query(&uri_clone, "unlock_pass") {
-            None => {
+        // ── Determine what kind of request this is ───────────────────────────
+        let maybe_token = parse_query(&uri_clone, "session");
+        let maybe_unlock = parse_query(&uri_clone, "unlock_pass");
+
+        match (maybe_unlock, maybe_token) {
+            // ── No credentials at all → show lock screen ─────────────────────
+            (None, None) => {
+                clear_session();
                 let wv = webview_clone.clone();
                 gtk::glib::idle_add_local(move || {
                     wv.load_html(LOCKED_HTML, Some("juanita://passwords-page"));
                     gtk::glib::ControlFlow::Break
                 });
             }
-            Some(pass) => {
-                let unlocking_html = r#"<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>Unlocking Vault...</title>
-<style>
-  body {
-    background: #0d0d0d;
-    color: #e0e0e0;
-    font-family: system-ui, sans-serif;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    margin: 0;
-  }
-  .container { text-align: center; }
-  .spinner {
-    border: 4px solid rgba(255,255,255,0.1);
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border-left-color: #3b82f6;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 16px;
-  }
-  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-</style>
-</head>
-<body>
-  <div class="container">
-    <div class="spinner"></div>
-    <div>Decrypting vault. Please wait...</div>
-  </div>
-</body>
-</html>"#;
+
+            // ── Fresh unlock attempt: validate master password ────────────────
+            (Some(raw_pass), _) => {
+                let unlocking_html = include_str!("../../../templates/passwords_unlocking.html");
                 let wv_unlocking = webview_clone.clone();
                 gtk::glib::idle_add_local(move || {
                     wv_unlocking.load_html(unlocking_html, Some("juanita://passwords-unlocking"));
@@ -373,49 +184,156 @@ impl InternalPage for PasswordsPage {
                 });
 
                 std::thread::spawn(move || {
-                    if let (Some(domain), Some(username), Some(password)) = (
-                        parse_query(&uri_clone, "add_domain"),
-                        parse_query(&uri_clone, "add_username"),
-                        parse_query(&uri_clone, "add_password"),
-                    ) {
-                        let email = parse_query(&uri_clone, "add_email").unwrap_or_default();
-                        if let Ok(mut mgr) = crate::unsubscribe::db::SecureDbManager::new(&pass) {
-                            if let Ok(conn) = mgr.open_connection() {
-                                let _ = crate::unsubscribe::db::save_full_credentials(
-                                    &conn, &domain, &username, &password, &email,
-                                );
-                                let _ = mgr.save_and_close(conn);
-                                let mut idx = crate::util::credentials::CredentialIndex::load();
-                                idx.register(&domain);
-                            }
-                        }
-                        let clean_uri = format!(
-                            "juanita://passwords?unlock_pass={}",
-                            urlencoding::encode(&pass)
-                        );
-                        let _ = tx.send_blocking(PasswordResult::Redirect(clean_uri));
-                        return;
-                    }
-
-                    let html = match crate::unsubscribe::db::SecureDbManager::new(&pass) {
+                    // Try to open the DB – this validates the master password
+                    match crate::unsubscribe::db::SecureDbManager::new(&raw_pass) {
                         Ok(mut mgr) => match mgr.open_connection() {
                             Ok(conn) => {
-                                let creds = crate::unsubscribe::db::list_all_credentials(&conn);
-                                let _ = mgr.save_and_close(conn);
-                                vault_html(&creds, &pass, None)
+                                // Handle add/update form submission
+                                if let (Some(domain), Some(username), Some(password)) = (
+                                    parse_query(&uri_clone, "add_domain"),
+                                    parse_query(&uri_clone, "add_username"),
+                                    parse_query(&uri_clone, "add_password"),
+                                ) {
+                                    let email =
+                                        parse_query(&uri_clone, "add_email").unwrap_or_default();
+                                    let _ = crate::unsubscribe::db::save_full_credentials(
+                                        &conn, &domain, &username, &password, &email,
+                                    );
+                                    let _ = mgr.save_and_close(conn);
+                                    let mut idx = crate::util::credentials::CredentialIndex::load();
+                                    idx.register(&domain);
+                                } else {
+                                    let _ = mgr.save_and_close(conn);
+                                }
+
+                                // Issue a session token – password leaves the URL here
+                                let token = new_session(&raw_pass);
+                                let redirect = format!(
+                                    "juanita://passwords?session={}",
+                                    urlencoding::encode(&token)
+                                );
+                                let _ = tx.send_blocking(PasswordResult::Redirect(redirect));
                             }
-                            Err(e) => vault_html(&[], &pass, Some(&format!("DB error: {}", e))),
+                            Err(e) => {
+                                let html = vault_html(&[], "", Some(&format!("DB error: {}", e)));
+                                let _ = tx.send_blocking(PasswordResult::Html(html));
+                            }
                         },
                         Err(_) => {
-                            format!(
+                            // Wrong master password
+                            let locked = format!(
                                 "{}<script>document.querySelector('p').textContent='Wrong master password. Try again.';</script>",
                                 LOCKED_HTML
-                            )
+                            );
+                            let _ = tx.send_blocking(PasswordResult::Html(locked));
                         }
-                    };
-
-                    let _ = tx.send_blocking(PasswordResult::Html(html));
+                    }
                 });
+            }
+
+            // ── Returning visit with a valid session token ────────────────────
+            (None, Some(token)) => {
+                match resolve_session(&token) {
+                    None => {
+                        // Session expired / invalid – back to lock screen
+                        let wv = webview_clone.clone();
+                        gtk::glib::idle_add_local(move || {
+                            wv.load_html(LOCKED_HTML, Some("juanita://passwords-page"));
+                            gtk::glib::ControlFlow::Break
+                        });
+                    }
+                    Some(master_pass) => {
+                        let unlocking_html =
+                            include_str!("../../../templates/passwords_unlocking.html");
+                        let wv_unlocking = webview_clone.clone();
+                        gtk::glib::idle_add_local(move || {
+                            wv_unlocking
+                                .load_html(unlocking_html, Some("juanita://passwords-unlocking"));
+                            gtk::glib::ControlFlow::Break
+                        });
+
+                        enum PasswordResult {
+                            Redirect(String),
+                            Html(String),
+                        }
+
+                        let (tx, rx) = async_channel::unbounded::<PasswordResult>();
+                        let wv = webview_clone.clone();
+                        gtk::glib::spawn_future_local(async move {
+                            while let Ok(res) = rx.recv().await {
+                                match res {
+                                    PasswordResult::Redirect(uri) => {
+                                        wv.load_uri(&uri);
+                                    }
+                                    PasswordResult::Html(html) => {
+                                        wv.load_html(&html, Some("juanita://passwords-page"));
+                                    }
+                                }
+                            }
+                        });
+
+                        let token_clone = token.clone();
+                        std::thread::spawn(move || {
+                            // Handle add/update form submission via session
+                            if let (Some(domain), Some(username), Some(password)) = (
+                                parse_query(&uri_clone, "add_domain"),
+                                parse_query(&uri_clone, "add_username"),
+                                parse_query(&uri_clone, "add_password"),
+                            ) {
+                                let email =
+                                    parse_query(&uri_clone, "add_email").unwrap_or_default();
+                                if let Ok(mut mgr) =
+                                    crate::unsubscribe::db::SecureDbManager::new(&master_pass)
+                                {
+                                    if let Ok(conn) = mgr.open_connection() {
+                                        let _ = crate::unsubscribe::db::save_full_credentials(
+                                            &conn, &domain, &username, &password, &email,
+                                        );
+                                        let _ = mgr.save_and_close(conn);
+                                        let mut idx =
+                                            crate::util::credentials::CredentialIndex::load();
+                                        idx.register(&domain);
+                                    }
+                                }
+                                let redirect = format!(
+                                    "juanita://passwords?session={}",
+                                    urlencoding::encode(&token_clone)
+                                );
+                                let _ = tx.send_blocking(PasswordResult::Redirect(redirect));
+                                return;
+                            }
+
+                            // Load and render vault
+                            let html = match crate::unsubscribe::db::SecureDbManager::new(
+                                &master_pass,
+                            ) {
+                                Ok(mut mgr) => match mgr.open_connection() {
+                                    Ok(conn) => {
+                                        let creds =
+                                            crate::unsubscribe::db::list_all_credentials(&conn);
+                                        let _ = mgr.save_and_close(conn);
+                                        vault_html(&creds, &token_clone, None)
+                                    }
+                                    Err(e) => vault_html(
+                                        &[],
+                                        &token_clone,
+                                        Some(&format!("DB error: {}", e)),
+                                    ),
+                                },
+                                Err(_) => {
+                                    // Session token exists but password no longer works –
+                                    // wipe session and go back to lock screen
+                                    clear_session();
+                                    format!(
+                                        "{}<script>document.querySelector('p').textContent='Session expired. Please unlock again.';</script>",
+                                        LOCKED_HTML
+                                    )
+                                }
+                            };
+                            let _ = tx.send_blocking(PasswordResult::Html(html));
+                        });
+                    }
+                }
             }
         }
         true

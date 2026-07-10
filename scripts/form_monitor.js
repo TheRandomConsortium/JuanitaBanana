@@ -2,6 +2,7 @@
   'use strict';
   if(window.__juanita_form_monitor)return;
   window.__juanita_form_monitor=true;
+  if(window.location.protocol==='juanita:')return;
 
   function capture(form){
     var passEl=form.querySelector('input[type=password]');
