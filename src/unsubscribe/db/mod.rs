@@ -440,5 +440,61 @@ pub fn save_credentials_for_domain(
     Ok(())
 }
 
+/// Save a full browser credential (username + password + email) captured from a login form.
+pub fn save_full_credentials(
+    conn: &Connection,
+    domain: &str,
+    username: &str,
+    password: &str,
+    email: &str,
+) -> Result<(), String> {
+    let mut stmt = conn
+        .prepare("SELECT id FROM passwords WHERE domain = ?1 LIMIT 1")
+        .map_err(|e| e.to_string())?;
+    let exists = stmt.exists([domain]).map_err(|e| e.to_string())?;
+    if exists {
+        conn.execute(
+            "UPDATE passwords SET username = ?2, password = ?3, email = ?4 WHERE domain = ?1",
+            rusqlite::params![domain, username, password, email],
+        )
+        .map_err(|e| format!("Failed to update full credentials: {}", e))?;
+    } else {
+        conn.execute(
+            "INSERT INTO passwords (domain, username, password, email) VALUES (?1, ?2, ?3, ?4)",
+            rusqlite::params![domain, username, password, email],
+        )
+        .map_err(|e| format!("Failed to insert full credentials: {}", e))?;
+    }
+    Ok(())
+}
+
+/// Return all saved credentials as (domain, username, email) — password intentionally excluded
+/// from the listing to avoid keeping it in memory longer than needed for autofill.
+pub fn list_all_credentials(conn: &Connection) -> Vec<(String, String, String)> {
+    let mut stmt =
+        match conn.prepare("SELECT domain, username, email FROM passwords ORDER BY domain") {
+            Ok(s) => s,
+            Err(_) => return vec![],
+        };
+    let rows: Vec<_> = stmt
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0).unwrap_or_default(),
+                row.get::<_, String>(1).unwrap_or_default(),
+                row.get::<_, String>(2).unwrap_or_default(),
+            ))
+        })
+        .map(|mapped| mapped.flatten().collect())
+        .unwrap_or_default();
+    rows
+}
+
+/// Delete all stored credentials for a domain.
+pub fn delete_credentials_for_domain(conn: &Connection, domain: &str) -> Result<(), String> {
+    conn.execute("DELETE FROM passwords WHERE domain = ?1", [domain])
+        .map_err(|e| format!("Failed to delete credentials: {}", e))?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests;

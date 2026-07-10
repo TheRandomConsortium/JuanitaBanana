@@ -381,6 +381,9 @@ pub fn handle_next_click(
                     &user_username_val,
                     &user_email_val,
                 );
+                // Update the plain index so the browser can hint without decrypting the vault
+                let mut idx = crate::util::credentials::CredentialIndex::load();
+                idx.register(&domain);
             }
 
             let (subject, body) = email::build_gdpr_notice(

@@ -110,6 +110,15 @@ pub fn run(banlist: SharedBanList) {
         );
         ucm.add_script(&toxic_script);
 
+        let form_mon_script = UserScript::new(
+            crate::browsing::credentials_ui::form_monitor_script(),
+            UserContentInjectedFrames::TopFrame,
+            UserScriptInjectionTime::End,
+            &[],
+            &[],
+        );
+        ucm.add_script(&form_mon_script);
+
         let settings = webkit2gtk::Settings::builder()
             .user_agent("JuanitaBanana/0.1 (FOSS; Not-Google; Linux)")
             .build();
@@ -128,6 +137,9 @@ pub fn run(banlist: SharedBanList) {
         let ad_engine_msg = ad_intox_engine.clone();
         let banlist_msg = banlist.clone();
         let webview_msg = webview.clone();
+        // Window isn't built yet; we resolve it lazily via this shared cell.
+        let global_window: Rc<RefCell<Option<ApplicationWindow>>> = Rc::new(RefCell::new(None));
+        let window_msg = global_window.clone();
         ucm.connect_script_message_received(
             Some("juanita"),
             move |_manager, js_result: &webkit2gtk::JavascriptResult| {
@@ -161,6 +173,64 @@ pub fn run(banlist: SharedBanList) {
                                 let banned_html =
                                     crate::util::ban::banned_page(&format!("https://{}", domain));
                                 webview_msg.load_html(&banned_html, Some("juanita://banned/"));
+                            }
+                        } else if msg_val["type"] == "save_local_html" {
+                            if let (Some(uri), Some(content)) = (
+                                msg_val["uri"].as_str(),
+                                msg_val["content"].as_str(),
+                            ) {
+                                let path = uri.strip_prefix("file://").unwrap_or(uri);
+                                match std::fs::write(path, content) {
+                                    Ok(_) => println!("[HTML_VIEWER] Saved: {}", path),
+                                    Err(e) => println!("[HTML_VIEWER] Save error: {}", e),
+                                }
+                            }
+                        } else if msg_val["type"] == "credential_capture" {
+                            if let (Some(domain), Some(username), Some(password)) = (
+                                msg_val["domain"].as_str(),
+                                msg_val["username"].as_str(),
+                                msg_val["password"].as_str(),
+                            ) {
+                                let idx = crate::util::credentials::CredentialIndex::load();
+                                if !idx.has_credentials(domain) {
+                                    if let Some(ref win) = *window_msg.borrow() {
+                                        crate::browsing::credentials_ui::handle_save_suggest(
+                                            win, domain, username, password,
+                                        );
+                                    }
+                                }
+                            }
+                        } else if msg_val["type"] == "delete_credential" {
+                            if let Some(domain) = msg_val["domain"].as_str() {
+                                if let Some(ref win) = *window_msg.borrow() {
+                                    let title = format!("❌ Delete Credentials — {}", domain);
+                                    let body = format!(
+                                        "Enter your master password to confirm deleting saved credentials for {}.",
+                                        domain
+                                    );
+                                    if let Some(pass) = crate::browsing::credentials_ui::ask_master_password(win, &title, &body) {
+                                        match crate::unsubscribe::db::SecureDbManager::new_responsive(&pass) {
+                                            Ok(mut mgr) => match mgr.open_connection() {
+                                                Ok(conn) => {
+                                                    let deleted = crate::unsubscribe::db::delete_credentials_for_domain(&conn, domain);
+                                                    let _ = mgr.save_and_close(conn);
+                                                    match deleted {
+                                                        Ok(_) => {
+                                                            let mut idx = crate::util::credentials::CredentialIndex::load();
+                                                            idx.remove(domain);
+                                                            println!("[CREDS] Deleted credentials for: {}", domain);
+                                                        }
+                                                        Err(e) => {
+                                                            println!("[CREDS] Failed to delete: {}", e);
+                                                        }
+                                                    }
+                                                }
+                                                Err(e) => println!("[CREDS] DB open error: {}", e),
+                                            },
+                                            Err(_) => println!("[CREDS] Wrong master password."),
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -265,6 +335,9 @@ pub fn run(banlist: SharedBanList) {
             .default_height(800)
             .build();
 
+        // Resolve the deferred window reference used by the JS message handler
+        *global_window.borrow_mut() = Some(window.clone());
+
         let header = HeaderBar::new();
         header.set_show_close_button(true);
         window.set_titlebar(Some(&header));
@@ -351,13 +424,22 @@ pub fn run(banlist: SharedBanList) {
 
         let banlist_nav = banlist.clone();
         let url_entry_nav = url_entry_clone.clone();
+        let window_autofill = window.clone();
+        let webview_autofill = webview.clone();
         webview.connect_load_changed(move |wv, load_event| {
-            if load_event == webkit2gtk::LoadEvent::Started
-                || load_event == webkit2gtk::LoadEvent::Committed
-            {
-                if let Some(uri) = wv.uri() {
-                    url_entry_nav.set_text(uri.as_str());
+            match load_event {
+                webkit2gtk::LoadEvent::Started | webkit2gtk::LoadEvent::Committed => {
+                    if let Some(uri) = wv.uri() {
+                        url_entry_nav.set_text(uri.as_str());
+                    }
                 }
+                webkit2gtk::LoadEvent::Finished => {
+                    crate::browsing::credentials_ui::try_autofill(
+                        &webview_autofill,
+                        &window_autofill,
+                    );
+                }
+                _ => {}
             }
         });
 
