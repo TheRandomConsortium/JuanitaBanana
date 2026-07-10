@@ -11,7 +11,8 @@ fn is_local_html(uri: &str) -> bool {
 
 fn read_file_from_uri(uri: &str) -> Option<String> {
     let path = uri.strip_prefix("file://")?;
-    std::fs::read_to_string(path).ok()
+    let decoded = urlencoding::decode(path).ok()?;
+    std::fs::read_to_string(decoded.as_ref()).ok()
 }
 
 fn viewer_page(uri: &str, source: &str) -> String {
@@ -165,18 +166,26 @@ impl InternalPage for LocalHtmlPage {
         if default == "render" {
             ctx.webview.load_uri(input);
         } else {
+            let uri_clone = input.to_string();
+            let webview_clone = ctx.webview.clone();
             match read_file_from_uri(input) {
                 Some(src) => {
-                    let html = viewer_page(input, &src);
-                    ctx.webview.load_html(&html, Some(input));
+                    gtk::glib::idle_add_local(move || {
+                        let html = viewer_page(&uri_clone, &src);
+                        webview_clone.load_html(&html, Some("juanita://local-html-viewer/"));
+                        gtk::glib::ControlFlow::Break
+                    });
                 }
                 None => {
-                    let err = format!(
-                        "<html><body style='font-family:monospace;background:#0d0d0d;color:#f87171;padding:2em'>\
-                        <h2>Cannot read file</h2><p>{}</p></body></html>",
-                        input
-                    );
-                    ctx.webview.load_html(&err, Some("juanita://error"));
+                    gtk::glib::idle_add_local(move || {
+                        let err = format!(
+                            "<html><body style='font-family:monospace;background:#0d0d0d;color:#f87171;padding:2em'>\
+                            <h2>Cannot read file</h2><p>{}</p></body></html>",
+                            uri_clone
+                        );
+                        webview_clone.load_html(&err, Some("juanita://error"));
+                        gtk::glib::ControlFlow::Break
+                    });
                 }
             }
         }
@@ -187,27 +196,42 @@ impl InternalPage for LocalHtmlPage {
     }
 
     fn ignore_policy(&self, _uri: &str) -> bool {
-        // We ignore the navigation and handle it ourselves
-        true
+        let config = crate::util::config::AppConfig::load();
+        config.local_html_default.as_str() != "render"
     }
 
     fn handle_policy(&self, uri: &str, ctx: &PageContext) -> bool {
+        println!("[DEBUG LOCAL_HTML] handle_policy: uri = {}", uri);
         let default = ctx.config.local_html_default.as_str();
+        println!("[DEBUG LOCAL_HTML] local_html_default mode = {}", default);
         if default == "render" {
             return false; // Let WebKit render it normally
         }
+        let uri_clone = uri.to_string();
+        let webview_clone = ctx.webview.clone();
         match read_file_from_uri(uri) {
             Some(src) => {
-                let html = viewer_page(uri, &src);
-                ctx.webview.load_html(&html, Some(uri));
+                println!(
+                    "[DEBUG LOCAL_HTML] read file successfully, len = {}",
+                    src.len()
+                );
+                gtk::glib::idle_add_local(move || {
+                    let html = viewer_page(&uri_clone, &src);
+                    webview_clone.load_html(&html, Some("juanita://local-html-viewer/"));
+                    gtk::glib::ControlFlow::Break
+                });
             }
             None => {
-                let err = format!(
-                    "<html><body style='font-family:monospace;background:#0d0d0d;color:#f87171;padding:2em'>\
-                    <h2>Cannot read file</h2><p>{}</p></body></html>",
-                    uri
-                );
-                ctx.webview.load_html(&err, Some("juanita://error"));
+                println!("[DEBUG LOCAL_HTML] failed to read file from URI: {}", uri);
+                gtk::glib::idle_add_local(move || {
+                    let err = format!(
+                        "<html><body style='font-family:monospace;background:#0d0d0d;color:#f87171;padding:2em'>\
+                        <h2>Cannot read file</h2><p>{}</p></body></html>",
+                        uri_clone
+                    );
+                    webview_clone.load_html(&err, Some("juanita://error"));
+                    gtk::glib::ControlFlow::Break
+                });
             }
         }
         true

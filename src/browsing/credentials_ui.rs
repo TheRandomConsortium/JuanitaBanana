@@ -6,6 +6,7 @@ use gtk::{
     ApplicationWindow, Box as GtkBox, Button, ButtonsType, Entry, Label, MessageDialog,
     MessageType, Orientation, ResponseType,
 };
+use javascriptcore::ValueExt;
 use webkit2gtk::{WebView, WebViewExt};
 
 // ─── Master Password Dialog ──────────────────────────────────────────────────
@@ -47,8 +48,9 @@ pub fn ask_master_password(parent: &ApplicationWindow, title: &str, body: &str) 
 
 // ─── Autofill ────────────────────────────────────────────────────────────────
 
-/// Called on `LoadEvent::Finished`. If the credential index has an entry for
-/// the current domain, asks for the master password and injects credentials.
+/// Called when the user clicks the Key button in the header bar.
+/// Prompts for the master password and immediately displays the copy-fill dialog
+/// to prevent detection/erasure by pages.
 pub fn try_autofill(webview: &WebView, window: &ApplicationWindow) {
     let uri = match webview.uri() {
         Some(u) => u.to_string(),
@@ -67,9 +69,9 @@ pub fn try_autofill(webview: &WebView, window: &ApplicationWindow) {
         return;
     }
 
-    let title = format!("🔑 Autofill — {}", domain);
+    let title = format!("🔑 Copy-Fill — {}", domain);
     let body = format!(
-        "Saved credentials found for {}.\nEnter your master password to fill the login form.",
+        "Saved credentials found for {}.\nEnter your master password to view and copy credentials.",
         domain
     );
     let pass = match ask_master_password(window, &title, &body) {
@@ -77,21 +79,30 @@ pub fn try_autofill(webview: &WebView, window: &ApplicationWindow) {
         None => return,
     };
 
-    let creds = decrypt_and_get(&domain, &pass);
-    if let Some((username, password, email)) = creds {
-        let fill_value = if !email.is_empty() {
-            email
-        } else {
-            username.clone()
-        };
-        inject_autofill(webview, window, &fill_value, &username, &password);
-    } else {
-        show_error(window, "Autofill failed. Wrong master password?");
-    }
+    let (tx, rx) = async_channel::unbounded::<Option<(String, String, String)>>();
+    let win_clone = window.clone();
+    gtk::glib::spawn_future_local(async move {
+        while let Ok(creds) = rx.recv().await {
+            if let Some((username, password, _email)) = creds {
+                show_copy_fill_dialog(&win_clone, &username, &password);
+            } else {
+                show_error(
+                    &win_clone,
+                    "Failed to decrypt credentials. Wrong master password?",
+                );
+            }
+        }
+    });
+
+    let domain_clone = domain.to_string();
+    std::thread::spawn(move || {
+        let creds = decrypt_and_get(&domain_clone, &pass);
+        let _ = tx.send_blocking(creds);
+    });
 }
 
 fn decrypt_and_get(domain: &str, master_pass: &str) -> Option<(String, String, String)> {
-    let mut mgr = crate::unsubscribe::db::SecureDbManager::new_responsive(master_pass).ok()?;
+    let mut mgr = crate::unsubscribe::db::SecureDbManager::new(master_pass).ok()?;
     let conn = mgr.open_connection().ok()?;
     let result = crate::unsubscribe::db::get_credentials_for_domain(&conn, domain);
     mgr.save_and_close(conn).ok()?;
@@ -107,33 +118,9 @@ fn inject_autofill(
 ) {
     let u = username_or_email.replace('\\', "\\\\").replace('\'', "\\'");
     let p = password.replace('\\', "\\\\").replace('\'', "\\'");
-    let js = format!(
-        r#"(function(){{
-  var filled=0;
-  var uCandidates=document.querySelectorAll(
-    'input[type=email],input[autocomplete=email],input[autocomplete=username],'
-    +'input[type=text][name*=email i],input[type=text][name*=user i],'
-    +'input[type=text][name*=login i],input[type=text][id*=email i],'
-    +'input[type=text][id*=user i],input[type=text][id*=login i]'
-  );
-  if(uCandidates.length>0){{
-    uCandidates[0].value='{u}';
-    uCandidates[0].dispatchEvent(new Event('input',{{bubbles:true}}));
-    uCandidates[0].dispatchEvent(new Event('change',{{bubbles:true}}));
-    filled++;
-  }}
-  var pCandidates=document.querySelectorAll('input[type=password]');
-  if(pCandidates.length>0){{
-    pCandidates[0].value='{p}';
-    pCandidates[0].dispatchEvent(new Event('input',{{bubbles:true}}));
-    pCandidates[0].dispatchEvent(new Event('change',{{bubbles:true}}));
-    filled++;
-  }}
-  return filled;
-}})();"#,
-        u = u,
-        p = p
-    );
+    let js = include_str!("../../scripts/autofill_injection.js")
+        .replace("USERNAME_PLACEHOLDER", &u)
+        .replace("PASSWORD_PLACEHOLDER", &p);
 
     let window_clone = window.clone();
     let u_copy = username_raw.to_string();
@@ -314,32 +301,98 @@ fn show_error(parent: &ApplicationWindow, msg: &str) {
 /// JavaScript injected into every page to detect login form submissions
 /// and suggest saving credentials.
 pub fn form_monitor_script() -> &'static str {
-    r#"(function(){
-  'use strict';
-  if(window.__juanita_form_monitor)return;
-  window.__juanita_form_monitor=true;
+    include_str!("../../scripts/form_monitor.js")
+}
 
-  function capture(form){
-    var passEl=form.querySelector('input[type=password]');
-    if(!passEl||!passEl.value)return;
-    var uEl=form.querySelector(
-      'input[type=email],input[autocomplete=email],input[autocomplete=username],'
-      +'input[type=text][name*=email i],input[type=text][name*=user i],'
-      +'input[type=text][name*=login i],input[type=text][id*=email i],'
-      +'input[type=text][id*=user i],input[type=text][id*=login i]'
+/// JavaScript injected to detect when the user interacts (clicks or focuses)
+/// with a login form input, triggering interactive autofill.
+pub fn form_interact_script() -> &'static str {
+    include_str!("../../scripts/form_interact.js")
+}
+
+/// Called when the user interacts with a login form on the page.
+/// Checks if the master password has already been prompted during this page load.
+/// If not, prompts the user and asynchronously decrypts and injects the credentials.
+pub fn handle_form_interact(webview: &WebView, window: &ApplicationWindow) {
+    let wv = webview.clone();
+    let win = window.clone();
+    webview.evaluate_javascript(
+        "window.__juanita_autofill_prompted",
+        None,
+        None,
+        gtk::gio::Cancellable::NONE,
+        move |result| {
+            let already_prompted = result.ok()
+                .map(|v| v.to_boolean())
+                .unwrap_or(false);
+            if already_prompted {
+                return;
+            }
+
+            // Set the prompted flag immediately to avoid race conditions/multiple popups
+            wv.evaluate_javascript(
+                "window.__juanita_autofill_prompted = true;",
+                None,
+                None,
+                gtk::gio::Cancellable::NONE,
+                |_| {}
+            );
+
+            let uri = match wv.uri() {
+                Some(u) => u.to_string(),
+                None => return,
+            };
+            let domain = crate::browsing::browser::extract_domain(&uri);
+            if domain.is_empty() {
+                return;
+            }
+
+            let idx = crate::util::credentials::CredentialIndex::load();
+            if !idx.has_credentials(&domain) {
+                return;
+            }
+
+            let title = format!("🔑 Autofill — {}", domain);
+            let body = format!(
+                "Saved credentials found for {}.\nEnter your master password to fill the login form.",
+                domain
+            );
+            let pass = match ask_master_password(&win, &title, &body) {
+                Some(p) => p,
+                None => return, // If they cancel, prompted flag is already true, so they won't be asked again
+            };
+
+            let (tx, rx) = async_channel::unbounded::<Option<(String, String, String)>>();
+            let wv_clone = wv.clone();
+            let win_clone = win.clone();
+            gtk::glib::spawn_future_local(async move {
+                while let Ok(creds) = rx.recv().await {
+                    if let Some((username, password, email)) = creds {
+                        let fill_value = if !email.is_empty() {
+                            email
+                        } else {
+                            username.clone()
+                        };
+                        inject_autofill(&wv_clone, &win_clone, &fill_value, &username, &password);
+                    } else {
+                        // If wrong password, allow retry by resetting the prompted flag
+                        wv_clone.evaluate_javascript(
+                            "window.__juanita_autofill_prompted = false;",
+                            None,
+                            None,
+                            gtk::gio::Cancellable::NONE,
+                            |_| {}
+                        );
+                        show_error(&win_clone, "Autofill failed. Wrong master password?");
+                    }
+                }
+            });
+
+            let domain_clone = domain.to_string();
+            std::thread::spawn(move || {
+                let creds = decrypt_and_get(&domain_clone, &pass);
+                let _ = tx.send_blocking(creds);
+            });
+        }
     );
-    var username=uEl?uEl.value:'';
-    if(!username&&!passEl.value)return;
-    if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.juanita){
-      window.webkit.messageHandlers.juanita.postMessage(JSON.stringify({
-        type:'credential_capture',
-        domain:window.location.hostname,
-        username:username,
-        password:passEl.value
-      }));
-    }
-  }
-
-  document.addEventListener('submit',function(e){capture(e.target);},true);
-})();"#
 }

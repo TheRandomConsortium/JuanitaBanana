@@ -282,7 +282,7 @@ fn parse_query(uri: &str, key: &str) -> Option<String> {
 
 impl InternalPage for PasswordsPage {
     fn matches_input(&self, input: &str) -> bool {
-        input == "juanita://passwords" || input.starts_with("juanita://passwords?")
+        input.starts_with("juanita://passwords") && !input.starts_with("juanita://passwords-")
     }
 
     fn handle_input(&self, input: &str, ctx: &PageContext) {
@@ -290,7 +290,7 @@ impl InternalPage for PasswordsPage {
     }
 
     fn matches_policy(&self, uri: &str) -> bool {
-        uri == "juanita://passwords" || uri.starts_with("juanita://passwords?")
+        uri.starts_with("juanita://passwords") && !uri.starts_with("juanita://passwords-")
     }
 
     fn ignore_policy(&self, _uri: &str) -> bool {
@@ -298,63 +298,124 @@ impl InternalPage for PasswordsPage {
     }
 
     fn handle_policy(&self, uri: &str, ctx: &PageContext) -> bool {
-        match parse_query(uri, "unlock_pass") {
+        let uri_clone = uri.to_string();
+        let webview_clone = ctx.webview.clone();
+
+        match parse_query(&uri_clone, "unlock_pass") {
             None => {
-                ctx.webview
-                    .load_html(LOCKED_HTML, Some("juanita://passwords"));
+                let wv = webview_clone.clone();
+                gtk::glib::idle_add_local(move || {
+                    wv.load_html(LOCKED_HTML, Some("juanita://passwords-page"));
+                    gtk::glib::ControlFlow::Break
+                });
             }
             Some(pass) => {
-                // If add request is present, handle it first!
-                if let (Some(domain), Some(username), Some(password)) = (
-                    parse_query(uri, "add_domain"),
-                    parse_query(uri, "add_username"),
-                    parse_query(uri, "add_password"),
-                ) {
-                    let email = parse_query(uri, "add_email").unwrap_or_default();
-                    if let Ok(mut mgr) =
-                        crate::unsubscribe::db::SecureDbManager::new_responsive(&pass)
-                    {
-                        if let Ok(conn) = mgr.open_connection() {
-                            let _ = crate::unsubscribe::db::save_full_credentials(
-                                &conn, &domain, &username, &password, &email,
-                            );
-                            let _ = mgr.save_and_close(conn);
-                            let mut idx = crate::util::credentials::CredentialIndex::load();
-                            idx.register(&domain);
-                        }
-                    }
-                    // Redirect back to clean unlocked view (no add params) to prevent refresh-re-submit
-                    let clean_uri = format!(
-                        "juanita://passwords?unlock_pass={}",
-                        urlencoding::encode(&pass)
-                    );
-                    ctx.webview.load_uri(&clean_uri);
-                    return true;
+                let unlocking_html = r#"<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Unlocking Vault...</title>
+<style>
+  body {
+    background: #0d0d0d;
+    color: #e0e0e0;
+    font-family: system-ui, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+  }
+  .container { text-align: center; }
+  .spinner {
+    border: 4px solid rgba(255,255,255,0.1);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border-left-color: #3b82f6;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="spinner"></div>
+    <div>Decrypting vault. Please wait...</div>
+  </div>
+</body>
+</html>"#;
+                let wv_unlocking = webview_clone.clone();
+                gtk::glib::idle_add_local(move || {
+                    wv_unlocking.load_html(unlocking_html, Some("juanita://passwords-unlocking"));
+                    gtk::glib::ControlFlow::Break
+                });
+
+                enum PasswordResult {
+                    Redirect(String),
+                    Html(String),
                 }
 
-                match crate::unsubscribe::db::SecureDbManager::new_responsive(&pass) {
-                    Ok(mut mgr) => match mgr.open_connection() {
-                        Ok(conn) => {
-                            let creds = crate::unsubscribe::db::list_all_credentials(&conn);
-                            let _ = mgr.save_and_close(conn);
-                            let html = vault_html(&creds, &pass, None);
-                            ctx.webview.load_html(&html, Some("juanita://passwords"));
+                let (tx, rx) = async_channel::unbounded::<PasswordResult>();
+                let wv = webview_clone.clone();
+                gtk::glib::spawn_future_local(async move {
+                    while let Ok(res) = rx.recv().await {
+                        match res {
+                            PasswordResult::Redirect(uri) => {
+                                wv.load_uri(&uri);
+                            }
+                            PasswordResult::Html(html) => {
+                                wv.load_html(&html, Some("juanita://passwords-page"));
+                            }
                         }
-                        Err(e) => {
-                            let html = vault_html(&[], &pass, Some(&format!("DB error: {}", e)));
-                            ctx.webview.load_html(&html, Some("juanita://passwords"));
+                    }
+                });
+
+                std::thread::spawn(move || {
+                    if let (Some(domain), Some(username), Some(password)) = (
+                        parse_query(&uri_clone, "add_domain"),
+                        parse_query(&uri_clone, "add_username"),
+                        parse_query(&uri_clone, "add_password"),
+                    ) {
+                        let email = parse_query(&uri_clone, "add_email").unwrap_or_default();
+                        if let Ok(mut mgr) = crate::unsubscribe::db::SecureDbManager::new(&pass) {
+                            if let Ok(conn) = mgr.open_connection() {
+                                let _ = crate::unsubscribe::db::save_full_credentials(
+                                    &conn, &domain, &username, &password, &email,
+                                );
+                                let _ = mgr.save_and_close(conn);
+                                let mut idx = crate::util::credentials::CredentialIndex::load();
+                                idx.register(&domain);
+                            }
                         }
-                    },
-                    Err(_) => {
-                        ctx.webview.load_html(
-                            &format!(
+                        let clean_uri = format!(
+                            "juanita://passwords?unlock_pass={}",
+                            urlencoding::encode(&pass)
+                        );
+                        let _ = tx.send_blocking(PasswordResult::Redirect(clean_uri));
+                        return;
+                    }
+
+                    let html = match crate::unsubscribe::db::SecureDbManager::new(&pass) {
+                        Ok(mut mgr) => match mgr.open_connection() {
+                            Ok(conn) => {
+                                let creds = crate::unsubscribe::db::list_all_credentials(&conn);
+                                let _ = mgr.save_and_close(conn);
+                                vault_html(&creds, &pass, None)
+                            }
+                            Err(e) => vault_html(&[], &pass, Some(&format!("DB error: {}", e))),
+                        },
+                        Err(_) => {
+                            format!(
                                 "{}<script>document.querySelector('p').textContent='Wrong master password. Try again.';</script>",
                                 LOCKED_HTML
-                            ),
-                            Some("juanita://passwords"),
-                        );
-                    }
-                }
+                            )
+                        }
+                    };
+
+                    let _ = tx.send_blocking(PasswordResult::Html(html));
+                });
             }
         }
         true

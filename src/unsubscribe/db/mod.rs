@@ -58,7 +58,7 @@ impl SecureDbManager {
         });
 
         let mut result = None;
-        if gtk::is_initialized_main_thread() {
+        if gtk::is_initialized_main_thread() && gtk::glib::MainContext::default().is_owner() {
             loop {
                 match rx.try_recv() {
                     Ok(res) => {
