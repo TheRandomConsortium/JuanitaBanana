@@ -26,10 +26,20 @@ function showTab(tabId) {
 
 function checkUnban() {
     const ans = document.getElementById('math-answer').value;
+    const result = document.getElementById('unban-result');
+    result.textContent = '';
+    const br = document.createElement('br');
+    result.appendChild(br);
     if (ans.trim() === "2") {
-        document.getElementById('unban-result').innerHTML = "<br>Correct. <a href='juanita://unban-page'>Manage Bans</a>";
+        const a = document.createElement('a');
+        a.href = 'juanita://unban-page';
+        a.textContent = 'Manage Bans';
+        result.appendChild(a);
     } else {
-        document.getElementById('unban-result').innerHTML = "<br><span style='color:red;'>Incorrect. Back to the abyss.</span>";
+        const span = document.createElement('span');
+        span.style.color = 'red';
+        span.textContent = 'Incorrect. Back to the abyss.';
+        result.appendChild(span);
     }
 }
 
@@ -82,12 +92,26 @@ function addRss() {
     const name = document.getElementById('new-rss-name').value;
     const url = document.getElementById('new-rss-url').value;
     if (!name || !url) return;
-    
+
     const tbody = document.getElementById('rss-tbody');
     const row = document.createElement('tr');
-    row.innerHTML = `<td>${name}</td><td>${url}</td><td><button onclick="this.parentElement.parentElement.remove()" style="margin:0; padding: 5px;">X</button></td>`;
+
+    const tdName = document.createElement('td');
+    tdName.textContent = name;
+    const tdUrl = document.createElement('td');
+    tdUrl.textContent = url;
+    const tdBtn = document.createElement('td');
+    const btn = document.createElement('button');
+    btn.textContent = 'X';
+    btn.style.cssText = 'margin:0; padding: 5px;';
+    btn.addEventListener('click', () => row.remove());
+    tdBtn.appendChild(btn);
+
+    row.appendChild(tdName);
+    row.appendChild(tdUrl);
+    row.appendChild(tdBtn);
     tbody.appendChild(row);
-    
+
     document.getElementById('new-rss-name').value = '';
     document.getElementById('new-rss-url').value = '';
 }
@@ -97,12 +121,29 @@ function addEngine() {
     const regex = document.getElementById('new-engine-regex').value;
     const params = document.getElementById('new-engine-params').value;
     if (!name || !regex || !params) return;
-    
+
     const tbody = document.getElementById('engines-tbody');
     const row = document.createElement('tr');
-    row.innerHTML = `<td>${name}</td><td>${regex}</td><td>${params}</td><td><button onclick="this.parentElement.parentElement.remove()" style="margin:0; padding: 5px;">X</button></td>`;
+
+    const tdName = document.createElement('td');
+    tdName.textContent = name;
+    const tdRegex = document.createElement('td');
+    tdRegex.textContent = regex;
+    const tdParams = document.createElement('td');
+    tdParams.textContent = params;
+    const tdBtn = document.createElement('td');
+    const btn = document.createElement('button');
+    btn.textContent = 'X';
+    btn.style.cssText = 'margin:0; padding: 5px;';
+    btn.addEventListener('click', () => row.remove());
+    tdBtn.appendChild(btn);
+
+    row.appendChild(tdName);
+    row.appendChild(tdRegex);
+    row.appendChild(tdParams);
+    row.appendChild(tdBtn);
     tbody.appendChild(row);
-    
+
     document.getElementById('new-engine-name').value = '';
     document.getElementById('new-engine-regex').value = '';
     document.getElementById('new-engine-params').value = '';
@@ -113,7 +154,18 @@ function addAdDomain() {
     if (!domain) return;
     const tbody = document.getElementById('ad-domains-tbody');
     const row = document.createElement('tr');
-    row.innerHTML = `<td>${domain}</td><td><button onclick="this.parentElement.parentElement.remove()" style="margin:0; padding: 5px;">X</button></td>`;
+
+    const tdDomain = document.createElement('td');
+    tdDomain.textContent = domain;
+    const tdBtn = document.createElement('td');
+    const btn = document.createElement('button');
+    btn.textContent = 'X';
+    btn.style.cssText = 'margin:0; padding: 5px;';
+    btn.addEventListener('click', () => row.remove());
+    tdBtn.appendChild(btn);
+
+    row.appendChild(tdDomain);
+    row.appendChild(tdBtn);
     tbody.appendChild(row);
     document.getElementById('new-ad-domain').value = '';
 }
