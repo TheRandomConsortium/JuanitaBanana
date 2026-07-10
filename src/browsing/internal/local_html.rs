@@ -1,5 +1,5 @@
 use crate::browsing::internal::{InternalPage, PageContext};
-use crate::debug_log;
+use crate::log;
 use webkit2gtk::WebViewExt;
 
 pub struct LocalHtmlPage;
@@ -202,9 +202,9 @@ impl InternalPage for LocalHtmlPage {
     }
 
     fn handle_policy(&self, uri: &str, ctx: &PageContext) -> bool {
-        debug_log!(raw: LOCAL_HTML, "handle_policy: uri = {}", uri);
+        log!(raw: Debug, LOCAL_HTML, "handle_policy: uri = {}", uri);
         let default = ctx.config.local_html_default.as_str();
-        debug_log!(raw: LOCAL_HTML, "local_html_default mode = {}", default);
+        log!(raw: Debug, LOCAL_HTML, "local_html_default mode = {}", default);
         if default == "render" {
             return false; // Let WebKit render it normally
         }
@@ -212,7 +212,7 @@ impl InternalPage for LocalHtmlPage {
         let webview_clone = ctx.webview.clone();
         match read_file_from_uri(uri) {
             Some(src) => {
-                debug_log!(raw: LOCAL_HTML, "read file successfully, len = {}", src.len());
+                log!(raw:Debug, LOCAL_HTML, "read file successfully, len = {}", src.len());
                 gtk::glib::idle_add_local(move || {
                     let html = viewer_page(&uri_clone, &src);
                     webview_clone.load_html(&html, Some("juanita://local-html-viewer/"));
@@ -220,7 +220,7 @@ impl InternalPage for LocalHtmlPage {
                 });
             }
             None => {
-                debug_log!(raw: LOCAL_HTML, "failed to read file from URI: {}", uri);
+                log!(raw:Debug, LOCAL_HTML, "failed to read file from URI: {}", uri);
                 gtk::glib::idle_add_local(move || {
                     let err = format!(
                         "<html><body style='font-family:monospace;background:#0d0d0d;color:#f87171;padding:2em'>\

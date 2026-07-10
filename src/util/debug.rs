@@ -1,10 +1,28 @@
 use lazy_static::lazy_static;
 
+// Asignamos pesos numéricos directamente a los identificadores
+#[repr(u8)]
+pub enum LogLevel {
+    //Error = 0,
+    //Warn = 1,
+    Info = 2,
+    Debug = 3,
+    //Trace = 4,
+}
+
 lazy_static! {
-    /// Set by passing `--debug` on the command line.
-    /// When false (the default) all `[DEBUG]` output is suppressed.
-    pub static ref DEBUG_ALL: bool =
-        std::env::args().any(|a| a == "--debug");
+    pub static ref CURRENT_LEVEL: u8 = {
+        match std::env::var("JUANITA_LOG") {
+            Ok(val) => match val.to_lowercase().as_str() {
+                //"error" | "0" => LogLevel::ERROR as u8,
+                //"warn" | "warning" | "1" => LogLevel::Warn as u8,
+                "info" | "2" => LogLevel::Info as u8,
+                "debug" | "3" => LogLevel::Debug as u8,
+                _ => LogLevel::Info as u8,
+            },
+            Err(_) => LogLevel::Info as u8,
+        }
+    };
 }
 
 pub fn redact_uri(uri: &str) -> String {
@@ -26,22 +44,23 @@ pub fn redact_uri(uri: &str) -> String {
 }
 
 #[macro_export]
-macro_rules! debug_log {
-    // 1. Variante segura (redacta URLs). Ej: debug_log!(GUI, "URL: {}", url)
-    ($sys:ident, $fmt:literal $(, $arg:expr)* $(,)?) => {
-        if *$crate::util::debug::DEBUG_ALL { // Usa un flag global
+macro_rules! log {
+    // Variante segura
+    ($lvl:ident, $sys:ident, $fmt:literal $(, $arg:expr)* $(,)?) => {
+        // AQUÍ ESTÁ TU MAGIA: Compara los números enteros
+        if ($crate::util::debug::LogLevel::$lvl as u8) <= *$crate::util::debug::CURRENT_LEVEL {
             println!(
-                concat!("[DEBUG ", stringify!($sys), "] ", $fmt)
+                concat!("[", stringify!($lvl), "] [", stringify!($sys), "] ", $fmt)
                 $(, $crate::util::debug::redact_uri(&$arg.to_string()))*
             );
         }
     };
 
-    // 2. Variante raw (sin redacción). Ej: debug_log!(raw: DB, "Conectado: {}", status)
-    (raw: $sys:ident, $fmt:literal $(, $arg:expr)* $(,)?) => {
-        if *$crate::util::debug::DEBUG_ALL {
+    // Variante raw
+    (raw: $lvl:ident, $sys:ident, $fmt:literal $(, $arg:expr)* $(,)?) => {
+        if ($crate::util::debug::LogLevel::$lvl as u8) <= *$crate::util::debug::CURRENT_LEVEL {
             println!(
-                concat!("[DEBUG ", stringify!($sys), "] ", $fmt)
+                concat!("[", stringify!($lvl), "] [", stringify!($sys), "] ", $fmt)
                 $(, $arg)*
             );
         }

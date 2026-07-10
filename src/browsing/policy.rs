@@ -1,11 +1,10 @@
 use crate::ad_intoxication::AdIntoxicationEngine;
 use crate::browsing::browser::SharedBanList;
 use crate::browsing::internal::InternalPage;
-use crate::debug_log;
+use crate::log;
 use crate::search::intoxication::IntoxicationEngine;
 use crate::search::noise::RssNoiseProvider;
 use crate::util::config::AppConfig;
-use crate::util::debug::redact_uri;
 use std::cell::RefCell;
 use std::rc::Rc;
 use webkit2gtk::{PolicyDecision, PolicyDecisionExt, WebView, WebViewExt};
@@ -25,9 +24,11 @@ pub fn handle_decide_policy(
 ) -> bool {
     // Intercept navigation to ad domains in main webview
     if ad_intox_engine_policy.is_ad_domain(uri_str) {
-        println!(
-            "[AD_INTOX] Intercepted ad navigation in main window to: {}",
-            redact_uri(uri_str)
+        log!(
+            Info,
+            AD_INTOX,
+            "Intercepted ad navigation in main window to: {}",
+            uri_str
         );
         ad_intox_engine_policy.queue_ad(crate::ad_intoxication::AdTask {
             page_url: uri_str.to_string(),
@@ -51,23 +52,29 @@ pub fn handle_decide_policy(
     let mut page_handled = false;
     for page in internal_pages_policy.iter() {
         if page.matches_policy(uri_str) {
-            debug_log!(GUI, "decide_policy matched internal page for: {}", uri_str);
+            log!(
+                Debug,
+                GUI,
+                "decide_policy matched internal page for: {}",
+                uri_str
+            );
             if page.ignore_policy(uri_str) {
-                debug_log!(
+                log!(
+                    Debug,
                     GUI,
                     "ignore_policy returned true, ignoring navigation: {}",
                     uri_str
                 );
                 decision.ignore();
             } else {
-                debug_log!(GUI, "ignore_policy returned false: {}", uri_str);
+                log!(Debug, GUI, "ignore_policy returned false: {}", uri_str);
             }
             if page.handle_policy(uri_str, &ctx) {
-                debug_log!(GUI, "handle_policy returned true for: {}", uri_str);
+                log!(Debug, GUI, "handle_policy returned true for: {}", uri_str);
                 page_handled = true;
                 break;
             } else {
-                debug_log!(GUI, "handle_policy returned false for: {}", uri_str);
+                log!(Debug, GUI, "handle_policy returned false for: {}", uri_str);
             }
         }
     }
