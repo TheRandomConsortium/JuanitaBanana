@@ -135,7 +135,13 @@ The result: your fake searches are the real searches of other users — maximum 
 
 #### Identity Management
 - **Integrated Password Manager** — native, no extensions, no cloud.
-- **Tor Integration** — optional SOCKS5 proxy. We aren't on Tor all day, but we can be.
+- **Overlay Networks & Decentralised Resolution** — Not a Tor toggle. A composable overlay transport layer paired with a BIOS-style priority-ordered multi-root resolver stack. See [`docs/OVERLAY_NETWORKS.md`](OVERLAY_NETWORKS.md) for the full architecture.
+  - **Tor** (`arti` Rust crate) — onion routing. Activating it registers the `.onion` resolver and optionally routes all clearnet through Tor.
+  - **I2P** (garlic routing) — `.i2p` address space. More resistant to traffic analysis than Tor for internal darknet services.
+  - **Handshake (HNS)** — permissionless blockchain root DNS. Parallel to ICANN; anyone can own any TLD. Integrated via `hnsd` (C) initially, long-term Rust port.
+  - **Resolver chain (BIOS order):** HNS → I2P → Onion → System DNS. First authoritative answer wins. Fully reorderable. This directly resolves the Handshake/ICANN namespace collision — whoever is first in *your* chain is authoritative *for you*.
+  - **Per-domain pinning rules:** `example.bit → always Handshake`, `*.onion → always Tor`. Explicit overrides bypass the chain entirely.
+  - **Resolver ≠ Transport:** You can resolve `.onion` names without routing clearnet through Tor. Transports (Tor, I2P) are independently togglable from resolvers.
 
 #### Weaponized Privacy (GDPR Art. 17 & 77)
 - **Aggressive Unsubscribe Button** — A local crawler that scans subdomains, legal texts, and footers to extract contact emails. It automatically sends formal legal requests demanding the deletion of all personal data (Right to be Forgotten, GDPR Article 17) and keeps a local registry of unsubscribed services. If a service fails to respond or comply, the tool generates a PDF formal complaint ready to be sent to European data protection authorities. Requires a local form with the user's data (EU citizens only).

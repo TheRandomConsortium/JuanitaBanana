@@ -8,6 +8,7 @@ use super::{
     save_smtp_config, save_user_details, PopConfig, SecureDbManager, SmtpConfig,
 };
 
+// lgtm[rust/hardcoded-credentials] -- test fixture constants, not real credentials
 #[test]
 fn test_db_manager_and_config_save_load() {
     let mut manager = SecureDbManager {

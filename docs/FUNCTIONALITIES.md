@@ -113,6 +113,39 @@
 
 ---
 
+## 🌐 Overlay Networks & Decentralised Resolver Stack
+
+> Full architecture: [`docs/OVERLAY_NETWORKS.md`](OVERLAY_NETWORKS.md)
+
+### Overlay Transports
+
+| Feature | Status | Notes |
+|---|---|---|
+| **Tor (onion routing)** | 📋 Planned | Integrated via [`arti`](https://gitlab.torproject.org/tpo/core/arti) — Tor Project's official Rust crate. No C dependency, no subprocess. Activating it: registers the `.onion` resolver; optionally routes all clearnet through Tor exit nodes. |
+| **I2P (garlic routing)** | 🔭 Future | Integrated via `i2p-rs` (Rust) when stable; subprocess fallback to Java I2P router initially. Garlic routing bundles multiple messages per payload — harder to traffic-analyse than Tor. Activating it: registers the `.i2p` resolver; optionally routes clearnet via I2P outproxies. |
+
+### Resolver Stack
+
+| Feature | Status | Notes |
+|---|---|---|
+| **BIOS-style resolver chain** | 🔭 Future | Priority-ordered chain: first resolver with an authoritative answer wins, rest skipped. Default order: Handshake → I2P → Tor/Onion → System DNS. Fully user-reorderable in `juanita://config`. |
+| **Handshake (HNS) resolver** | 🔭 Future | Permissionless blockchain root DNS, parallel to ICANN. Integrated via `hnsd` (C SPV client) initially; long-term goal is a native Rust port for full in-house maintenance. |
+| **Onion resolver** | 📋 Planned | Resolves `.onion` v3 addresses when Tor transport is active. |
+| **I2P resolver** | 🔭 Future | Resolves `.i2p` eepsite addresses when I2P transport is active. |
+| **Namespace collision handling** | 🔭 Future | HNS and ICANN can both define `google.com`. Resolver order is the user's tiebreak — whoever is first in your chain is authoritative for you. |
+| **Per-domain pinning rules** | 🔭 Future | User rules in config: `example.bit → always Handshake`, `*.onion → always Tor`. Pinned domains bypass the chain entirely. |
+
+### Niche Protocols (Under Evaluation)
+
+| Protocol | Address space | Notes |
+|---|---|---|
+| **Lokinet** | `.loki` | Session messenger's overlay; C++ (`llarp`) |
+| **Namecoin** | `.bit` | Original blockchain DNS; largely superseded by HNS |
+| **ENS / IPFS** | `.eth` | Ethereum Name Service; requires ETH node or trusted gateway |
+| **Yggdrasil** | IPv6 mesh | Encrypted mesh overlay; no special TLD |
+
+---
+
 ## 🔒 Privacy Hardening (Engine Level)
 
 | Feature | Status | Notes |
@@ -123,6 +156,5 @@
 | **Make Default Browser** | ✅ Done | Button in the new General tab of `juanita://config` to register Juanita Banana as the default system web browser using `xdg-settings`. |
 | **Choose Competitor (Betrayal Mode)** | ✅ Done | If Juanita is already default, displays a "Choose Competitor" button. Clicking it dynamically loads native system desktop entries (`.desktop` via `gio mime`) and their icons, allowing the user to betray the banana and revert to Firefox/Chromium etc. |
 | **RPM Packaging & Version Bumping** | ✅ Done | Included `build_rpm.sh` script to parse Cargo versions, build a `.spec` dynamically, build RPM packages, and auto-increment `major`, `minor`, or `patch` tags automatically. |
-| **Tor integration** | 🔭 Future | SOCKS5 proxy toggle in config. |
 | **Integrated Password Manager** | ✅ Almost Done | Native secure credential storage using local Argon2id + XChaCha20-Poly1305 encrypted SQLite, ready to be plugged into browser autofill. |
 | **Tab Inactivity TTL (Tab Death)** | 📋 Planned | If tabs are ever implemented, they will have a strict inactivity Time-To-Live (TTL). If surpassed, the tab is aggressively killed. Fuck clutter and RAM consumption. Be tidy. |
