@@ -45,5 +45,10 @@ mod tests {
         // Fonts
         assert!(script.contains("CanvasRenderingContext2D.prototype.measureText"));
         assert!(script.contains("FontFaceSet.prototype.check"));
+
+        // Sensors
+        assert!(script.contains("window.addEventListener = function(type, listener, options)"));
+        assert!(script.contains("window.Accelerometer = createSensorMock"));
+        assert!(script.contains("window.Gyroscope = createSensorMock"));
     }
 }
