@@ -28,6 +28,8 @@ mod contribute;
 mod downloads;
 mod history;
 mod home;
+mod local_html;
+mod passwords;
 mod unban;
 
 pub use about::AboutPage;
@@ -37,10 +39,14 @@ pub use contribute::ContributePage;
 pub use downloads::DownloadsPage;
 pub use history::HistoryPage;
 pub use home::HomePage;
+pub use local_html::LocalHtmlPage;
+pub use passwords::PasswordsPage;
 pub use unban::UnbanPage;
 
 pub fn get_internal_pages() -> Vec<Box<dyn InternalPage>> {
     vec![
+        Box::new(LocalHtmlPage),
+        Box::new(PasswordsPage),
         Box::new(HomePage),
         Box::new(HistoryPage),
         Box::new(ConfigPage),

@@ -11,6 +11,7 @@ use webkit2gtk::{
 
 use crate::browsing::browser::SharedBanList;
 use crate::fingerprint::spoof;
+use crate::log;
 use crate::search::intoxication::IntoxicationEngine;
 use crate::search::noise::RssNoiseProvider;
 use crate::util::config::AppConfig;
@@ -21,16 +22,19 @@ pub fn run(banlist: SharedBanList) {
         .flags(gtk::gio::ApplicationFlags::HANDLES_OPEN)
         .build();
 
-    #[allow(deprecated)]
-    let (tx, rx) = gtk::glib::MainContext::channel::<(String, bool)>(gtk::glib::Priority::DEFAULT);
+    let (tx, rx) = async_channel::unbounded::<(String, bool)>();
 
-    let tx_open = tx.clone();
+    let pending_urls: Rc<RefCell<Vec<(String, bool)>>> = Rc::new(RefCell::new(Vec::new()));
+    let pending_open = pending_urls.clone();
+
     app.connect_open(move |app, files, _hint| {
-        app.activate();
+        log!(raw:Debug, GUI, "connect_open: processing {} files", files.len());
         for file in files {
             let uri = file.uri();
-            let _ = tx_open.send((uri.to_string(), true));
+            log!(raw:Debug, GUI, "connect_open file URI: {}", uri);
+            pending_open.borrow_mut().push((uri.to_string(), true));
         }
+        app.activate();
     });
 
     let global_webview: Rc<RefCell<Option<WebView>>> = Rc::new(RefCell::new(None));
@@ -38,36 +42,50 @@ pub fn run(banlist: SharedBanList) {
     let rx_banlist = banlist.clone();
     let app_rx = app.clone();
 
-    let pending_urls: Rc<RefCell<Vec<(String, bool)>>> = Rc::new(RefCell::new(Vec::new()));
     let pending_rx = pending_urls.clone();
 
-    rx.attach(None, move |(url, is_external)| {
-        if let Some(wv) = gw_rx.borrow().as_ref() {
-            if is_external {
-                let domain = crate::browsing::browser::extract_domain(&url);
-                if rx_banlist.borrow().is_banned(&domain) {
-                    let refuse_html = "<html><head><style>
-                        body { background: #000; color: #ff3333; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: monospace; font-size: 2rem; text-align: center; }
-                        </style></head><body>
-                        <div style=\"font-size: 8rem; margin-bottom: 20px;\">🛑</div>
-                        <div>We politely refuse on your behalf to open this shithole.</div>
-                        <div style=\"margin-top: 20px; font-size: 1.5rem; color: #888;\">Closing window in 5 seconds...</div>
-                        </body></html>";
-                    wv.load_html(refuse_html, Some("juanita://refuse/"));
+    gtk::glib::spawn_future_local(async move {
+        while let Ok((url, is_external)) = rx.recv().await {
+            log!(
+                Debug,
+                GUI,
+                "rx channel received URL: {}, is_external = {}",
+                url,
+                is_external
+            );
+            if let Some(wv) = gw_rx.borrow().as_ref() {
+                if is_external {
+                    let domain = crate::browsing::browser::extract_domain(&url);
+                    if rx_banlist.borrow().is_banned(&domain) {
+                        let refuse_html = "<html><head><style>
+                            body { background: #000; color: #ff3333; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: monospace; font-size: 2rem; text-align: center; }
+                            </style></head><body>
+                            <div style=\"font-size: 8rem; margin-bottom: 20px;\">🛑</div>
+                            <div>We politely refuse on your behalf to open this shithole.</div>
+                            <div style=\"margin-top: 20px; font-size: 1.5rem; color: #888;\">Closing window in 5 seconds...</div>
+                            </body></html>";
+                        wv.load_html(refuse_html, Some("juanita://refuse/"));
 
-                    let app_clone = app_rx.clone();
-                    gtk::glib::timeout_add_seconds_local(5, move || {
-                        app_clone.quit();
-                        gtk::glib::ControlFlow::Break
-                    });
-                    return gtk::glib::ControlFlow::Continue;
+                        let app_clone = app_rx.clone();
+                        gtk::glib::timeout_add_seconds_local(5, move || {
+                            app_clone.quit();
+                            gtk::glib::ControlFlow::Break
+                        });
+                        continue;
+                    }
                 }
+                log!(Debug, GUI, "webview loading URL: {}", url);
+                wv.load_uri(&url);
+            } else {
+                log!(
+                    Debug,
+                    GUI,
+                    "webview not yet ready, pushing to pending: {}",
+                    url
+                );
+                pending_rx.borrow_mut().push((url, is_external));
             }
-            wv.load_uri(&url);
-        } else {
-            pending_rx.borrow_mut().push((url, is_external));
         }
-        gtk::glib::ControlFlow::Continue
     });
 
     let banlist_clone = banlist.clone();
@@ -110,6 +128,24 @@ pub fn run(banlist: SharedBanList) {
         );
         ucm.add_script(&toxic_script);
 
+        let form_mon_script = UserScript::new(
+            crate::browsing::credentials_ui::form_monitor_script(),
+            UserContentInjectedFrames::TopFrame,
+            UserScriptInjectionTime::End,
+            &[],
+            &[],
+        );
+        ucm.add_script(&form_mon_script);
+
+        let form_interact_script = UserScript::new(
+            crate::browsing::credentials_ui::form_interact_script(),
+            UserContentInjectedFrames::TopFrame,
+            UserScriptInjectionTime::End,
+            &[],
+            &[],
+        );
+        ucm.add_script(&form_interact_script);
+
         let settings = webkit2gtk::Settings::builder()
             .user_agent("JuanitaBanana/0.1 (FOSS; Not-Google; Linux)")
             .build();
@@ -125,54 +161,31 @@ pub fn run(banlist: SharedBanList) {
             &config,
         ));
 
+        let global_window: Rc<RefCell<Option<ApplicationWindow>>> = Rc::new(RefCell::new(None));
+        let window_msg = global_window.clone();
         let ad_engine_msg = ad_intox_engine.clone();
         let banlist_msg = banlist.clone();
         let webview_msg = webview.clone();
-        ucm.connect_script_message_received(
-            Some("juanita"),
-            move |_manager, js_result: &webkit2gtk::JavascriptResult| {
-                if let Some(val) = js_result.js_value() {
-                    let json_str = val.to_string();
-                    if let Ok(msg_val) = serde_json::from_str::<serde_json::Value>(&json_str) {
-                        if msg_val["type"] == "ad_detected" {
-                            let page_url = msg_val["page_url"].as_str().unwrap_or("").to_string();
-                            let selector = msg_val["selector"].as_str().unwrap_or("").to_string();
-                            let ad_url = msg_val["ad_url"].as_str().unwrap_or("").to_string();
-                            ad_engine_msg.queue_ad(crate::ad_intoxication::AdTask {
-                                page_url,
-                                selector,
-                                ad_url,
-                            });
-                        } else if msg_val["type"] == "right_click_target" {
-                            if let Ok(info) = serde_json::from_value::<
-                                crate::browsing::gui_plugin::RightClickInfo,
-                            >(msg_val.clone())
-                            {
-                                crate::browsing::gui_plugin::LAST_RIGHT_CLICK.with(|rc| {
-                                    *rc.borrow_mut() = Some(info);
-                                });
-                            }
-                        } else if msg_val["type"] == "ban_domain" {
-                            if let Some(domain) = msg_val["domain"].as_str() {
-                                let mut bl = banlist_msg.borrow_mut();
-                                bl.ban(domain);
-                                bl.save();
-                                println!("[BAN] Banned domain: {}", domain);
-                                let banned_html =
-                                    crate::util::ban::banned_page(&format!("https://{}", domain));
-                                webview_msg.load_html(&banned_html, Some("juanita://banned/"));
-                            }
-                        }
-                    }
-                }
-            },
-        );
+        ucm.connect_script_message_received(Some("juanita"), move |_manager, js_result| {
+            crate::browsing::message_handler::handle_script_message(
+                js_result,
+                &webview_msg,
+                &window_msg,
+                &banlist_msg,
+                &ad_engine_msg,
+            );
+        });
 
         *gw_activate.borrow_mut() = Some(webview.clone());
 
-        let mut pending = pending_activate.borrow_mut();
-        for (url, is_external) in pending.drain(..) {
-            let _ = tx_activate.send((url, is_external));
+        let has_pending = !pending_activate.borrow().is_empty();
+        log!(raw:Debug, GUI, "connect_activate: has_pending = {}", has_pending);
+        {
+            let mut pending = pending_activate.borrow_mut();
+            for (url, is_external) in pending.drain(..) {
+                log!(Debug, GUI, "draining pending URL: {}", url);
+                let _ = tx_activate.send_blocking((url, is_external));
+            }
         }
 
         let downloads = Rc::new(RefCell::new(crate::util::downloads::DownloadManager::new()));
@@ -250,7 +263,8 @@ pub fn run(banlist: SharedBanList) {
                             .output()
                         {
                             if String::from_utf8_lossy(&out.stdout).trim() == "open" {
-                                let _ = tx_thread.send(("juanita://downloads".to_string(), false));
+                                let _ = tx_thread
+                                    .send_blocking(("juanita://downloads".to_string(), false));
                             }
                         }
                     });
@@ -264,6 +278,9 @@ pub fn run(banlist: SharedBanList) {
             .default_width(1280)
             .default_height(800)
             .build();
+
+        // Resolve the deferred window reference used by the JS message handler
+        *global_window.borrow_mut() = Some(window.clone());
 
         let header = HeaderBar::new();
         header.set_show_close_button(true);
@@ -279,6 +296,17 @@ pub fn run(banlist: SharedBanList) {
 
         header.set_custom_title(Some(&url_entry));
         header.pack_end(&ban_button);
+
+        let key_button = Button::with_label("🔑");
+        key_button.set_no_show_all(true);
+        key_button.set_visible(false);
+        header.pack_start(&key_button);
+
+        let webview_key = webview.clone();
+        let window_key = window.clone();
+        key_button.connect_clicked(move |_| {
+            crate::browsing::credentials_ui::try_autofill(&webview_key, &window_key);
+        });
 
         let vbox = GtkBox::new(Orientation::Vertical, 0);
         vbox.pack_start(&webview, true, true, 0);
@@ -340,25 +368,51 @@ pub fn run(banlist: SharedBanList) {
         ban_button.connect_clicked(move |_| {
             if let Some(uri) = webview_clone2.uri() {
                 let domain = crate::browsing::browser::extract_domain(uri.as_str());
-                let mut bl = banlist_btn.borrow_mut();
-                bl.ban(&domain);
-                bl.save();
+                {
+                    let mut bl = banlist_btn.borrow_mut();
+                    bl.ban(&domain);
+                    bl.save();
+                }
                 println!("[BAN] Banned domain: {}", domain);
                 let banned_html = crate::util::ban::banned_page(uri.as_str());
                 webview_clone2.load_html(&banned_html, Some("juanita://banned/"));
             }
         });
 
-        let banlist_nav = banlist.clone();
         let url_entry_nav = url_entry_clone.clone();
-        webview.connect_load_changed(move |wv, load_event| {
-            if load_event == webkit2gtk::LoadEvent::Started
-                || load_event == webkit2gtk::LoadEvent::Committed
-            {
+        let key_button_clone = key_button.clone();
+        let intox_engine_load = intox_engine.clone();
+        webview.connect_load_changed(move |wv, load_event| match load_event {
+            webkit2gtk::LoadEvent::Started => {
+                intox_engine_load.cancel_pending();
+                key_button_clone.set_visible(false);
                 if let Some(uri) = wv.uri() {
                     url_entry_nav.set_text(uri.as_str());
                 }
             }
+            webkit2gtk::LoadEvent::Committed => {
+                if let Some(uri) = wv.uri() {
+                    url_entry_nav.set_text(uri.as_str());
+                }
+            }
+            webkit2gtk::LoadEvent::Finished => {
+                let has_creds = if let Some(uri) = wv.uri() {
+                    let domain = crate::browsing::browser::extract_domain(uri.as_str());
+                    if !domain.is_empty()
+                        && !uri.starts_with("juanita://")
+                        && !uri.starts_with("about:")
+                    {
+                        let idx = crate::util::credentials::CredentialIndex::load();
+                        idx.has_credentials(&domain)
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                };
+                key_button_clone.set_visible(has_creds);
+            }
+            _ => {}
         });
 
         let webview_nav = webview.clone();
@@ -386,65 +440,18 @@ pub fn run(banlist: SharedBanList) {
                     if let Some(req) = nav_decision.request() {
                         if let Some(uri) = req.uri() {
                             let uri_str = uri.as_str();
-
-                            // Intercept navigation to ad domains in main webview
-                            if ad_intox_engine_policy.is_ad_domain(uri_str) {
-                                println!(
-                                    "[AD_INTOX] Intercepted ad navigation in main window to: {}",
-                                    uri_str
-                                );
-                                ad_intox_engine_policy.queue_ad(crate::ad_intoxication::AdTask {
-                                    page_url: uri_str.to_string(),
-                                    selector: "body".to_string(),
-                                    ad_url: uri_str.to_string(),
-                                });
-                                use webkit2gtk::PolicyDecisionExt;
-                                decision.ignore();
-                                return true;
-                            }
-
-                            intox_engine.cancel_pending();
-
-                            let ctx = crate::browsing::internal::PageContext {
-                                webview: webview_nav.clone(),
-                                downloads: downloads_policy.clone(),
-                                banlist: banlist_policy.clone(),
-                                expected_unban: expected_unban_policy.clone(),
-                                config: AppConfig::load(),
-                            };
-
-                            let mut page_handled = false;
-                            for page in internal_pages_policy.iter() {
-                                if page.matches_policy(uri_str) {
-                                    if page.ignore_policy(uri_str) {
-                                        use webkit2gtk::PolicyDecisionExt;
-                                        decision.ignore();
-                                    }
-                                    if page.handle_policy(uri_str, &ctx) {
-                                        page_handled = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            if page_handled {
-                                return true;
-                            }
-
-                            // Check for Search Intoxication
-                            if intox_engine.check_and_poison_search(
+                            if crate::browsing::policy::handle_decide_policy(
+                                decision,
                                 uri_str,
-                                &config,
-                                &*noise_provider,
+                                &webview_nav,
+                                &downloads_policy,
+                                &banlist_policy,
+                                &expected_unban_policy,
+                                &internal_pages_policy,
+                                &ad_intox_engine_policy,
+                                &intox_engine,
+                                &noise_provider,
                             ) {
-                                use webkit2gtk::PolicyDecisionExt;
-                                decision.ignore();
-                                return true;
-                            }
-                            if banlist_nav.borrow().is_banned(uri_str) {
-                                use webkit2gtk::PolicyDecisionExt;
-                                decision.ignore();
-                                let banned_html = crate::util::ban::banned_page(uri_str);
-                                webview_nav.load_html(&banned_html, Some("juanita://banned"));
                                 return true;
                             }
                         }
@@ -454,7 +461,10 @@ pub fn run(banlist: SharedBanList) {
             false
         });
 
-        webview.load_uri("juanita://home");
+        if !has_pending {
+            log!(raw:Debug, GUI, "No pending activation, loading home page");
+            webview.load_uri("juanita://home");
+        }
         window.show_all();
     });
 

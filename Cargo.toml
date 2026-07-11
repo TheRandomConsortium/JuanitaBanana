@@ -1,6 +1,6 @@
 [package]
 name = "juanita-banana"
-version = "1.0.7"
+version = "1.1.7"
 edition = "2021"
 
 # ── Engine Stack ──────────────────────────────────────────────
@@ -16,6 +16,7 @@ serde_json = "1.0"
 lazy_static = "1.4"
 gtk = "0.18"
 webkit2gtk = { version = "2.0", features = ["v2_40"] }
+javascriptcore = { package = "javascriptcore-rs", version = "1.1" }
 reqwest = { version = "0.12", features = ["blocking", "json"] }
 regex = "1.10"
 rand = "0.8"
@@ -31,6 +32,7 @@ chacha20poly1305 = "0.10"
 lettre = { version = "0.11", features = ["smtp-transport"] }
 chrono = "0.4"
 openssl = "0.10"
+async-channel = "2.3"
 
 [profile.release]
 opt-level = 3

@@ -74,7 +74,7 @@ impl InternalPage for UnbanPage {
             println!("[UNBAN] Incorrect math or tampered domain. Access denied.");
             let banned_html = crate::util::ban::banned_page(&domain);
             ctx.webview
-                .load_html(&banned_html, Some("juanita://banned"));
+                .load_html(&banned_html, Some("juanita://banned-page"));
             return true;
         }
 
@@ -86,7 +86,7 @@ impl InternalPage for UnbanPage {
             };
             let banned_html = crate::util::ban::banned_page(&domain);
             ctx.webview
-                .load_html(&banned_html, Some("juanita://banned"));
+                .load_html(&banned_html, Some("juanita://banned-page"));
             return true;
         }
 

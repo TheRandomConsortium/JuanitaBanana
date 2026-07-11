@@ -135,6 +135,7 @@ The result: your fake searches are the real searches of other users — maximum 
 
 #### Identity Management
 - **Integrated Password Manager** — native, no extensions, no cloud.
+- **Out-of-Band TOTP Solver** — Cryptographically isolated 2FA. TOTP secrets are encrypted via EC-Diffie-Hellman and passed on-demand to the `juanita-companion` mobile app. The mobile app derives the code on-the-fly and displays it as a notification, never storing the key locally to prevent mobile filesystem theft, and never sending the code back automatically to force user-presence verification via manual input.
 - **Overlay Networks & Decentralised Resolution** — Not a Tor toggle. A composable overlay transport layer paired with a BIOS-style priority-ordered multi-root resolver stack. See [`docs/OVERLAY_NETWORKS.md`](OVERLAY_NETWORKS.md) for the full architecture.
   - **Tor** (`arti` Rust crate) — onion routing. Activating it registers the `.onion` resolver and optionally routes all clearnet through Tor.
   - **I2P** (garlic routing) — `.i2p` address space. More resistant to traffic analysis than Tor for internal darknet services.
