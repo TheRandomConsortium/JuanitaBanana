@@ -47,7 +47,8 @@ mod tests {
         assert!(script.contains("FontFaceSet.prototype.check"));
 
         // Sensors
-        assert!(script.contains("window.addEventListener = function(type, listener, options)"));
+        assert!(script.contains("DeviceMotionEvent.prototype overrides"));
+        assert!(script.contains("DeviceOrientationEvent.prototype overrides"));
         assert!(script.contains("window.Accelerometer = createSensorMock"));
         assert!(script.contains("window.Gyroscope = createSensorMock"));
     }

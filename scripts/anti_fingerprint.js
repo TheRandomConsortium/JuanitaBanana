@@ -132,150 +132,48 @@
     // ── Sensor API Poisoning ─────────────────────────────
     // Mock the window events (devicemotion, deviceorientation) and W3C generic sensor APIs.
     // Simulating spiral walking and device orientation changes.
-    const _origAddEventListener = window.addEventListener;
-    window.addEventListener = function(type, listener, options) {
-        if (type === 'devicemotion' || type === 'deviceorientation') {
-            _reportTrack('window.addEventListener.' + type);
-            const fakeEventSender = () => {
-                let event;
-                const now = Date.now();
-                if (type === 'devicemotion') {
+    if (window.DeviceMotionEvent) {
+        _reportTrack('DeviceMotionEvent.prototype overrides');
+        Object.defineProperties(DeviceMotionEvent.prototype, {
+            acceleration: {
+                get() {
+                    const now = Date.now();
                     const x = Math.sin(now / 1000) * 1.5;
                     const y = Math.cos(now / 1000) * 1.5;
-                    const z = 9.8 + (Math.random() - 0.5) * 0.2;
-                    try {
-                        event = new DeviceMotionEvent('devicemotion', {
-                            acceleration: { x, y, z: 0 },
-                            accelerationIncludingGravity: { x, y, z },
-                            rotationRate: {
-                                alpha: Math.sin(now / 500) * 5,
-                                beta: Math.cos(now / 500) * 5,
-                                gamma: 0
-                            },
-                            interval: 16
-                        });
-                    } catch (e) {
-                        event = new Event('devicemotion');
-                        Object.assign(event, {
-                            acceleration: { x, y, z: 0 },
-                            accelerationIncludingGravity: { x, y, z },
-                            rotationRate: {
-                                alpha: Math.sin(now / 500) * 5,
-                                beta: Math.cos(now / 500) * 5,
-                                gamma: 0
-                            },
-                            interval: 16
-                        });
-                    }
-                } else {
-                    try {
-                        event = new DeviceOrientationEvent('deviceorientation', {
-                            alpha: (now / 50) % 360,
-                            beta: 45 + Math.sin(now / 2000) * 10,
-                            gamma: Math.cos(now / 2000) * 10,
-                            absolute: true
-                        });
-                    } catch (e) {
-                        event = new Event('deviceorientation');
-                        Object.assign(event, {
-                            alpha: (now / 50) % 360,
-                            beta: 45 + Math.sin(now / 2000) * 10,
-                            gamma: Math.cos(now / 2000) * 10,
-                            absolute: true
-                        });
-                    }
+                    return { x, y, z: 0 };
                 }
-                if (typeof listener === 'function') {
-                    listener.call(window, event);
-                } else if (listener && typeof listener.handleEvent === 'function') {
-                    listener.handleEvent(event);
-                }
-            };
-            fakeEventSender();
-            setInterval(fakeEventSender, 100);
-            return;
-        }
-        return _origAddEventListener.call(this, type, listener, options);
-    };
-
-    let _ondevicemotion = null;
-    let _devicemotionInterval = null;
-    Object.defineProperty(window, 'ondevicemotion', {
-        get: () => _ondevicemotion,
-        set: (val) => {
-            _reportTrack('window.ondevicemotion');
-            _ondevicemotion = val;
-            if (_devicemotionInterval) clearInterval(_devicemotionInterval);
-            if (val) {
-                _devicemotionInterval = setInterval(() => {
+            },
+            accelerationIncludingGravity: {
+                get() {
                     const now = Date.now();
                     const x = Math.sin(now / 1000) * 1.5;
                     const y = Math.cos(now / 1000) * 1.5;
                     const z = 9.8 + (Math.random() - 0.5) * 0.2;
-                    let event;
-                    try {
-                        event = new DeviceMotionEvent('devicemotion', {
-                            acceleration: { x, y, z: 0 },
-                            accelerationIncludingGravity: { x, y, z },
-                            rotationRate: {
-                                alpha: Math.sin(now / 500) * 5,
-                                beta: Math.cos(now / 500) * 5,
-                                gamma: 0
-                            },
-                            interval: 16
-                        });
-                    } catch (e) {
-                        event = new Event('devicemotion');
-                        Object.assign(event, {
-                            acceleration: { x, y, z: 0 },
-                            accelerationIncludingGravity: { x, y, z },
-                            rotationRate: {
-                                alpha: Math.sin(now / 500) * 5,
-                                beta: Math.cos(now / 500) * 5,
-                                gamma: 0
-                            },
-                            interval: 16
-                        });
-                    }
-                    if (typeof val === 'function') val.call(window, event);
-                }, 100);
-            }
-        }
-    });
-
-    let _ondeviceorientation = null;
-    let _deviceorientationInterval = null;
-    Object.defineProperty(window, 'ondeviceorientation', {
-        get: () => _ondeviceorientation,
-        set: (val) => {
-            _reportTrack('window.ondeviceorientation');
-            _ondeviceorientation = val;
-            if (_deviceorientationInterval) clearInterval(_deviceorientationInterval);
-            if (val) {
-                _deviceorientationInterval = setInterval(() => {
+                    return { x, y, z };
+                }
+            },
+            rotationRate: {
+                get() {
                     const now = Date.now();
-                    let event;
-                    try {
-                        event = new DeviceOrientationEvent('deviceorientation', {
-                            alpha: (now / 50) % 360,
-                            beta: 45 + Math.sin(now / 2000) * 10,
-                            gamma: Math.cos(now / 2000) * 10,
-                            absolute: true
-                        });
-                    } catch (e) {
-                        event = new Event('deviceorientation');
-                        Object.assign(event, {
-                            alpha: (now / 50) % 360,
-                            beta: 45 + Math.sin(now / 2000) * 10,
-                            gamma: Math.cos(now / 2000) * 10,
-                            absolute: true
-                        });
-                    }
-                    if (typeof val === 'function') val.call(window, event);
-                }, 100);
+                    return {
+                        alpha: Math.sin(now / 500) * 5,
+                        beta: Math.cos(now / 500) * 5,
+                        gamma: 0
+                    };
+                }
             }
-        }
-    });
+        });
+    }
+
+    if (window.DeviceOrientationEvent) {
+        _reportTrack('DeviceOrientationEvent.prototype overrides');
+        Object.defineProperties(DeviceOrientationEvent.prototype, {
+            alpha: { get() { return (Date.now() / 50) % 360; } },
+            beta: { get() { return 45 + Math.sin(Date.now() / 2000) * 10; } },
+            gamma: { get() { return Math.cos(Date.now() / 2000) * 10; } },
+            absolute: { get() { return true; } }
+        });
+    }
 
     if (window.Sensor || !window.Accelerometer) {
         const createSensorMock = (className, getValueFn) => {
