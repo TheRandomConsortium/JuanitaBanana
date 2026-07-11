@@ -24,7 +24,11 @@ impl InternalPage for HomePage {
         let b64_image = crate::util::image::get_juanita_throwing_papers_b64();
         let html_template = include_str!("../../../templates/home.html");
         let html = html_template.replace("{b64_image}", &b64_image);
-        ctx.webview.load_html(&html, Some("juanita://home-page/"));
+        let webview_clone = ctx.webview.clone();
+        gtk::glib::idle_add_local(move || {
+            webview_clone.load_html(&html, Some("juanita://home-page/"));
+            gtk::glib::ControlFlow::Break
+        });
         true
     }
 }

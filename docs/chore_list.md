@@ -52,3 +52,13 @@ This document maintains the tracking of known technical chores, API deprecations
 - **Action Plan:**
   - Parse the `not_after` field from the X.509 cert in `db_certs.rs` at load time using the `openssl` crate's `X509::not_after()`.
   - If within 90 days of expiry, show a non-blocking warning banner. If expired, treat as no-certificate (fall back to unsigned PDF) and show an error.
+
+### 7. Migrate all prints from `println` to `log!(...)`
+- **Chore:** Use `log!(...)` macros for all debug output instead of `println!`.
+- **Action Plan:**
+  - Find all `println!` macros in the codebase.
+  - Replace them with `log!(...)`.
+  - Keep the `JUANITA_LOG` environment variable to control the log level.
+- **Considerations:**
+  - error level => `eprintln!(...)`
+  - warn, info, debug level => `println!(...)`
