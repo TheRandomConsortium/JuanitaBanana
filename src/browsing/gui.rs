@@ -1,12 +1,11 @@
 use gtk::prelude::*;
 use gtk::{Application, ApplicationWindow, Box as GtkBox, Button, Entry, HeaderBar, Orientation};
-use rand::Rng;
 use std::cell::RefCell;
 use std::rc::Rc;
 use webkit2gtk::{
-    DownloadExt, NavigationPolicyDecision, NavigationPolicyDecisionExt, PolicyDecisionType,
-    URIRequestExt, UserContentInjectedFrames, UserContentManager, UserContentManagerExt,
-    UserScript, UserScriptInjectionTime, WebContext, WebContextExt, WebView, WebViewExt,
+    NavigationPolicyDecision, NavigationPolicyDecisionExt, PolicyDecisionType, URIRequestExt,
+    UserContentInjectedFrames, UserContentManager, UserContentManagerExt, UserScript,
+    UserScriptInjectionTime, WebContext, WebView, WebViewExt,
 };
 
 use crate::browsing::browser::SharedBanList;
@@ -189,88 +188,7 @@ pub fn run(banlist: SharedBanList) {
         }
 
         let downloads = Rc::new(RefCell::new(crate::util::downloads::DownloadManager::new()));
-        let downloads_ctx = downloads.clone();
-
-        let tx_download = tx_activate.clone();
-        web_context.connect_download_started(move |_context, download| {
-            let id = format!("{}", rand::thread_rng().gen::<u64>());
-
-            let mut origin_domain = String::from("unknown");
-            #[allow(deprecated)]
-            if let Some(req) = download.request() {
-                if let Some(uri) = req.uri() {
-                    origin_domain = crate::browsing::browser::extract_domain(uri.as_str());
-                }
-            }
-
-            let downloads_ctx_dest = downloads_ctx.clone();
-            let id_dest = id.clone();
-            download.connect_decide_destination(move |dl, suggested_filename| {
-                let filename = suggested_filename.to_string();
-                let dest_dir = format!("/tmp/juanita-sandbox-{}", id_dest);
-                std::fs::create_dir_all(&dest_dir).ok();
-
-                let dest_path = format!("{}/{}", dest_dir, filename);
-                dl.set_destination(&format!("file://{}", dest_path));
-
-                downloads_ctx_dest.borrow_mut().active_downloads.insert(
-                    id_dest.clone(),
-                    (
-                        dest_path,
-                        filename.clone(),
-                        false,
-                        0.0,
-                        origin_domain.clone(),
-                    ),
-                );
-
-                std::process::Command::new("notify-send")
-                    .arg("Juanita Banana 🍌")
-                    .arg(format!("Downloading: {}", filename))
-                    .spawn()
-                    .ok();
-
-                true
-            });
-
-            let downloads_ctx_prog = downloads_ctx.clone();
-            let id_prog = id.clone();
-            download.connect_received_data(move |dl, _data_length| {
-                if let Some(entry) = downloads_ctx_prog
-                    .borrow_mut()
-                    .active_downloads
-                    .get_mut(&id_prog)
-                {
-                    entry.3 = dl.estimated_progress();
-                }
-            });
-
-            let downloads_fin = downloads_ctx.clone();
-            let id_fin = id.clone();
-            let tx_clone = tx_download.clone();
-            download.connect_finished(move |_| {
-                if let Some(entry) = downloads_fin.borrow_mut().active_downloads.get_mut(&id_fin) {
-                    entry.2 = true;
-                    let filename = entry.1.clone();
-                    println!("[SANDBOX] Download finished: {}", filename);
-
-                    let tx_thread = tx_clone.clone();
-                    std::thread::spawn(move || {
-                        if let Ok(out) = std::process::Command::new("notify-send")
-                            .arg("--action=open=View Downloads")
-                            .arg("Juanita Banana 🍌")
-                            .arg(format!("Ready in Sandbox: {}", filename))
-                            .output()
-                        {
-                            if String::from_utf8_lossy(&out.stdout).trim() == "open" {
-                                let _ = tx_thread
-                                    .send_blocking(("juanita://downloads".to_string(), false));
-                            }
-                        }
-                    });
-                }
-            });
-        });
+        crate::util::downloads::setup_downloads(&web_context, &downloads, &tx_activate);
 
         let window = ApplicationWindow::builder()
             .application(app)
@@ -286,10 +204,31 @@ pub fn run(banlist: SharedBanList) {
         header.set_show_close_button(true);
         window.set_titlebar(Some(&header));
 
+        let current_uri = Rc::new(RefCell::new(String::new()));
+
         let url_entry = Entry::builder()
             .placeholder_text("Search or enter address...")
             .hexpand(true)
             .build();
+
+        let current_uri_focus = current_uri.clone();
+        url_entry.connect_focus_in_event(move |entry, _| {
+            let uri = current_uri_focus.borrow();
+            entry.set_text(&crate::util::debug::redact_uri(&uri));
+            gtk::glib::Propagation::Proceed
+        });
+
+        let current_uri_blur = current_uri.clone();
+        url_entry.connect_focus_out_event(move |entry, _| {
+            let uri = current_uri_blur.borrow();
+            let display_uri = if let Some((base, _)) = uri.split_once('?') {
+                base.to_string()
+            } else {
+                uri.to_string()
+            };
+            entry.set_text(&display_uri);
+            gtk::glib::Propagation::Proceed
+        });
 
         let ban_button = Button::with_label("BAN");
         ban_button.style_context().add_class("destructive-action");
@@ -382,17 +321,36 @@ pub fn run(banlist: SharedBanList) {
         let url_entry_nav = url_entry_clone.clone();
         let key_button_clone = key_button.clone();
         let intox_engine_load = intox_engine.clone();
+        let current_uri_nav = current_uri.clone();
         webview.connect_load_changed(move |wv, load_event| match load_event {
             webkit2gtk::LoadEvent::Started => {
                 intox_engine_load.cancel_pending();
                 key_button_clone.set_visible(false);
                 if let Some(uri) = wv.uri() {
-                    url_entry_nav.set_text(uri.as_str());
+                    let uri_str = uri.as_str();
+                    *current_uri_nav.borrow_mut() = uri_str.to_string();
+                    if !url_entry_nav.has_focus() {
+                        let display_uri = if let Some((base, _)) = uri_str.split_once('?') {
+                            base.to_string()
+                        } else {
+                            uri_str.to_string()
+                        };
+                        url_entry_nav.set_text(&display_uri);
+                    }
                 }
             }
             webkit2gtk::LoadEvent::Committed => {
                 if let Some(uri) = wv.uri() {
-                    url_entry_nav.set_text(uri.as_str());
+                    let uri_str = uri.as_str();
+                    *current_uri_nav.borrow_mut() = uri_str.to_string();
+                    if !url_entry_nav.has_focus() {
+                        let display_uri = if let Some((base, _)) = uri_str.split_once('?') {
+                            base.to_string()
+                        } else {
+                            uri_str.to_string()
+                        };
+                        url_entry_nav.set_text(&display_uri);
+                    }
                 }
             }
             webkit2gtk::LoadEvent::Finished => {

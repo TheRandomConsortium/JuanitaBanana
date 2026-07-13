@@ -77,6 +77,7 @@ Read the full manifesto → [`docs/MANIFESTO.md`](docs/MANIFESTO.md)
 - **WebGL:** Vendor/renderer strings replaced with Juanita Banana GPU
 - **Navigator:** hardwareConcurrency, deviceMemory, platform — all spoofed
 - **Fonts:** Overrides canvas text measurement and CSS font loading APIs to report that only `Webdings` and `Monospace` are installed.
+- **Sensors:** Spoofs W3C Generic Sensors (Accelerometer, Gyroscope, Gravity, LinearAcceleration) and device events (devicemotion, deviceorientation) to inject synthetic "spiral walking" patterns.
 - **User-Agent:** Honest by default (`JuanitaBanana/0.1`). In the future, a config toggle will allow switching to a rotating mode that cycles daily through a curated list of genuine, modern User-Agents to blend into the crowd perfectly.
 
 ### 🔍 Search Profile Obfuscation
@@ -104,7 +105,7 @@ Read the full manifesto → [`docs/MANIFESTO.md`](docs/MANIFESTO.md)
 - **Future POP3 Integration & Sandbox (`juanita://mail`):** Fetch incoming email via POP3, display it natively in Juanita with contextual *Add Ban* / *Unsubscribe* banners, and open attachments in an isolated Bubblewrap (`bwrap`) secure sandbox.
 
 ### 🔮 Future Arsenal
-GTM poisoning · Meta Pixel contamination · Cookie garbage fill · Beacon API interception · Tor integration · Password manager · P2P Circle Jerk Swarm
+GTM poisoning · Meta Pixel contamination · Cookie garbage fill · Beacon API interception · Tor integration · P2P Circle Jerk Swarm
 
 See [`docs/FUNCTIONALITIES.md`](docs/FUNCTIONALITIES.md) for full status.
 
