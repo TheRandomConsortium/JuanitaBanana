@@ -1,5 +1,9 @@
+use rand::Rng;
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::process::Command;
+use std::rc::Rc;
+use webkit2gtk::{DownloadExt, URIRequestExt, WebContextExt};
 
 pub struct DownloadManager {
     // Maps download ID -> (Sandbox Path, Original Filename, Is Finished, Progress, Origin Domain)
@@ -230,6 +234,94 @@ fi
         }
         self.active_downloads.remove(id);
     }
+}
+
+pub fn setup_downloads(
+    web_context: &webkit2gtk::WebContext,
+    downloads: &Rc<RefCell<DownloadManager>>,
+    tx_activate: &async_channel::Sender<(String, bool)>,
+) {
+    let downloads_ctx = downloads.clone();
+    let tx_download = tx_activate.clone();
+    web_context.connect_download_started(move |_context, download| {
+        let id = format!("{}", rand::thread_rng().gen::<u64>());
+
+        let mut origin_domain = String::from("unknown");
+        #[allow(deprecated)]
+        if let Some(req) = download.request() {
+            if let Some(uri) = req.uri() {
+                origin_domain = crate::browsing::browser::extract_domain(uri.as_str());
+            }
+        }
+
+        let downloads_ctx_dest = downloads_ctx.clone();
+        let id_dest = id.clone();
+        download.connect_decide_destination(move |dl, suggested_filename| {
+            let filename = suggested_filename.to_string();
+            let dest_dir = format!("/tmp/juanita-sandbox-{}", id_dest);
+            std::fs::create_dir_all(&dest_dir).ok();
+
+            let dest_path = format!("{}/{}", dest_dir, filename);
+            dl.set_destination(&format!("file://{}", dest_path));
+
+            downloads_ctx_dest.borrow_mut().active_downloads.insert(
+                id_dest.clone(),
+                (
+                    dest_path,
+                    filename.clone(),
+                    false,
+                    0.0,
+                    origin_domain.clone(),
+                ),
+            );
+
+            std::process::Command::new("notify-send")
+                .arg("Juanita Banana 🍌")
+                .arg(format!("Downloading: {}", filename))
+                .spawn()
+                .ok();
+
+            true
+        });
+
+        let downloads_ctx_prog = downloads_ctx.clone();
+        let id_prog = id.clone();
+        download.connect_received_data(move |dl, _data_length| {
+            if let Some(entry) = downloads_ctx_prog
+                .borrow_mut()
+                .active_downloads
+                .get_mut(&id_prog)
+            {
+                entry.3 = dl.estimated_progress();
+            }
+        });
+
+        let downloads_fin = downloads_ctx.clone();
+        let id_fin = id.clone();
+        let tx_clone = tx_download.clone();
+        download.connect_finished(move |_| {
+            if let Some(entry) = downloads_fin.borrow_mut().active_downloads.get_mut(&id_fin) {
+                entry.2 = true;
+                let filename = entry.1.clone();
+                println!("[SANDBOX] Download finished: {}", filename);
+
+                let tx_thread = tx_clone.clone();
+                std::thread::spawn(move || {
+                    if let Ok(out) = std::process::Command::new("notify-send")
+                        .arg("--action=open=View Downloads")
+                        .arg("Juanita Banana 🍌")
+                        .arg(format!("Ready in Sandbox: {}", filename))
+                        .output()
+                    {
+                        if String::from_utf8_lossy(&out.stdout).trim() == "open" {
+                            let _ =
+                                tx_thread.send_blocking(("juanita://downloads".to_string(), false));
+                        }
+                    }
+                });
+            }
+        });
+    });
 }
 
 #[cfg(test)]
