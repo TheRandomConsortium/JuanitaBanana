@@ -6,6 +6,7 @@ pub enum LogLevel {
     Error = 0,
     Info = 1,
     Debug = 2,
+    Trace = 3,
 }
 
 lazy_static! {
@@ -15,6 +16,7 @@ lazy_static! {
                 "error" | "0" => LogLevel::Error as u8,
                 "info" | "1" | "2" => LogLevel::Info as u8,
                 "debug" | "3" => LogLevel::Debug as u8,
+                "trace" | "4" => LogLevel::Trace as u8,
                 _ => LogLevel::Info as u8,
             },
             Err(_) => LogLevel::Info as u8,

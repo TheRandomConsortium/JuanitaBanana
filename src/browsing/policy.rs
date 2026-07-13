@@ -97,34 +97,61 @@ pub fn handle_decide_policy(
     // Run priority resolver chain for domain resolution if external HTTP/HTTPS page
     if uri_str.starts_with("http://") || uri_str.starts_with("https://") {
         let domain = crate::browsing::browser::extract_domain(uri_str);
-        if !domain.is_empty() {
-            if let Err(e) = crate::resolver::resolve_domain_with_chain(&domain) {
-                log!(
-                    Error,
-                    RESOLVER,
-                    "Failed to resolve domain '{}' via priority chain: {}",
-                    domain,
-                    e
-                );
-                decision.ignore();
-                let error_html = format!(
-                    "<html><head><style>
-                    body {{ background: #121214; color: #e1e1e6; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: monospace; text-align: center; }}
-                    .card {{ background: #1a1a1e; border: 1px solid #29292e; padding: 40px; border-radius: 12px; max-width: 600px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }}
-                    h1 {{ color: #ff5555; font-size: 2.5rem; margin: 0 0 20px 0; }}
-                    p {{ color: #a9a9b3; font-size: 1.1rem; line-height: 1.6; margin: 0 0 20px 0; }}
-                    .error-box {{ background: #282a36; border-left: 4px solid #ff79c6; padding: 15px; text-align: left; font-family: monospace; font-size: 0.95rem; color: #f8f8f2; white-space: pre-wrap; }}
-                    </style></head><body>
-                    <div class=\"card\">
-                        <h1>Server Not Found</h1>
-                        <p>Juanita Banana's priority resolver chain failed to resolve the host <strong>{}</strong>.</p>
-                        <div class=\"error-box\">{}</div>
-                    </div>
-                    </body></html>",
-                    domain, e
-                );
-                webview_nav.load_html(&error_html, Some("juanita://dns-error"));
-                return true;
+        let host = crate::resolver::clean_host(&domain);
+        if !host.is_empty() && host.parse::<std::net::IpAddr>().is_err() {
+            match crate::resolver::resolve_domain_with_chain(&host) {
+                Ok((ip, _resolver_name)) => {
+                    // If the domain is system-resolvable, let WebKit load it natively to avoid redirect loops on clearweb sites.
+                    if crate::resolver::is_system_resolvable(&host) {
+                        return false;
+                    }
+
+                    // Otherwise, it is a Handshake-only domain. Rewrite it to the IP address.
+                    let ip_str = ip.to_string();
+                    crate::resolver::register_resolved_ip(ip_str.clone(), host.clone());
+                    // Force http:// to avoid TLS SNI unrecognized name alert issues
+                    let new_uri = crate::resolver::rewrite_uri_host(uri_str, &host, &ip_str)
+                        .replace("https://", "http://");
+                    log!(
+                        Info,
+                        RESOLVER,
+                        "Rewriting navigation from '{}' to IP '{}' (new URI: '{}')",
+                        host,
+                        ip_str,
+                        new_uri
+                    );
+                    webview_nav.load_uri(&new_uri);
+                    decision.ignore();
+                    return true;
+                }
+                Err(e) => {
+                    log!(
+                        Error,
+                        RESOLVER,
+                        "Failed to resolve domain '{}' via priority chain: {}",
+                        host,
+                        e
+                    );
+                    decision.ignore();
+                    let error_html = format!(
+                        "<html><head><style>
+                        body {{ background: #121214; color: #e1e1e6; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: monospace; text-align: center; }}
+                        .card {{ background: #1a1a1e; border: 1px solid #29292e; padding: 40px; border-radius: 12px; max-width: 600px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }}
+                        h1 {{ color: #ff5555; font-size: 2.5rem; margin: 0 0 20px 0; }}
+                        p {{ color: #a9a9b3; font-size: 1.1rem; line-height: 1.6; margin: 0 0 20px 0; }}
+                        .error-box {{ background: #282a36; border-left: 4px solid #ff79c6; padding: 15px; text-align: left; font-family: monospace; font-size: 0.95rem; color: #f8f8f2; white-space: pre-wrap; }}
+                        </style></head><body>
+                        <div class=\"card\">
+                            <h1>Server Not Found</h1>
+                            <p>Juanita Banana's priority resolver chain failed to resolve the host <strong>{}</strong>.</p>
+                            <div class=\"error-box\">{}</div>
+                        </div>
+                        </body></html>",
+                        host, e
+                    );
+                    webview_nav.load_html(&error_html, Some("juanita://dns-error"));
+                    return true;
+                }
             }
         }
     }

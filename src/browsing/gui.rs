@@ -328,12 +328,13 @@ pub fn run(banlist: SharedBanList) {
                 key_button_clone.set_visible(false);
                 if let Some(uri) = wv.uri() {
                     let uri_str = uri.as_str();
-                    *current_uri_nav.borrow_mut() = uri_str.to_string();
+                    let restored_uri = crate::resolver::restore_original_domain_in_uri(uri_str);
+                    *current_uri_nav.borrow_mut() = restored_uri.clone();
                     if !url_entry_nav.has_focus() {
-                        let display_uri = if let Some((base, _)) = uri_str.split_once('?') {
+                        let display_uri = if let Some((base, _)) = restored_uri.split_once('?') {
                             base.to_string()
                         } else {
-                            uri_str.to_string()
+                            restored_uri.clone()
                         };
                         url_entry_nav.set_text(&display_uri);
                     }
@@ -342,12 +343,13 @@ pub fn run(banlist: SharedBanList) {
             webkit2gtk::LoadEvent::Committed => {
                 if let Some(uri) = wv.uri() {
                     let uri_str = uri.as_str();
-                    *current_uri_nav.borrow_mut() = uri_str.to_string();
+                    let restored_uri = crate::resolver::restore_original_domain_in_uri(uri_str);
+                    *current_uri_nav.borrow_mut() = restored_uri.clone();
                     if !url_entry_nav.has_focus() {
-                        let display_uri = if let Some((base, _)) = uri_str.split_once('?') {
+                        let display_uri = if let Some((base, _)) = restored_uri.split_once('?') {
                             base.to_string()
                         } else {
-                            uri_str.to_string()
+                            restored_uri.clone()
                         };
                         url_entry_nav.set_text(&display_uri);
                     }
