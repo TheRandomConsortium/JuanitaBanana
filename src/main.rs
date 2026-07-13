@@ -20,6 +20,7 @@ mod ad_intoxication;
 mod browsing;
 mod fingerprint;
 mod plugins;
+mod resolver;
 mod search;
 mod unsubscribe;
 mod util;
@@ -30,6 +31,12 @@ fn main() {
     config.save();
     state.borrow().save();
 
+    // Start local resolvers / daemon
+    resolver::init_resolver();
+
     // Launch GTK application
     browsing::gui::run(state);
+
+    // Stop local resolvers / daemon
+    resolver::shutdown_resolver();
 }

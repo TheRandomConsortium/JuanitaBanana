@@ -85,6 +85,14 @@ function saveConfig() {
     });
     configData.ad_domains = newAdDomains;
     
+    const resolverItems = document.querySelectorAll('#resolver-list .resolver-item');
+    const newResolverOrder = [];
+    resolverItems.forEach(item => {
+        const name = item.getAttribute('data-name');
+        if (name) newResolverOrder.push(name);
+    });
+    configData.resolver_order = newResolverOrder;
+
     window.location.href = "juanita://save-config?data=" + encodeURIComponent(JSON.stringify(configData));
 }
 
@@ -211,4 +219,20 @@ function saveSecureConfig(isInit) {
                   "&pop_pass=" + encodeURIComponent(pop_pass);
 
     window.location.href = "juanita://save-secure-config" + query;
+}
+
+function moveResolverUp(button) {
+    const li = button.closest('.resolver-item');
+    const prev = li.previousElementSibling;
+    if (prev) {
+        li.parentNode.insertBefore(li, prev);
+    }
+}
+
+function moveResolverDown(button) {
+    const li = button.closest('.resolver-item');
+    const next = li.nextElementSibling;
+    if (next) {
+        li.parentNode.insertBefore(next, li);
+    }
 }

@@ -36,6 +36,7 @@ mkdir -p $RPM_ROOT/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
 echo "Preparing build files..."
 cp target/release/juanita-banana $RPM_ROOT/BUILD/
+cp bin/hnsd $RPM_ROOT/BUILD/
 cp assets/icon.png $RPM_ROOT/BUILD/juanita-banana.png
 
 cat > $RPM_ROOT/BUILD/juanita-banana.desktop << 'EOF'
@@ -68,11 +69,13 @@ mkdir -p %{buildroot}/usr/share/applications
 mkdir -p %{buildroot}/usr/share/pixmaps
 
 cp %{_topdir}/BUILD/juanita-banana %{buildroot}/usr/bin/
+cp %{_topdir}/BUILD/hnsd %{buildroot}/usr/bin/
 cp %{_topdir}/BUILD/juanita-banana.desktop %{buildroot}/usr/share/applications/
 cp %{_topdir}/BUILD/juanita-banana.png %{buildroot}/usr/share/pixmaps/
 
 %files
 /usr/bin/juanita-banana
+/usr/bin/hnsd
 /usr/share/applications/juanita-banana.desktop
 /usr/share/pixmaps/juanita-banana.png
 EOF

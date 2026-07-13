@@ -35,6 +35,7 @@ pub struct AppConfig {
     pub deep_crawl_max_pages: usize,
     /// How to open local HTML files: "edit" (text viewer, default) or "render".
     pub local_html_default: String,
+    pub resolver_order: Vec<String>,
 }
 
 impl Default for AppConfig {
@@ -108,6 +109,10 @@ impl Default for AppConfig {
             toxic_threshold: 5,
             deep_crawl_max_pages: 25,
             local_html_default: "edit".to_string(),
+            resolver_order: vec![
+                "Handshake".to_string(),
+                "System".to_string(),
+            ],
         }
     }
 }

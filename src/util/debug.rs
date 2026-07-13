@@ -3,20 +3,17 @@ use lazy_static::lazy_static;
 // Asignamos pesos numéricos directamente a los identificadores
 #[repr(u8)]
 pub enum LogLevel {
-    //Error = 0,
-    //Warn = 1,
-    Info = 2,
-    Debug = 3,
-    //Trace = 4,
+    Error = 0,
+    Info = 1,
+    Debug = 2,
 }
 
 lazy_static! {
     pub static ref CURRENT_LEVEL: u8 = {
         match std::env::var("JUANITA_LOG") {
             Ok(val) => match val.to_lowercase().as_str() {
-                //"error" | "0" => LogLevel::ERROR as u8,
-                //"warn" | "warning" | "1" => LogLevel::Warn as u8,
-                "info" | "2" => LogLevel::Info as u8,
+                "error" | "0" => LogLevel::Error as u8,
+                "info" | "1" | "2" => LogLevel::Info as u8,
                 "debug" | "3" => LogLevel::Debug as u8,
                 _ => LogLevel::Info as u8,
             },
@@ -45,9 +42,26 @@ pub fn redact_uri(uri: &str) -> String {
 
 #[macro_export]
 macro_rules! log {
-    // Variante segura
+    // Specialized Error variant (always prints to stderr via eprintln!)
+    (Error, $sys:ident, $fmt:literal $(, $arg:expr)* $(,)?) => {
+        if ($crate::util::debug::LogLevel::Error as u8) <= *$crate::util::debug::CURRENT_LEVEL {
+            eprintln!(
+                concat!("[Error] [", stringify!($sys), "] ", $fmt)
+                $(, $crate::util::debug::redact_uri(&$arg.to_string()))*
+            );
+        }
+    };
+    (raw: Error, $sys:ident, $fmt:literal $(, $arg:expr)* $(,)?) => {
+        if ($crate::util::debug::LogLevel::Error as u8) <= *$crate::util::debug::CURRENT_LEVEL {
+            eprintln!(
+                concat!("[Error] [", stringify!($sys), "] ", $fmt)
+                $(, $arg)*
+            );
+        }
+    };
+
+    // Generic safe variant
     ($lvl:ident, $sys:ident, $fmt:literal $(, $arg:expr)* $(,)?) => {
-        // AQUÍ ESTÁ TU MAGIA: Compara los números enteros
         if ($crate::util::debug::LogLevel::$lvl as u8) <= *$crate::util::debug::CURRENT_LEVEL {
             println!(
                 concat!("[", stringify!($lvl), "] [", stringify!($sys), "] ", $fmt)
@@ -56,7 +70,7 @@ macro_rules! log {
         }
     };
 
-    // Variante raw
+    // Generic raw variant
     (raw: $lvl:ident, $sys:ident, $fmt:literal $(, $arg:expr)* $(,)?) => {
         if ($crate::util::debug::LogLevel::$lvl as u8) <= *$crate::util::debug::CURRENT_LEVEL {
             println!(
