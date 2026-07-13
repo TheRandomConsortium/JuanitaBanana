@@ -36,6 +36,7 @@ pub struct AppConfig {
     /// How to open local HTML files: "edit" (text viewer, default) or "render".
     pub local_html_default: String,
     pub resolver_order: Vec<String>,
+    pub handshake_enabled: bool,
 }
 
 impl Default for AppConfig {
@@ -113,6 +114,7 @@ impl Default for AppConfig {
                 "Handshake".to_string(),
                 "System".to_string(),
             ],
+            handshake_enabled: true,
         }
     }
 }

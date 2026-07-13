@@ -307,6 +307,7 @@ impl InternalPage for ConfigPage {
                 if let Ok(decoded) = urlencoding::decode(data_str) {
                     if let Ok(new_config) = serde_json::from_str::<AppConfig>(&decoded) {
                         new_config.save();
+                        crate::resolver::init_resolver();
                         println!("[CONFIG] Configuration saved successfully. Reloading scripts.");
 
                         if let Some(ucm) = webview_clone.user_content_manager() {

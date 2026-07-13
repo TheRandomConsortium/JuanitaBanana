@@ -59,13 +59,22 @@ fn base_data_dir() -> PathBuf {
 /// Initializes the resolver system. Starts the hnsd daemon if Handshake is enabled.
 pub fn init_resolver() {
     let config = AppConfig::load();
-    if !config.resolver_order.contains(&"Handshake".to_string()) {
+    if !config.handshake_enabled || !config.resolver_order.contains(&"Handshake".to_string()) {
         crate::log!(
             Info,
             RESOLVER,
-            "Handshake resolver not in resolver_order, skipping hnsd daemon startup"
+            "Handshake resolver not enabled or not in resolver_order, stopping hnsd daemon if active"
         );
+        shutdown_resolver();
         return;
+    }
+
+    {
+        let lock = HNSD_PROCESS.lock().unwrap();
+        if lock.is_some() {
+            // Already running
+            return;
+        }
     }
 
     let hnsd_bin = match find_hnsd_path() {
@@ -259,6 +268,10 @@ impl DomainResolver for HandshakeResolver {
     }
 
     fn resolve(&self, domain: &str) -> Result<IpAddr, String> {
+        let config = AppConfig::load();
+        if !config.handshake_enabled {
+            return Err("Handshake resolution is disabled in configuration".to_string());
+        }
         let dns_server = format!("127.0.0.1:{}", self.port);
         match resolve_dns_udp(domain, &dns_server) {
             Ok(ips) => {
@@ -375,5 +388,24 @@ mod tests {
     fn test_resolve_domain_with_chain() {
         let ip = resolve_domain_with_chain("localhost");
         assert!(ip.is_ok());
+    }
+
+    #[test]
+    fn test_handshake_disabled_resolver() {
+        let resolver = HandshakeResolver::new(5349);
+        // Save temporary config with handshake disabled
+        let mut config = AppConfig::load();
+        let original_val = config.handshake_enabled;
+        
+        config.handshake_enabled = false;
+        config.save();
+        
+        let res = resolver.resolve("localhost");
+        assert!(res.is_err());
+        assert_eq!(res.unwrap_err(), "Handshake resolution is disabled in configuration");
+
+        // Restore original config
+        config.handshake_enabled = original_val;
+        config.save();
     }
 }

@@ -92,6 +92,7 @@ function saveConfig() {
         if (name) newResolverOrder.push(name);
     });
     configData.resolver_order = newResolverOrder;
+    configData.handshake_enabled = document.getElementById('handshake-enabled').checked;
 
     window.location.href = "juanita://save-config?data=" + encodeURIComponent(JSON.stringify(configData));
 }
