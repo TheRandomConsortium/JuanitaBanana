@@ -102,8 +102,16 @@ HNS at priority 1, you get the HNS result — put ICANN first to preserve legacy
 │ Slot 3   │  Tor / Onion       — .onion address space     │
 │ Slot 4   │  System DNS (ICANN)— legacy fallback          │
 └──────────┴──────────────────────────────────────────────┘
-         ↑ Reorderable via juanita://config
 ```
+         ↑ Reorderable via juanita://config
+
+### ⚡ Non-Blocking Resolution & Resilient Fallback
+
+To ensure the browser remains responsive and secure under unstable connections, the resolver stack leverages the following architectures:
+
+- **Asynchronous GUI Decoupling (✅ Implemented)**: Resolvers are executed asynchronously off the main GTK thread using non-blocking channels and `glib::timeout_add_local` ticks. This prevents network latency or dead Handshake daemon connections from freezing the browser GUI.
+- **Resilient Non-Blocking Chain Retries (📋 Planned)**: Currently, if a resolver in the chain is slow or times out, it halts downstream evaluation. The planned improvement introduces parallel fallback execution: once a resolver fails its initial attempt, we immediately spawn background retries *without blocking the chain*, allowing downstream resolvers (like System DNS) to try resolving in parallel. If a downstream resolver resolves first, the browser proceeds, but cancels/discards background retries.
+- **Navbar Resolver Override (📋 Planned)**: Directly inside the browser navbar, we will display an indicator showing which resolver successfully answered the current page lookup. This indicator doubles as a dropdown selector, enabling the user to perform an instant, one-off override to resolve the current domain using a specific alternative resolver on-the-fly.
 
 ### 🤝 Handshake (HNS) — Decentralised Root DNS
 
@@ -175,7 +183,7 @@ activating the `.onion` resolver (though that would be unusual).
 - When enabled: register `.onion` resolver, optional navigation routing
 - SOCKS5 compatibility layer for WebKitGTK network stack
 
-### Phase 2 — Handshake resolver (🔭 Future)
+### Phase 2 — Handshake resolver (✅ Implemented)
 - FFI or subprocess bridge to `hnsd`
 - Integrate with resolver chain (configurable slot)
 - Per-domain pinning UI in config
