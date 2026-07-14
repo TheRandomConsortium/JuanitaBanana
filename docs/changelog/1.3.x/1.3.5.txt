@@ -1,0 +1,10 @@
+Juanita Banana v1.3.5 Changelog
+================================
+
+Changes:
+- Refactored the monolithic `src/resolver/mod.rs` into a clean, modular submodule architecture under `src/resolver/` (`helpers.rs`, `system/`, and `hns/`).
+- Implemented fully asynchronous resolver integration in GTK policy decision hooks using non-blocking channels and local GLib futures.
+- Resolved browser GUI freezing/locking up during slow Handshake resolver network timeouts by offloading resolutions to spawned worker threads.
+- Ensured seamless and responsive fallback capability to system DNS for unresolvable Handshake domains.
+- Fixed a clippy warning regarding double-ended iterator usage (`DoubleEndedIterator::last`) in host cleaning logic.
+- Cleaned up modular exports to prevent unused import warnings, avoiding the use of warning-suppression tags.

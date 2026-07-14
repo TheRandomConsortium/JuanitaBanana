@@ -99,60 +99,82 @@ pub fn handle_decide_policy(
         let domain = crate::browsing::browser::extract_domain(uri_str);
         let host = crate::resolver::clean_host(&domain);
         if !host.is_empty() && host.parse::<std::net::IpAddr>().is_err() {
-            match crate::resolver::resolve_domain_with_chain(&host) {
-                Ok((ip, _resolver_name)) => {
-                    // If the domain is system-resolvable, let WebKit load it natively to avoid redirect loops on clearweb sites.
-                    if crate::resolver::is_system_resolvable(&host) {
-                        return false;
-                    }
+            let (tx, rx) = async_channel::bounded(1);
+            let host_clone = host.to_string();
 
-                    // Otherwise, it is a Handshake-only domain. Rewrite it to the IP address.
-                    let ip_str = ip.to_string();
-                    crate::resolver::register_resolved_ip(ip_str.clone(), host.clone());
-                    // Force http:// to avoid TLS SNI unrecognized name alert issues
-                    let new_uri = crate::resolver::rewrite_uri_host(uri_str, &host, &ip_str)
-                        .replace("https://", "http://");
-                    log!(
-                        Info,
-                        RESOLVER,
-                        "Rewriting navigation from '{}' to IP '{}' (new URI: '{}')",
-                        host,
-                        ip_str,
-                        new_uri
-                    );
-                    webview_nav.load_uri(&new_uri);
-                    decision.ignore();
-                    return true;
+            // Spawn blocking DNS resolution on a background OS thread to avoid freezing the GTK main thread.
+            std::thread::spawn(move || {
+                let resolve_result = crate::resolver::resolve_domain_with_chain(&host_clone);
+                let is_sys = crate::resolver::is_system_resolvable(&host_clone);
+                let response = match resolve_result {
+                    Ok((ip, _)) => Ok((ip, is_sys)),
+                    Err(e) => Err(e),
+                };
+                let _ = tx.send_blocking(response);
+            });
+
+            // Await the response asynchronously on the main thread
+            let decision = decision.clone();
+            let webview_nav = webview_nav.clone();
+            let uri_str = uri_str.to_string();
+            let host = host.to_string();
+            gtk::glib::spawn_future_local(async move {
+                if let Ok(res) = rx.recv().await {
+                    match res {
+                        Ok((ip, is_sys)) => {
+                            if is_sys {
+                                decision.use_();
+                            } else {
+                                let ip_str = ip.to_string();
+                                crate::resolver::register_resolved_ip(ip_str.clone(), host.clone());
+                                // Force http:// to avoid TLS SNI unrecognized name alert issues
+                                let new_uri =
+                                    crate::resolver::rewrite_uri_host(&uri_str, &host, &ip_str)
+                                        .replace("https://", "http://");
+                                log!(
+                                    Info,
+                                    RESOLVER,
+                                    "Rewriting navigation from '{}' to IP '{}' (new URI: '{}')",
+                                    host,
+                                    ip_str,
+                                    new_uri
+                                );
+                                webview_nav.load_uri(&new_uri);
+                                decision.ignore();
+                            }
+                        }
+                        Err(e) => {
+                            log!(
+                                Error,
+                                RESOLVER,
+                                "Failed to resolve domain '{}' via priority chain: {}",
+                                host,
+                                e
+                            );
+                            decision.ignore();
+                            let error_html = format!(
+                                "<html><head><style>
+                                body {{ background: #121214; color: #e1e1e6; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: monospace; text-align: center; }}
+                                .card {{ background: #1a1a1e; border: 1px solid #29292e; padding: 40px; border-radius: 12px; max-width: 600px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }}
+                                h1 {{ color: #ff5555; font-size: 2.5rem; margin: 0 0 20px 0; }}
+                                p {{ color: #a9a9b3; font-size: 1.1rem; line-height: 1.6; margin: 0 0 20px 0; }}
+                                .error-box {{ background: #282a36; border-left: 4px solid #ff79c6; padding: 15px; text-align: left; font-family: monospace; font-size: 0.95rem; color: #f8f8f2; white-space: pre-wrap; }}
+                                </style></head><body>
+                                <div class=\"card\">
+                                    <h1>Server Not Found</h1>
+                                    <p>Juanita Banana's priority resolver chain failed to resolve the host <strong>{}</strong>.</p>
+                                    <div class=\"error-box\">{}</div>
+                                </div>
+                                </body></html>",
+                                host, e
+                            );
+                            webview_nav.load_html(&error_html, Some("juanita://dns-error"));
+                        }
+                    }
                 }
-                Err(e) => {
-                    log!(
-                        Error,
-                        RESOLVER,
-                        "Failed to resolve domain '{}' via priority chain: {}",
-                        host,
-                        e
-                    );
-                    decision.ignore();
-                    let error_html = format!(
-                        "<html><head><style>
-                        body {{ background: #121214; color: #e1e1e6; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: monospace; text-align: center; }}
-                        .card {{ background: #1a1a1e; border: 1px solid #29292e; padding: 40px; border-radius: 12px; max-width: 600px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }}
-                        h1 {{ color: #ff5555; font-size: 2.5rem; margin: 0 0 20px 0; }}
-                        p {{ color: #a9a9b3; font-size: 1.1rem; line-height: 1.6; margin: 0 0 20px 0; }}
-                        .error-box {{ background: #282a36; border-left: 4px solid #ff79c6; padding: 15px; text-align: left; font-family: monospace; font-size: 0.95rem; color: #f8f8f2; white-space: pre-wrap; }}
-                        </style></head><body>
-                        <div class=\"card\">
-                            <h1>Server Not Found</h1>
-                            <p>Juanita Banana's priority resolver chain failed to resolve the host <strong>{}</strong>.</p>
-                            <div class=\"error-box\">{}</div>
-                        </div>
-                        </body></html>",
-                        host, e
-                    );
-                    webview_nav.load_html(&error_html, Some("juanita://dns-error"));
-                    return true;
-                }
-            }
+            });
+
+            return true;
         }
     }
 
