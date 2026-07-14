@@ -1,0 +1,10 @@
+Juanita Banana v1.4.0 Changelog
+================================
+
+Changes:
+- Added subliminal guilt trip overlay to remind the user about toxic browsing habits, featuring category-configurable high-fidelity meme overlays (Ceiling Cat for NSFW/porn, Donald Trump for news, Fry "Take My Money" for shopping/gambling, Wojak "Touch Grass" for social media/time wasting, and Banana for fallbacks).
+- Overhauled webconsole log interception, capturing guest page console messages (`console.log`, `console.error`, etc.) inside the webview and routing them to the Rust log macro under the debug levels.
+- Reconfigured GitHub CI compilation script for hnsd (recursive resolver) by adding libunbound-dev, autoconf, automake, and libtool dependencies to the Ubuntu runner image to resolve build panics.
+- Corrected templates/config.html spaced template placeholder parsing error which previously caused page scripts to break on configuration updates.
+- Restored Guilt Trip Overlay subliminal opacity limits (capped slider back to a maximum of 0.1).
+- Avoided injecting ad-intoxication, fingerprint-spoofing, toxic warnings, or guilt overlays on internal local pages (juanita://*).

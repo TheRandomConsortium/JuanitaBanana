@@ -104,7 +104,7 @@ pub fn run(banlist: SharedBanList) {
             UserContentInjectedFrames::AllFrames,
             UserScriptInjectionTime::Start,
             &[],
-            &[],
+            &["juanita://*"],
         );
         ucm.add_script(&script);
 
@@ -114,7 +114,7 @@ pub fn run(banlist: SharedBanList) {
             UserContentInjectedFrames::AllFrames,
             UserScriptInjectionTime::Start,
             &[],
-            &[],
+            &["juanita://*"],
         );
         ucm.add_script(&ad_script);
 
@@ -123,9 +123,20 @@ pub fn run(banlist: SharedBanList) {
             UserContentInjectedFrames::TopFrame,
             UserScriptInjectionTime::Start,
             &[],
-            &[],
+            &["juanita://*"],
         );
         ucm.add_script(&toxic_script);
+
+        if config.guilt_trip_enabled {
+            let guilt_script = UserScript::new(
+                &crate::browsing::guilt::guilt_trip_script(&config),
+                UserContentInjectedFrames::TopFrame,
+                UserScriptInjectionTime::Start,
+                &[],
+                &["juanita://*"],
+            );
+            ucm.add_script(&guilt_script);
+        }
 
         let form_mon_script = UserScript::new(
             crate::browsing::credentials_ui::form_monitor_script(),
@@ -135,6 +146,15 @@ pub fn run(banlist: SharedBanList) {
             &[],
         );
         ucm.add_script(&form_mon_script);
+
+        let console_override = UserScript::new(
+            crate::util::debug::console_override_script(),
+            UserContentInjectedFrames::AllFrames,
+            UserScriptInjectionTime::Start,
+            &[],
+            &[],
+        );
+        ucm.add_script(&console_override);
 
         let form_interact_script = UserScript::new(
             crate::browsing::credentials_ui::form_interact_script(),
@@ -165,6 +185,14 @@ pub fn run(banlist: SharedBanList) {
         let ad_engine_msg = ad_intox_engine.clone();
         let banlist_msg = banlist.clone();
         let webview_msg = webview.clone();
+        ucm.register_script_message_handler("console");
+        ucm.connect_script_message_received(Some("console"), move |_manager, js_result| {
+            if let Some(val) = js_result.js_value() {
+                let msg = val.to_string();
+                log!(raw:Debug, CONSOLE, "{}", msg);
+            }
+        });
+
         ucm.connect_script_message_received(Some("juanita"), move |_manager, js_result| {
             crate::browsing::message_handler::handle_script_message(
                 js_result,

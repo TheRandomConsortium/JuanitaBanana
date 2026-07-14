@@ -211,6 +211,12 @@ pub fn config_page_html(
         ""
     };
 
+    let guilt_trip_enabled_checked = if config.guilt_trip_enabled {
+        "checked"
+    } else {
+        ""
+    };
+
     html_template
         .replace("{config_js}", js_content)
         .replace("{default_btn}", default_btn)
@@ -232,6 +238,31 @@ pub fn config_page_html(
         .replace("{secure_db_html}", &secure_db_html)
         .replace("{resolver_list_html}", &resolver_list_html)
         .replace("{handshake_enabled_checked}", handshake_enabled_checked)
+        .replace("{guilt_trip_enabled_checked}", guilt_trip_enabled_checked)
+        .replace(
+            "{guilt_trip_opacity}",
+            &config.guilt_trip_opacity.to_string(),
+        )
+        .replace(
+            "{guilt_trip_threshold}",
+            &config.guilt_trip_threshold.to_string(),
+        )
+        .replace(
+            "{guilt_trip_nsfw_rules}",
+            &config.guilt_trip_nsfw_rules.join(", "),
+        )
+        .replace(
+            "{guilt_trip_news_rules}",
+            &config.guilt_trip_news_rules.join(", "),
+        )
+        .replace(
+            "{guilt_trip_shopping_rules}",
+            &config.guilt_trip_shopping_rules.join(", "),
+        )
+        .replace(
+            "{guilt_trip_social_rules}",
+            &config.guilt_trip_social_rules.join(", "),
+        )
 }
 
 #[cfg(test)]
@@ -244,6 +275,13 @@ mod tests {
         let config = AppConfig {
             max_concurrent_searches: 777,
             toxic_threshold: 999,
+            guilt_trip_enabled: true,
+            guilt_trip_opacity: 0.088,
+            guilt_trip_threshold: 42,
+            guilt_trip_nsfw_rules: vec!["nsfwmeme".to_string()],
+            guilt_trip_news_rules: vec!["newsmeme".to_string()],
+            guilt_trip_shopping_rules: vec!["shopmeme".to_string()],
+            guilt_trip_social_rules: vec!["socialmeme".to_string()],
             ..AppConfig::default()
         };
 
@@ -252,5 +290,12 @@ mod tests {
         assert!(html.contains("999"));
         assert!(html.contains("Hacker News"));
         assert!(html.contains("DuckDuckGo"));
+        assert!(html.contains("0.088"));
+        assert!(html.contains("42"));
+        assert!(html.contains("checked"));
+        assert!(html.contains("nsfwmeme"));
+        assert!(html.contains("newsmeme"));
+        assert!(html.contains("shopmeme"));
+        assert!(html.contains("socialmeme"));
     }
 }
