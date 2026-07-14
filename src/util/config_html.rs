@@ -46,6 +46,20 @@ pub fn config_page_html(
 
     let json_data = serde_json::to_string(&config).unwrap_or_default();
 
+    let mut resolver_list_html = String::new();
+    for res in &config.resolver_order {
+        resolver_list_html.push_str(&format!(
+            r#"<li class="resolver-item" data-name="{name}" style="padding: 12px; margin: 8px 0; background: #37373d; border-radius: 4px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #444;">
+                <span style="font-weight: bold; color: #fff;">{name}</span>
+                <div>
+                    <button type="button" onclick="moveResolverUp(this)" style="margin: 0; padding: 4px 10px; font-size: 0.85em; background: #444; border: 1px solid #555; border-radius: 3px; color: #fff; cursor: pointer;">Up</button>
+                    <button type="button" onclick="moveResolverDown(this)" style="margin: 0; padding: 4px 10px; font-size: 0.85em; background: #444; border: 1px solid #555; border-radius: 3px; color: #fff; cursor: pointer; margin-left: 5px;">Down</button>
+                </div>
+            </li>"#,
+            name = res
+        ));
+    }
+
     let max_concurrent = config.max_concurrent_searches.to_string();
     let min_delay = config.min_delay_ms.to_string();
     let max_delay = config.max_delay_ms.to_string();
@@ -191,6 +205,12 @@ pub fn config_page_html(
     let html_template = include_str!("../../templates/config.html");
     let js_content = include_str!("../../scripts/config.js");
 
+    let handshake_enabled_checked = if config.handshake_enabled {
+        "checked"
+    } else {
+        ""
+    };
+
     html_template
         .replace("{config_js}", js_content)
         .replace("{default_btn}", default_btn)
@@ -210,6 +230,8 @@ pub fn config_page_html(
         .replace("{toxic_threshold}", &toxic_threshold)
         .replace("{deep_crawl_max_pages}", &deep_crawl_max_pages)
         .replace("{secure_db_html}", &secure_db_html)
+        .replace("{resolver_list_html}", &resolver_list_html)
+        .replace("{handshake_enabled_checked}", handshake_enabled_checked)
 }
 
 #[cfg(test)]

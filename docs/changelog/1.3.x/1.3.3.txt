@@ -1,0 +1,8 @@
+Version 1.3.3 Changelog
+=======================
+
+* Resolved a port collision conflict in the Handshake resolver system where both the root nameserver (ns) and the recursive nameserver (rns) components of the `hnsd` daemon attempted to bind to the same port (5349).
+* Configured the root nameserver component to bind explicitly to port 5349 (`-n 127.0.0.1:5349`).
+* Configured the recursive nameserver component to bind to port 5350 (`-r 127.0.0.1:5350`).
+* Updated `HandshakeResolver` and the testing suite to target port 5350 for resolver lookups.
+* Implemented background log readers for the `hnsd` daemon process's `stdout` and `stderr` streams, routing stdout logs to the new `Trace` level logger, and routing stderr logs to the `Error` logger to maintain clean terminal output while preserving complete debugging capability.

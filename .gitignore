@@ -2,3 +2,5 @@
 /vendor
 *.rpm
 *.repo
+/bin
+/build_temp

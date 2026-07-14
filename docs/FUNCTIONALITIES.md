@@ -6,6 +6,7 @@
 | 🔨 | **WIP**: Currently being worked on. |
 | 📋 | **Planned**: Accepted into the roadmap, pending implementation. |
 | 🔭 | **Future**: Conceptual idea, needs research or architecture design. |
+| ❓ | **Doubtful**: May be implemented however might not be within the project philosophy |
 
 ---
 
@@ -128,11 +129,11 @@
 
 | Feature | Status | Notes |
 |---|---|---|
-| **BIOS-style resolver chain** | 🔭 Future | Priority-ordered chain: first resolver with an authoritative answer wins, rest skipped. Default order: Handshake → I2P → Tor/Onion → System DNS. Fully user-reorderable in `juanita://config`. |
-| **Handshake (HNS) resolver** | 🔭 Future | Permissionless blockchain root DNS, parallel to ICANN. Integrated via `hnsd` (C SPV client) initially; long-term goal is a native Rust port for full in-house maintenance. |
+| **BIOS-style resolver chain** | ✅ Done | Priority-ordered chain: first resolver with an authoritative answer wins, rest skipped. Default order: Handshake → System DNS. Fully user-reorderable in `juanita://config`. |
+| **Handshake (HNS) resolver** | ✅ Done | Permissionless blockchain root DNS, parallel to ICANN. Integrated via local `hnsd` daemon managed automatically by the browser. |
 | **Onion resolver** | 📋 Planned | Resolves `.onion` v3 addresses when Tor transport is active. |
 | **I2P resolver** | 🔭 Future | Resolves `.i2p` eepsite addresses when I2P transport is active. |
-| **Namespace collision handling** | 🔭 Future | HNS and ICANN can both define `google.com`. Resolver order is the user's tiebreak — whoever is first in your chain is authoritative for you. |
+| **Namespace collision handling** | ✅ Done | HNS and ICANN can both define same names. Resolver priority chain is the user's tiebreak — whoever is first in your chain is authoritative for you. |
 | **Per-domain pinning rules** | 🔭 Future | User rules in config: `example.bit → always Handshake`, `*.onion → always Tor`. Pinned domains bypass the chain entirely. |
 
 ### Niche Protocols (Under Evaluation)

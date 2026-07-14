@@ -84,6 +84,7 @@
             <li id="li-ad-intox" onclick="showTab('ad-intox')">Ad Intoxication</li>
             <li id="li-rss" onclick="showTab('rss')">RSS Sources</li>
             <li id="li-secure-db" onclick="showTab('secure-db')">Secure DB & Email</li>
+            <li id="li-resolver" onclick="showTab('resolver')">Resolver Stack</li>
         </ul>
     </div>
     <div id="content">
@@ -195,6 +196,23 @@
         <div id="secure-db" class="tab-content">
             <h2>Secure Database & Email Configuration</h2>
             {secure_db_html}
+        </div>
+        <div id="resolver" class="tab-content">
+            <h2>Resolver Stack Settings</h2>
+            <p>Configure the priority-ordered BIOS-style resolver chain. The first resolver in the list is queried first. If it cannot resolve the domain, the query falls back to the next resolver.</p>
+            <div style="background: #2d2d30; padding: 20px; border-radius: 5px; max-width: 500px; margin-top: 20px; margin-bottom: 20px;">
+                <h3 style="margin-top: 0; color: #fff;">Handshake Resolver Daemon</h3>
+                <label style="display: flex; align-items: center; cursor: pointer; color: #d4d4d4;">
+                    <input type="checkbox" id="handshake-enabled" {handshake_enabled_checked} style="margin-right: 10px; width: 18px; height: 18px;">
+                    Enable Handshake resolution daemon (hnsd)
+                </label>
+            </div>
+            <div style="background: #2d2d30; padding: 20px; border-radius: 5px; max-width: 500px;">
+                <h3 style="margin-top: 0; color: #fff;">Priority Order</h3>
+                <ul id="resolver-list" style="list-style: none; padding: 0; margin: 0;">
+                    {resolver_list_html}
+                </ul>
+            </div>
         </div>
 
         <div id="unban" class="tab-content">

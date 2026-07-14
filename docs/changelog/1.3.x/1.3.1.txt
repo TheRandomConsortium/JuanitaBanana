@@ -1,0 +1,7 @@
+Version 1.3.1 Changelog
+=======================
+
+* Fixed compilation and linting checks by resolving cargo clippy warnings.
+* Removed unused `LogLevel::Warn` variant and corresponding environment parser cases to prevent compiler warnings.
+* Restored standard mapping for the custom `log!` macro, ensuring `Error` log levels output directly to `eprintln!` (standard error stream).
+* Fixed status format checklist in `docs/FUNCTIONALITIES.md` to consistently use the green checkmark done format (`✅ Done`) for the new BIOS-style resolver stack, Handshake (HNS) resolver, and namespace collision handling.
