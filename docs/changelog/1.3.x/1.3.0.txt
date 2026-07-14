@@ -1,0 +1,11 @@
+Version 1.3.0 Changelog
+=======================
+
+* Integrated Handshake (HNS) resolver daemon (hnsd) directly compiled with system unbound development dependencies.
+* Implemented browser-managed hnsd subprocess lifecycle, dynamically starting and stopping the daemon with the browser.
+* Avoided hardcoded paths by dynamically retrieving base data directory for hnsd state using XDG_DATA_HOME / HOME environment variables.
+* Added a DomainResolver trait to implement the Open-Closed Principle for future resolver plugins.
+* Implemented SystemResolver fallback using rust standard library ToSocketAddrs resolving ICANN namespaces.
+* Added a customizable, priority-ordered "Resolver Stack" configuration UI tab under juanita://config with interactive reordering controls.
+* Standardized all diagnostics and log outputs in the resolver code utilizing the internal log! macro rather than println!/eprintln!.
+* Updated build.rs to automatically compile hnsd on project cargo build, avoiding separate binary distribution steps.

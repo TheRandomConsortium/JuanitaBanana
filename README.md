@@ -125,7 +125,7 @@ Builds are extremely fast since we are dynamically linking to your system's GTK3
 
 ```bash
 # Prerequisites (Fedora)
-sudo dnf install -y webkit2gtk4.1-devel gtk3-devel gcc-c++ make cmake pkgconf-pkg-config openssl-devel clang-devel
+sudo dnf install -y webkit2gtk4.1-devel gtk3-devel gcc-c++ make cmake pkgconf-pkg-config openssl-devel clang-devel unbound-devel
 
 # Install Rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh

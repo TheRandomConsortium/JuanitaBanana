@@ -1,0 +1,10 @@
+Juanita Banana v1.3.4 Changelog
+================================
+
+Changes:
+- Implemented dynamic DNS resolution utilizing the user's configured priority chain (Handshake -> System).
+- Eliminated static clearnet TLD checklists in favor of checking system DNS resolvability dynamically via `is_system_resolvable`.
+- Resolved infinite redirect loops on clearweb sites (like google.com) by natively loading domains that are resolvable via the system DNS, bypassing IP-rewriting.
+- Implemented robust host normalization (`clean_host`) to correctly parse URIs containing custom ports (e.g. :8080), userinfo (e.g. user:pass@), and IPv6 brackets (e.g. [2001:db8::1]).
+- Implemented authority-scoped URI rewriting (`rewrite_uri_host`) that preserves custom port numbers and protects against accidental replacement of matching strings in path components.
+- Integrated a thread-safe mapping registry (`RESOLVED_IPS`) to intercept GTK load-changed events and restore original domain names (like nathan.woodburn) in the address bar.
