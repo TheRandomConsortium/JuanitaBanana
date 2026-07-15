@@ -1,10 +1,13 @@
 pub mod browser;
 pub mod credentials_ui;
 pub mod gui;
-pub mod gui_plugin;
-pub mod guilt;
 pub mod internal;
 pub mod message_handler;
+pub mod plugin;
 pub mod policy;
-pub mod tab;
-pub mod tab_cleanup;
+pub mod tabs;
+
+pub use plugin::gui_plugin;
+pub use plugin::guilt;
+pub use tabs::cleanup as tab_cleanup;
+pub use tabs::tab;

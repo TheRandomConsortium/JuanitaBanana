@@ -1,4 +1,4 @@
-use super::{InternalPage, PageContext};
+use crate::browsing::internal::{InternalPage, PageContext};
 use webkit2gtk::WebViewExt;
 
 pub struct HomePage;
@@ -22,7 +22,7 @@ impl InternalPage for HomePage {
 
     fn handle_policy(&self, _uri: &str, ctx: &PageContext) -> bool {
         let b64_image = crate::util::image::get_juanita_throwing_papers_b64();
-        let html_template = include_str!("../../../templates/home.html");
+        let html_template = include_str!("../../../../templates/home.html");
         let html = html_template.replace("{b64_image}", &b64_image);
         let webview_clone = ctx.webview.clone();
         gtk::glib::idle_add_local(move || {

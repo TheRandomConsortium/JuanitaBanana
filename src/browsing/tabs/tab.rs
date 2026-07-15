@@ -3,10 +3,9 @@ use gtk::{ApplicationWindow, Button, Entry};
 use std::cell::RefCell;
 use std::rc::Rc;
 use webkit2gtk::{
-    NavigationPolicyDecision, NavigationPolicyDecisionExt, PolicyDecisionType, URIRequestExt,
-    UserContentInjectedFrames, UserContentManager, UserContentManagerExt, UserScript,
-    UserScriptInjectionTime, WebContext, WebView, WebViewExt,
-    PolicyDecisionExt, HitTestResultExt,
+    HitTestResultExt, NavigationPolicyDecision, NavigationPolicyDecisionExt, PolicyDecisionExt,
+    PolicyDecisionType, URIRequestExt, UserContentInjectedFrames, UserContentManager,
+    UserContentManagerExt, UserScript, UserScriptInjectionTime, WebContext, WebView, WebViewExt,
 };
 
 use crate::browsing::browser::SharedBanList;
@@ -16,18 +15,18 @@ use crate::search::intoxication::IntoxicationEngine;
 use crate::search::noise::RssNoiseProvider;
 use crate::util::config::AppConfig;
 
-#[allow(dead_code)]
 #[derive(Clone)]
 pub struct Tab {
     pub webview: WebView,
-    pub label: gtk::Label,
+    pub _label: gtk::Label,
     pub last_interaction: Rc<RefCell<std::time::Instant>>,
     pub is_killed: Rc<RefCell<bool>>,
-    pub original_title: Rc<RefCell<String>>,
+    pub _original_title: Rc<RefCell<String>>,
     pub intox_engine: IntoxicationEngine,
     pub ad_intox_engine: Rc<crate::ad_intoxication::AdIntoxicationEngine>,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn create_tab(
     notebook: &gtk::Notebook,
     _tabs: &Rc<RefCell<Vec<Tab>>>,
@@ -336,13 +335,17 @@ pub fn create_tab(
 
     let tab_tx_policy = tab_tx.clone();
     webview.connect_decide_policy(move |_, decision, decision_type| {
-        if decision_type == PolicyDecisionType::NavigationAction || decision_type == PolicyDecisionType::NewWindowAction {
+        if decision_type == PolicyDecisionType::NavigationAction
+            || decision_type == PolicyDecisionType::NewWindowAction
+        {
             if let Some(nav_decision) = decision.downcast_ref::<NavigationPolicyDecision>() {
                 #[allow(deprecated)]
                 if let Some(req) = nav_decision.request() {
                     if let Some(uri) = req.uri() {
                         let uri_str = uri.as_str();
-                        if decision_type == PolicyDecisionType::NewWindowAction || nav_decision.mouse_button() == 2 {
+                        if decision_type == PolicyDecisionType::NewWindowAction
+                            || nav_decision.mouse_button() == 2
+                        {
                             decision.ignore();
                             let _ = tab_tx_policy.send_blocking(uri_str.to_string());
                             return true;
@@ -430,10 +433,10 @@ pub fn create_tab(
 
     Tab {
         webview,
-        label,
+        _label: label,
         last_interaction,
         is_killed,
-        original_title,
+        _original_title: original_title,
         intox_engine,
         ad_intox_engine,
     }

@@ -103,6 +103,7 @@ pub fn cleanup_killed_tabs(
     );
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn manual_close_tab(
     notebook: &Notebook,
     tabs: &Rc<RefCell<Vec<Tab>>>,
@@ -159,7 +160,10 @@ pub fn check_tab_inactivity(tabs: &Rc<RefCell<Vec<Tab>>>) {
     let now = std::time::Instant::now();
     let mut tabs_borrow = tabs.borrow_mut();
 
-    let mut active_count = tabs_borrow.iter().filter(|t| !*t.is_killed.borrow()).count();
+    let mut active_count = tabs_borrow
+        .iter()
+        .filter(|t| !*t.is_killed.borrow())
+        .count();
 
     for tab in tabs_borrow.iter_mut() {
         if *tab.is_killed.borrow() {

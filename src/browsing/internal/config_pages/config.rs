@@ -1,4 +1,4 @@
-use super::{InternalPage, PageContext};
+use crate::browsing::internal::{InternalPage, PageContext};
 use crate::util::config::AppConfig;
 use webkit2gtk::{UserContentManagerExt, WebViewExt};
 

@@ -153,7 +153,10 @@ pub fn run(banlist: SharedBanList) {
         let (tab_tx, tab_rx) = async_channel::unbounded::<String>();
 
         // Register window action for right-click context menu "Open Link in New Tab"
-        let open_in_new_tab_action = gtk::gio::SimpleAction::new("open-in-new-tab", Some(gtk::glib::VariantTy::new("s").unwrap()));
+        let open_in_new_tab_action = gtk::gio::SimpleAction::new(
+            "open-in-new-tab",
+            Some(gtk::glib::VariantTy::new("s").unwrap()),
+        );
         let tab_tx_act = tab_tx.clone();
         open_in_new_tab_action.connect_activate(move |_, parameter| {
             if let Some(p) = parameter {
@@ -258,7 +261,10 @@ pub fn run(banlist: SharedBanList) {
                     *at.borrow_mut() = Some((tab.webview.clone(), tab.ad_intox_engine.clone()));
                 });
 
-                let has_creds = if !uri.is_empty() && !uri.starts_with("juanita://") && !uri.starts_with("about:") {
+                let has_creds = if !uri.is_empty()
+                    && !uri.starts_with("juanita://")
+                    && !uri.starts_with("about:")
+                {
                     let domain = crate::browsing::browser::extract_domain(&uri);
                     crate::util::credentials::CredentialIndex::load().has_credentials(&domain)
                 } else {
