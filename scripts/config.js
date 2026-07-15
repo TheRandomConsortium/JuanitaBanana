@@ -109,6 +109,8 @@ function saveConfig() {
     });
     configData.resolver_order = newResolverOrder;
     configData.handshake_enabled = document.getElementById('handshake-enabled').checked;
+    configData.tab_inactivity_ttl = parseInt(document.getElementById('tab-inactivity-ttl').value, 10);
+    configData.last_tab_nuke_action = document.getElementById('last-tab-nuke-action').value;
 
     window.location.href = "juanita://save-config?data=" + encodeURIComponent(JSON.stringify(configData));
 }

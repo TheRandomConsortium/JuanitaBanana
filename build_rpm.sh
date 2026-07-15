@@ -26,6 +26,30 @@ else
     echo "Keeping version at $NEW_VERSION..."
 fi
 
+# Find highest release number for the current version in local repo or rpmbuild RPMS
+REPO_DIR="$HOME/juanita-repo"
+RPM_ROOT=~/rpmbuild
+RELEASE=1
+EXISTING_RPMS=$(find "$REPO_DIR" "$RPM_ROOT/RPMS" -name "juanita-banana-${NEW_VERSION}-*.rpm" 2>/dev/null || true)
+if [ -n "$EXISTING_RPMS" ]; then
+    MAX_RELEASE=0
+    for rpm in $EXISTING_RPMS; do
+        fname=$(basename "$rpm")
+        rel_part=${fname#juanita-banana-${NEW_VERSION}-}
+        rel_num=${rel_part%%.*}
+        rel_num=${rel_num%%-*}
+        if [[ "$rel_num" =~ ^[0-9]+$ ]]; then
+            if [ "$rel_num" -gt "$MAX_RELEASE" ]; then
+                MAX_RELEASE=$rel_num
+            fi
+        fi
+    done
+    if [ "$MAX_RELEASE" -gt 0 ]; then
+        RELEASE=$((MAX_RELEASE + 1))
+    fi
+fi
+echo "Using Release: $RELEASE"
+
 echo "Building release binary..."
 source ~/.cargo/env
 cargo build --release
@@ -55,7 +79,7 @@ EOF
 cat > $RPM_ROOT/SPECS/juanita-banana.spec << 'EOF'
 Name:           juanita-banana
 Version:        VERSION_PLACEHOLDER
-Release:        1%{?dist}
+Release:        RELEASE_PLACEHOLDER%{?dist}
 Summary:        A browser that fights back
 License:        MPL-2.0
 BuildArch:      x86_64
@@ -81,6 +105,7 @@ cp %{_topdir}/BUILD/juanita-banana.png %{buildroot}/usr/share/pixmaps/
 EOF
 
 sed -i "s/VERSION_PLACEHOLDER/$NEW_VERSION/" $RPM_ROOT/SPECS/juanita-banana.spec
+sed -i "s/RELEASE_PLACEHOLDER/$RELEASE/" $RPM_ROOT/SPECS/juanita-banana.spec
 
 echo "Building RPM..."
 rpmbuild -bb $RPM_ROOT/SPECS/juanita-banana.spec
@@ -89,7 +114,7 @@ REPO_DIR="$HOME/juanita-repo"
 mkdir -p "$REPO_DIR"
 
 echo "Copying new RPM to local repository at $REPO_DIR..."
-find $RPM_ROOT/RPMS -name "juanita-banana-${NEW_VERSION}*.rpm" -exec cp {} "$REPO_DIR/" \;
+find $RPM_ROOT/RPMS -name "juanita-banana-${NEW_VERSION}-${RELEASE}*.rpm" -exec cp {} "$REPO_DIR/" \;
 
 echo "Cleaning up older RPM versions in local repository (keeping the latest 3)..."
 pushd "$REPO_DIR" > /dev/null

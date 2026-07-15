@@ -2,17 +2,11 @@ use gtk::prelude::*;
 use gtk::{Application, ApplicationWindow, Box as GtkBox, Button, Entry, HeaderBar, Orientation};
 use std::cell::RefCell;
 use std::rc::Rc;
-use webkit2gtk::{
-    NavigationPolicyDecision, NavigationPolicyDecisionExt, PolicyDecisionType, URIRequestExt,
-    UserContentInjectedFrames, UserContentManager, UserContentManagerExt, UserScript,
-    UserScriptInjectionTime, WebContext, WebView, WebViewExt,
-};
+use webkit2gtk::{WebContext, WebView, WebViewExt};
 
 use crate::browsing::browser::SharedBanList;
-use crate::fingerprint::spoof;
+use crate::browsing::tab::{cleanup_killed_tabs, create_tab, Tab};
 use crate::log;
-use crate::search::intoxication::IntoxicationEngine;
-use crate::search::noise::RssNoiseProvider;
 use crate::util::config::AppConfig;
 
 pub fn run(banlist: SharedBanList) {
@@ -95,129 +89,6 @@ pub fn run(banlist: SharedBanList) {
     app.connect_activate(move |app| {
         let banlist = banlist_clone.clone();
 
-        let config = AppConfig::load();
-        let web_context = WebContext::default().unwrap();
-        let ucm = UserContentManager::new();
-
-        let script = UserScript::new(
-            spoof::anti_fingerprint_script(),
-            UserContentInjectedFrames::AllFrames,
-            UserScriptInjectionTime::Start,
-            &[],
-            &["juanita://*"],
-        );
-        ucm.add_script(&script);
-
-        ucm.register_script_message_handler("juanita");
-        let ad_script = UserScript::new(
-            &crate::ad_intoxication::ad_intoxication_script(&config),
-            UserContentInjectedFrames::AllFrames,
-            UserScriptInjectionTime::Start,
-            &[],
-            &["juanita://*"],
-        );
-        ucm.add_script(&ad_script);
-
-        let toxic_script = UserScript::new(
-            &crate::util::ban::toxic_warning_script(&config),
-            UserContentInjectedFrames::TopFrame,
-            UserScriptInjectionTime::Start,
-            &[],
-            &["juanita://*"],
-        );
-        ucm.add_script(&toxic_script);
-
-        if config.guilt_trip_enabled {
-            let guilt_script = UserScript::new(
-                &crate::browsing::guilt::guilt_trip_script(&config),
-                UserContentInjectedFrames::TopFrame,
-                UserScriptInjectionTime::Start,
-                &[],
-                &["juanita://*"],
-            );
-            ucm.add_script(&guilt_script);
-        }
-
-        let form_mon_script = UserScript::new(
-            crate::browsing::credentials_ui::form_monitor_script(),
-            UserContentInjectedFrames::TopFrame,
-            UserScriptInjectionTime::End,
-            &[],
-            &[],
-        );
-        ucm.add_script(&form_mon_script);
-
-        let console_override = UserScript::new(
-            crate::util::debug::console_override_script(),
-            UserContentInjectedFrames::AllFrames,
-            UserScriptInjectionTime::Start,
-            &[],
-            &[],
-        );
-        ucm.add_script(&console_override);
-
-        let form_interact_script = UserScript::new(
-            crate::browsing::credentials_ui::form_interact_script(),
-            UserContentInjectedFrames::TopFrame,
-            UserScriptInjectionTime::End,
-            &[],
-            &[],
-        );
-        ucm.add_script(&form_interact_script);
-
-        let settings = webkit2gtk::Settings::builder()
-            .user_agent("JuanitaBanana/0.1 (FOSS; Not-Google; Linux)")
-            .build();
-        let webview = WebView::builder()
-            .web_context(&web_context)
-            .user_content_manager(&ucm)
-            .settings(&settings)
-            .build();
-
-        let ad_intox_engine = Rc::new(crate::ad_intoxication::AdIntoxicationEngine::new(
-            &web_context,
-            &webview,
-            &config,
-        ));
-
-        let global_window: Rc<RefCell<Option<ApplicationWindow>>> = Rc::new(RefCell::new(None));
-        let window_msg = global_window.clone();
-        let ad_engine_msg = ad_intox_engine.clone();
-        let banlist_msg = banlist.clone();
-        let webview_msg = webview.clone();
-        ucm.register_script_message_handler("console");
-        ucm.connect_script_message_received(Some("console"), move |_manager, js_result| {
-            if let Some(val) = js_result.js_value() {
-                let msg = val.to_string();
-                log!(raw:Debug, CONSOLE, "{}", msg);
-            }
-        });
-
-        ucm.connect_script_message_received(Some("juanita"), move |_manager, js_result| {
-            crate::browsing::message_handler::handle_script_message(
-                js_result,
-                &webview_msg,
-                &window_msg,
-                &banlist_msg,
-                &ad_engine_msg,
-            );
-        });
-
-        *gw_activate.borrow_mut() = Some(webview.clone());
-
-        let has_pending = !pending_activate.borrow().is_empty();
-        log!(raw:Debug, GUI, "connect_activate: has_pending = {}", has_pending);
-        {
-            let mut pending = pending_activate.borrow_mut();
-            for (url, is_external) in pending.drain(..) {
-                log!(Debug, GUI, "draining pending URL: {}", url);
-                let _ = tx_activate.send_blocking((url, is_external));
-            }
-        }
-
-        let downloads = Rc::new(RefCell::new(crate::util::downloads::DownloadManager::new()));
-        crate::util::downloads::setup_downloads(&web_context, &downloads, &tx_activate);
-
         let window = ApplicationWindow::builder()
             .application(app)
             .title("Juanita Banana 🍌")
@@ -225,7 +96,7 @@ pub fn run(banlist: SharedBanList) {
             .default_height(800)
             .build();
 
-        // Resolve the deferred window reference used by the JS message handler
+        let global_window: Rc<RefCell<Option<ApplicationWindow>>> = Rc::new(RefCell::new(None));
         *global_window.borrow_mut() = Some(window.clone());
 
         let header = HeaderBar::new();
@@ -239,9 +110,152 @@ pub fn run(banlist: SharedBanList) {
             .hexpand(true)
             .build();
 
-        let current_uri_focus = current_uri.clone();
+        let ban_button = Button::with_label("BAN");
+        ban_button.style_context().add_class("destructive-action");
+
+        header.set_custom_title(Some(&url_entry));
+        header.pack_end(&ban_button);
+
+        let key_button = Button::with_label("🔑");
+        key_button.set_no_show_all(true);
+        key_button.set_visible(false);
+        header.pack_start(&key_button);
+
+        // Autofill button click handler
+        let gw_key = global_webview.clone();
+        let window_key = window.clone();
+        key_button.connect_clicked(move |_| {
+            if let Some(wv) = gw_key.borrow().as_ref() {
+                crate::browsing::credentials_ui::try_autofill(wv, &window_key);
+            }
+        });
+
+        let vbox = GtkBox::new(Orientation::Vertical, 0);
+        let notebook = gtk::Notebook::new();
+        notebook.set_show_tabs(true);
+        notebook.set_scrollable(true);
+        vbox.pack_start(&notebook, true, true, 0);
+        window.add(&vbox);
+
+        let tabs: Rc<RefCell<Vec<Tab>>> = Rc::new(RefCell::new(Vec::new()));
+        let is_cleaning = Rc::new(RefCell::new(false));
+
+        let web_context = WebContext::default().unwrap();
+        let downloads = Rc::new(RefCell::new(crate::util::downloads::DownloadManager::new()));
+        crate::util::downloads::setup_downloads(&web_context, &downloads, &tx_activate);
+
+        let expected_unban: Rc<RefCell<Option<(String, i32)>>> = Rc::new(RefCell::new(None));
+        let internal_pages = Rc::new(crate::browsing::internal::get_internal_pages());
+
+        // Helper to add a tab
+        let notebook_c = notebook.clone();
+        let tabs_c = tabs.clone();
+        let window_c = window.clone();
+        let global_window_c = global_window.clone();
+        let web_context_c = web_context.clone();
+        let banlist_c = banlist.clone();
+        let downloads_c = downloads.clone();
+        let expected_unban_c = expected_unban.clone();
+        let internal_pages_c = internal_pages.clone();
+        let tx_c = tx_activate.clone();
+        let url_entry_c = url_entry.clone();
+        let current_uri_c = current_uri.clone();
+        let key_button_c = key_button.clone();
+        let is_cleaning_c = is_cleaning.clone();
+        let gw_c = gw_activate.clone();
+
+        let add_new_tab = move |url: &str| {
+            let tab = create_tab(
+                &notebook_c,
+                &tabs_c,
+                url,
+                &window_c,
+                &global_window_c,
+                &web_context_c,
+                &banlist_c,
+                &downloads_c,
+                &expected_unban_c,
+                &internal_pages_c,
+                &tx_c,
+                &url_entry_c,
+                &current_uri_c,
+                &key_button_c,
+                &is_cleaning_c,
+                &gw_c,
+            );
+            let mut tabs_borrow = tabs_c.borrow_mut();
+            tabs_borrow.push(tab);
+            notebook_c.set_current_page(Some((tabs_borrow.len() - 1) as u32));
+        };
+
+        // Add New Tab button "+" to headerbar
+        let new_tab_btn = Button::with_label("+");
+        header.pack_start(&new_tab_btn);
+        let add_tab_btn_clone = add_new_tab.clone();
+        new_tab_btn.connect_clicked(move |_| {
+            add_tab_btn_clone("juanita://home");
+        });
+
+        // Set up active tab change / switch page event
+        let tabs_switch = tabs.clone();
+        let url_entry_switch = url_entry.clone();
+        let key_button_switch = key_button.clone();
+        let global_webview_switch = gw_activate.clone();
+        let current_uri_switch = current_uri.clone();
+        let is_cleaning_switch = is_cleaning.clone();
+
+        notebook.connect_switch_page(move |_, _page, page_num| {
+            if *is_cleaning_switch.borrow() {
+                return;
+            }
+            let tabs_borrow = tabs_switch.borrow();
+            if let Some(tab) = tabs_borrow.get(page_num as usize) {
+                let uri = tab.webview.uri().map(|s| s.to_string()).unwrap_or_default();
+                let restored_uri = crate::resolver::restore_original_domain_in_uri(&uri);
+                *current_uri_switch.borrow_mut() = restored_uri.clone();
+                let display_uri = if let Some((base, _)) = restored_uri.split_once('?') {
+                    base.to_string()
+                } else {
+                    restored_uri
+                };
+                url_entry_switch.set_text(&display_uri);
+                *global_webview_switch.borrow_mut() = Some(tab.webview.clone());
+
+                crate::browsing::gui_plugin::ACTIVE_TAB.with(|at| {
+                    *at.borrow_mut() = Some((tab.webview.clone(), tab.ad_intox_engine.clone()));
+                });
+
+                let has_creds = if !uri.is_empty() && !uri.starts_with("juanita://") && !uri.starts_with("about:") {
+                    let domain = crate::browsing::browser::extract_domain(&uri);
+                    crate::util::credentials::CredentialIndex::load().has_credentials(&domain)
+                } else {
+                    false
+                };
+                key_button_switch.set_visible(has_creds);
+            }
+        });
+
+        // Focus in on url_entry and notebook to trigger cleanup
+        let tabs_cleanup1 = tabs.clone();
+        let notebook_cleanup1 = notebook.clone();
+        let url_entry_cleanup1 = url_entry.clone();
+        let gw_cleanup1 = gw_activate.clone();
+        let cur_cleanup1 = current_uri.clone();
+        let key_cleanup1 = key_button.clone();
+        let is_cleaning_cleanup1 = is_cleaning.clone();
         url_entry.connect_focus_in_event(move |entry, _| {
-            let uri = current_uri_focus.borrow();
+            let config = AppConfig::load();
+            cleanup_killed_tabs(
+                &notebook_cleanup1,
+                &tabs_cleanup1,
+                &url_entry_cleanup1,
+                &gw_cleanup1,
+                &cur_cleanup1,
+                &key_cleanup1,
+                &config,
+                &is_cleaning_cleanup1,
+            );
+            let uri = cur_cleanup1.borrow();
             entry.set_text(&crate::util::debug::redact_uri(&uri));
             gtk::glib::Propagation::Proceed
         });
@@ -258,201 +272,151 @@ pub fn run(banlist: SharedBanList) {
             gtk::glib::Propagation::Proceed
         });
 
-        let ban_button = Button::with_label("BAN");
-        ban_button.style_context().add_class("destructive-action");
-
-        header.set_custom_title(Some(&url_entry));
-        header.pack_end(&ban_button);
-
-        let key_button = Button::with_label("🔑");
-        key_button.set_no_show_all(true);
-        key_button.set_visible(false);
-        header.pack_start(&key_button);
-
-        let webview_key = webview.clone();
-        let window_key = window.clone();
-        key_button.connect_clicked(move |_| {
-            crate::browsing::credentials_ui::try_autofill(&webview_key, &window_key);
+        let tabs_cleanup2 = tabs.clone();
+        let notebook_cleanup2 = notebook.clone();
+        let url_entry_cleanup2 = url_entry.clone();
+        let gw_cleanup2 = gw_activate.clone();
+        let cur_cleanup2 = current_uri.clone();
+        let key_cleanup2 = key_button.clone();
+        let is_cleaning_cleanup2 = is_cleaning.clone();
+        notebook.connect_button_press_event(move |_, _| {
+            let config = AppConfig::load();
+            cleanup_killed_tabs(
+                &notebook_cleanup2,
+                &tabs_cleanup2,
+                &url_entry_cleanup2,
+                &gw_cleanup2,
+                &cur_cleanup2,
+                &key_cleanup2,
+                &config,
+                &is_cleaning_cleanup2,
+            );
+            gtk::glib::Propagation::Proceed
         });
 
-        let vbox = GtkBox::new(Orientation::Vertical, 0);
-        vbox.pack_start(&webview, true, true, 0);
-        window.add(&vbox);
-
-        // Set up custom actions & context menu plugin
-        use crate::browsing::gui_plugin::{AdIntoxicationPlugin, GuiPlugin};
-        use crate::plugins::unsubscribe::AggressiveUnsubscribePlugin;
-        let plugin = AdIntoxicationPlugin;
-        plugin.setup(&window, &webview, &ad_intox_engine);
-
-        let unsub_plugin = AggressiveUnsubscribePlugin;
-        unsub_plugin.setup(&window, &webview, &ad_intox_engine);
-
-        let config = AppConfig::load();
-        let noise_provider = Rc::new(RssNoiseProvider::new(&config));
-        let intox_engine = IntoxicationEngine::new(&web_context, &webview, &config);
-
-        let expected_unban: Rc<RefCell<Option<(String, i32)>>> = Rc::new(RefCell::new(None));
-        let internal_pages = Rc::new(crate::browsing::internal::get_internal_pages());
-
-        let webview_clone = webview.clone();
-        let url_entry_clone = url_entry.clone();
-        let intox_engine_entry = intox_engine.clone(); // Clone for entry closure
-        let expected_unban_activate = expected_unban.clone();
-        let downloads_activate = downloads.clone();
-        let banlist_activate = banlist.clone();
-        let internal_pages_activate = internal_pages.clone();
-
+        // URL entry activate handler navigates the active webview
+        let gw_act_entry = gw_activate.clone();
+        let downloads_act_entry = downloads.clone();
+        let banlist_act_entry = banlist.clone();
+        let expected_unban_act_entry = expected_unban.clone();
+        let internal_pages_act_entry = internal_pages.clone();
+        let tabs_act_entry = tabs.clone();
+        let notebook_act_entry = notebook.clone();
         url_entry.connect_activate(move |entry| {
             let text = entry.text();
             let text_str = text.as_str();
-            intox_engine_entry.cancel_pending(); // User is initiating a new navigation!
 
-            let ctx = crate::browsing::internal::PageContext {
-                webview: webview_clone.clone(),
-                downloads: downloads_activate.clone(),
-                banlist: banlist_activate.clone(),
-                expected_unban: expected_unban_activate.clone(),
-                config: AppConfig::load(),
-            };
-
-            let mut handled = false;
-            for page in internal_pages_activate.iter() {
-                if page.matches_input(text_str) {
-                    page.handle_input(text_str, &ctx);
-                    handled = true;
-                    break;
-                }
+            // Cancel pending on the active tab's intox engine
+            let active_idx = notebook_act_entry.current_page().unwrap_or(0) as usize;
+            if let Some(tab) = tabs_act_entry.borrow().get(active_idx) {
+                tab.intox_engine.cancel_pending();
             }
-            if !handled {
-                let url = crate::browsing::browser::normalize_url(text_str);
-                webview_clone.load_uri(&url);
+
+            if let Some(wv) = gw_act_entry.borrow().as_ref() {
+                let ctx = crate::browsing::internal::PageContext {
+                    webview: wv.clone(),
+                    downloads: downloads_act_entry.clone(),
+                    banlist: banlist_act_entry.clone(),
+                    expected_unban: expected_unban_act_entry.clone(),
+                    config: AppConfig::load(),
+                };
+
+                let mut handled = false;
+                for page in internal_pages_act_entry.iter() {
+                    if page.matches_input(text_str) {
+                        page.handle_input(text_str, &ctx);
+                        handled = true;
+                        break;
+                    }
+                }
+                if !handled {
+                    let url = crate::browsing::browser::normalize_url(text_str);
+                    wv.load_uri(&url);
+                }
             }
         });
 
-        let webview_clone2 = webview.clone();
+        // Ban button acts on active webview
+        let gw_ban = gw_activate.clone();
         let banlist_btn = banlist.clone();
         ban_button.connect_clicked(move |_| {
-            if let Some(uri) = webview_clone2.uri() {
-                let domain = crate::browsing::browser::extract_domain(uri.as_str());
-                {
-                    let mut bl = banlist_btn.borrow_mut();
-                    bl.ban(&domain);
-                    bl.save();
-                }
-                println!("[BAN] Banned domain: {}", domain);
-                let banned_html = crate::util::ban::banned_page(uri.as_str());
-                webview_clone2.load_html(&banned_html, Some("juanita://banned/"));
-            }
-        });
-
-        let url_entry_nav = url_entry_clone.clone();
-        let key_button_clone = key_button.clone();
-        let intox_engine_load = intox_engine.clone();
-        let current_uri_nav = current_uri.clone();
-        webview.connect_load_changed(move |wv, load_event| match load_event {
-            webkit2gtk::LoadEvent::Started => {
-                intox_engine_load.cancel_pending();
-                key_button_clone.set_visible(false);
+            if let Some(wv) = gw_ban.borrow().as_ref() {
                 if let Some(uri) = wv.uri() {
-                    let uri_str = uri.as_str();
-                    let restored_uri = crate::resolver::restore_original_domain_in_uri(uri_str);
-                    *current_uri_nav.borrow_mut() = restored_uri.clone();
-                    if !url_entry_nav.has_focus() {
-                        let display_uri = if let Some((base, _)) = restored_uri.split_once('?') {
-                            base.to_string()
-                        } else {
-                            restored_uri.clone()
-                        };
-                        url_entry_nav.set_text(&display_uri);
-                    }
-                }
-            }
-            webkit2gtk::LoadEvent::Committed => {
-                if let Some(uri) = wv.uri() {
-                    let uri_str = uri.as_str();
-                    let restored_uri = crate::resolver::restore_original_domain_in_uri(uri_str);
-                    *current_uri_nav.borrow_mut() = restored_uri.clone();
-                    if !url_entry_nav.has_focus() {
-                        let display_uri = if let Some((base, _)) = restored_uri.split_once('?') {
-                            base.to_string()
-                        } else {
-                            restored_uri.clone()
-                        };
-                        url_entry_nav.set_text(&display_uri);
-                    }
-                }
-            }
-            webkit2gtk::LoadEvent::Finished => {
-                let has_creds = if let Some(uri) = wv.uri() {
                     let domain = crate::browsing::browser::extract_domain(uri.as_str());
-                    if !domain.is_empty()
-                        && !uri.starts_with("juanita://")
-                        && !uri.starts_with("about:")
                     {
-                        let idx = crate::util::credentials::CredentialIndex::load();
-                        idx.has_credentials(&domain)
-                    } else {
-                        false
+                        let mut bl = banlist_btn.borrow_mut();
+                        bl.ban(&domain);
+                        bl.save();
                     }
-                } else {
-                    false
-                };
-                key_button_clone.set_visible(has_creds);
-            }
-            _ => {}
-        });
-
-        let webview_nav = webview.clone();
-        let expected_unban_policy = expected_unban.clone();
-        let downloads_policy = downloads.clone();
-        let banlist_policy = banlist.clone();
-        let internal_pages_policy = internal_pages.clone();
-        let ad_intox_engine_policy = ad_intox_engine.clone();
-
-        let webview_create = webview.clone();
-        webview.connect_create(move |_wv, nav_action| {
-            #[allow(deprecated)]
-            if let Some(req) = nav_action.request() {
-                if let Some(uri) = req.uri() {
-                    webview_create.load_uri(uri.as_str());
+                    println!("[BAN] Banned domain: {}", domain);
+                    let banned_html = crate::util::ban::banned_page(uri.as_str());
+                    wv.load_html(&banned_html, Some("juanita://banned/"));
                 }
             }
-            None // Deny new window, open in same tab
         });
 
-        webview.connect_decide_policy(move |_, decision, decision_type| {
-            if decision_type == PolicyDecisionType::NavigationAction {
-                if let Some(nav_decision) = decision.downcast_ref::<NavigationPolicyDecision>() {
-                    #[allow(deprecated)]
-                    if let Some(req) = nav_decision.request() {
-                        if let Some(uri) = req.uri() {
-                            let uri_str = uri.as_str();
-                            if crate::browsing::policy::handle_decide_policy(
-                                decision,
-                                uri_str,
-                                &webview_nav,
-                                &downloads_policy,
-                                &banlist_policy,
-                                &expected_unban_policy,
-                                &internal_pages_policy,
-                                &ad_intox_engine_policy,
-                                &intox_engine,
-                                &noise_provider,
-                            ) {
-                                return true;
-                            }
+        // Inactivity timeout loop checking for dead tabs
+        let tabs_timer = tabs.clone();
+        gtk::glib::timeout_add_seconds_local(5, move || {
+            let config = AppConfig::load();
+            let ttl_mins = config.tab_inactivity_ttl.clamp(1, 60);
+            let nuke_action = config.last_tab_nuke_action.clone();
+
+            let now = std::time::Instant::now();
+            let mut tabs_borrow = tabs_timer.borrow_mut();
+
+            let active_count = tabs_borrow.iter().filter(|t| !*t.is_killed.borrow()).count();
+
+            for tab in tabs_borrow.iter_mut() {
+                if *tab.is_killed.borrow() {
+                    continue;
+                }
+
+                let last_inter = *tab.last_interaction.borrow();
+                if now.duration_since(last_inter) >= std::time::Duration::from_secs(ttl_mins as u64 * 60) {
+                    if active_count == 1 {
+                        if nuke_action == "survive" {
+                            *tab.last_interaction.borrow_mut() = now;
+                            continue;
+                        } else if nuke_action == "home" {
+                            tab.webview.load_uri("juanita://home");
+                            *tab.last_interaction.borrow_mut() = now;
+                            continue;
                         }
                     }
+
+                    *tab.is_killed.borrow_mut() = true;
+                    tab.webview.load_html(
+                        "<html><body style='background:#1e1e1e;color:#888;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:sans-serif;'>
+                         <div>tab closed due to inactivity in 0 frames</div>
+                         </body></html>",
+                        Some("about:blank")
+                    );
+                    tab.label.set_text("tab closed due to inactivity in 0 frames");
                 }
             }
-            false
+
+            gtk::glib::ControlFlow::Continue
         });
 
-        if !has_pending {
-            log!(raw:Debug, GUI, "No pending activation, loading home page");
-            webview.load_uri("juanita://home");
+        // Load the initial/pending tabs
+        let has_pending = !pending_activate.borrow().is_empty();
+        log!(raw:Debug, GUI, "connect_activate: has_pending = {}", has_pending);
+
+        let mut initial_loaded = false;
+        {
+            let mut pending = pending_activate.borrow_mut();
+            for (url, _is_external) in pending.drain(..) {
+                add_new_tab(&url);
+                initial_loaded = true;
+            }
         }
+
+        if !initial_loaded {
+            log!(raw:Debug, GUI, "No pending activation, loading home page");
+            add_new_tab("juanita://home");
+        }
+
         window.show_all();
     });
 

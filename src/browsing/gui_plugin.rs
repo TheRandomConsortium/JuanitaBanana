@@ -2,6 +2,7 @@ use crate::ad_intoxication::AdIntoxicationEngine;
 use gtk::prelude::*;
 use gtk::{ApplicationWindow, ComboBoxText, Dialog, Entry, Label, Scale};
 use std::cell::RefCell;
+use std::rc::Rc;
 use webkit2gtk::{HitTestResultExt, WebView, WebViewExt};
 
 #[derive(Clone, Debug, serde::Deserialize)]
@@ -13,6 +14,7 @@ pub struct RightClickInfo {
 
 thread_local! {
     pub static LAST_RIGHT_CLICK: RefCell<Option<RightClickInfo>> = const {RefCell::new(None)};
+    pub static ACTIVE_TAB: RefCell<Option<(WebView, Rc<AdIntoxicationEngine>)>> = const {RefCell::new(None)};
 }
 
 pub trait GuiPlugin {
@@ -31,61 +33,66 @@ impl GuiPlugin for AdIntoxicationPlugin {
         &self,
         window: &ApplicationWindow,
         webview: &WebView,
-        ad_engine: &AdIntoxicationEngine,
+        _ad_engine: &AdIntoxicationEngine,
     ) {
-        let mark_as_ad_action = gtk::gio::SimpleAction::new(
-            "mark-as-ad",
-            Some(gtk::glib::VariantTy::new("s").unwrap()),
-        );
-        let ad_engine_act = ad_engine.clone();
-        let main_wv_act = webview.clone();
-        let window_act = window.clone();
-        mark_as_ad_action.connect_activate(move |_, parameter| {
-            if let Some(param) = parameter {
-                if let Some(json_str) = param.str() {
-                    if let Ok(candidates) = serde_json::from_str::<Vec<String>>(json_str) {
-                        if candidates.is_empty() { return; }
+        let mark_as_ad_action = if let Some(act) = window.lookup_action("mark-as-ad") {
+            act.downcast::<gtk::gio::SimpleAction>().unwrap()
+        } else {
+            let act = gtk::gio::SimpleAction::new(
+                "mark-as-ad",
+                Some(gtk::glib::VariantTy::new("s").unwrap()),
+            );
+            let window_act = window.clone();
+            act.connect_activate(move |_, parameter| {
+                if let Some(param) = parameter {
+                    if let Some(json_str) = param.str() {
+                        if let Ok(candidates) = serde_json::from_str::<Vec<String>>(json_str) {
+                            if candidates.is_empty() { return; }
 
-                        let dialog = Dialog::with_buttons(
-                            Some("Confirm Ad Target"),
-                            Some(&window_act),
-                            gtk::DialogFlags::MODAL | gtk::DialogFlags::DESTROY_WITH_PARENT,
-                            &[("Accept", gtk::ResponseType::Accept), ("Cancel", gtk::ResponseType::Cancel)]
-                        );
-                        let content_area = dialog.content_area();
-                        content_area.set_margin_start(15);
-                        content_area.set_margin_end(15);
-                        content_area.set_margin_top(15);
-                        content_area.set_margin_bottom(15);
-                        content_area.set_spacing(10);
+                            let (active_wv, active_ad_engine) = ACTIVE_TAB.with(|at| {
+                                at.borrow().clone().expect("No active tab set!")
+                            });
 
-                        let combo = ComboBoxText::new();
-                        if candidates.len() == 1 {
-                            let msg = format!("Are you sure you want to block & poison target: {}?", candidates[0]);
-                            let label = Label::new(Some(&msg));
-                            content_area.pack_start(&label, false, false, 0);
-                            combo.append_text(&candidates[0]);
-                            combo.set_active(Some(0));
-                        } else {
-                            let label = Label::new(Some("Select the target URL/domain to block & poison:"));
-                            content_area.pack_start(&label, false, false, 0);
-                            for cand in &candidates {
-                                combo.append_text(cand);
+                            let dialog = Dialog::with_buttons(
+                                Some("Confirm Ad Target"),
+                                Some(&window_act),
+                                gtk::DialogFlags::MODAL | gtk::DialogFlags::DESTROY_WITH_PARENT,
+                                &[("Accept", gtk::ResponseType::Accept), ("Cancel", gtk::ResponseType::Cancel)]
+                            );
+                            let content_area = dialog.content_area();
+                            content_area.set_margin_start(15);
+                            content_area.set_margin_end(15);
+                            content_area.set_margin_top(15);
+                            content_area.set_margin_bottom(15);
+                            content_area.set_spacing(10);
+
+                            let combo = ComboBoxText::new();
+                            if candidates.len() == 1 {
+                                let msg = format!("Are you sure you want to block & poison target: {}?", candidates[0]);
+                                let label = Label::new(Some(&msg));
+                                content_area.pack_start(&label, false, false, 0);
+                                combo.append_text(&candidates[0]);
+                                combo.set_active(Some(0));
+                            } else {
+                                let label = Label::new(Some("Select the target URL/domain to block & poison:"));
+                                content_area.pack_start(&label, false, false, 0);
+                                for cand in &candidates {
+                                    combo.append_text(cand);
+                                }
+                                combo.set_active(Some(0));
+                                content_area.pack_start(&combo, false, false, 0);
                             }
-                            combo.set_active(Some(0));
-                            content_area.pack_start(&combo, false, false, 0);
-                        }
 
-                        let phase = std::rc::Rc::new(std::cell::Cell::new(1));
-                        let selected_uri = std::rc::Rc::new(std::cell::RefCell::new(String::new()));
-                        let chosen_depth = std::rc::Rc::new(std::cell::Cell::new(5));
+                            let phase = std::rc::Rc::new(std::cell::Cell::new(1));
+                            let selected_uri = std::rc::Rc::new(std::cell::RefCell::new(String::new()));
+                            let chosen_depth = std::rc::Rc::new(std::cell::Cell::new(5));
 
-                        let phase_resp = phase.clone();
-                        let selected_uri_resp = selected_uri.clone();
-                        let chosen_depth_resp = chosen_depth.clone();
-                        let combo_clone = combo.clone();
-                        let ad_engine_response = ad_engine_act.clone();
-                        let main_wv_response = main_wv_act.clone();
+                            let phase_resp = phase.clone();
+                            let selected_uri_resp = selected_uri.clone();
+                            let chosen_depth_resp = chosen_depth.clone();
+                            let combo_clone = combo.clone();
+                            let ad_engine_response = active_ad_engine.clone();
+                            let main_wv_response = active_wv.clone();
 
                         dialog.connect_response(move |dialog_widget, response| {
                             let current_phase = phase_resp.get();
@@ -385,8 +392,10 @@ impl GuiPlugin for AdIntoxicationPlugin {
                     }
                 }
             }
-        });
-        window.add_action(&mark_as_ad_action);
+            });
+            window.add_action(&act);
+            act
+        };
 
         let action_for_menu = mark_as_ad_action.clone();
         webview.connect_context_menu(move |_wv, menu, _event, hit_test| {

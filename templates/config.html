@@ -121,6 +121,21 @@
                     style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;">
             </div>
             <div style="margin-top: 30px; padding: 15px; background: #2d2d30; border-radius: 5px;">
+                <h3 style="margin-top: 0;">Tab Inactivity Settings</h3>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: inline-block; width: 250px;">Inactivity TTL (Minutes, 1-60):</label>
+                    <input type="number" id="tab-inactivity-ttl" min="1" max="60" value="{tab_inactivity_ttl}"
+                        style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;">
+                </div>
+                <div>
+                    <label style="display: inline-block; width: 250px;">Last Tab Action:</label>
+                    <select id="last-tab-nuke-action" style="padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;">
+                        <option value="survive" {last_tab_action_survive_selected}>Survive Nuke</option>
+                        <option value="home" {last_tab_action_home_selected}>Redirect to Home</option>
+                    </select>
+                </div>
+            </div>
+            <div style="margin-top: 30px; padding: 15px; background: #2d2d30; border-radius: 5px;">
                 <h3 style="margin-top: 0;">Guilt Trip Overlay Settings (Opt-in)</h3>
                 <label
                     style="display: flex; align-items: center; cursor: pointer; color: #d4d4d4; margin-bottom: 15px;">
