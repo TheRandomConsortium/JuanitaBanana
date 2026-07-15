@@ -102,8 +102,16 @@ HNS at priority 1, you get the HNS result — put ICANN first to preserve legacy
 │ Slot 3   │  Tor / Onion       — .onion address space     │
 │ Slot 4   │  System DNS (ICANN)— legacy fallback          │
 └──────────┴──────────────────────────────────────────────┘
-         ↑ Reorderable via juanita://config
 ```
+         ↑ Reorderable via juanita://config
+
+### ⚡ Non-Blocking Resolution & Resilient Fallback
+
+To ensure the browser remains responsive and secure under unstable connections, the resolver stack leverages the following architectures:
+
+- **Asynchronous GUI Decoupling (✅ Implemented)**: Resolvers are executed asynchronously off the main GTK thread using non-blocking channels and `glib::timeout_add_local` ticks. This prevents network latency or dead Handshake daemon connections from freezing the browser GUI.
+- **Resilient Non-Blocking Chain Retries (📋 Planned)**: Currently, if a resolver in the chain is slow or times out, it halts downstream evaluation. The planned improvement introduces parallel fallback execution: once a resolver fails its initial attempt, we immediately spawn background retries *without blocking the chain*, allowing downstream resolvers (like System DNS) to try resolving in parallel. If a downstream resolver resolves first, the browser proceeds, but cancels/discards background retries.
+- **Navbar Resolver Override (📋 Planned)**: Directly inside the browser navbar, we will display an indicator showing which resolver successfully answered the current page lookup. This indicator doubles as a dropdown selector, enabling the user to perform an instant, one-off override to resolve the current domain using a specific alternative resolver on-the-fly.
 
 ### 🤝 Handshake (HNS) — Decentralised Root DNS
 
@@ -152,8 +160,18 @@ These are two separate concepts:
 | **Transport** | Routes your traffic through the overlay | Actually connecting |
 
 You can have the Tor resolver active (to resolve `.onion` addresses) without routing
-all clearnet traffic through Tor. Conversely, you can route clearnet through Tor without
+all navigation traffic through Tor. Conversely, you can route navigation through Tor without
 activating the `.onion` resolver (though that would be unusual).
+
+> [!NOTE]
+> **Handshake over Tor / I2P Resolution**: When routing navigation through Tor or I2P, resolving Handshake domains presents similar architectural options:
+> - **Tor Resolution**:
+>   1. **Proxying queries**: Routing standard Handshake IP traffic through Tor's proxy wrapper.
+>   2. **Tor-forced daemon resolution**: Forcing the `hnsd` daemon to query the P2P network completely through Tor. This is significantly more secure. If the C-based `hnsd` daemon is unable to support this natively, we will implement it directly within our planned native Rust port of the resolver.
+> - **I2P Resolution**:
+>   1. **Outproxying queries**: Wrapping Handshake P2P requests in garlic encryption and routing them through I2P outproxies to reach the clearnet P2P network.
+>   2. **Native I2P tunnel resolution**: Querying Handshake P2P seed nodes that exist directly inside the I2P network (as `.i2p` destinations) via native I2P client tunnels, avoiding outproxy reliance entirely.
+
 
 ---
 
@@ -162,10 +180,10 @@ activating the `.onion` resolver (though that would be unusual).
 ### Phase 1 — Tor via `arti` (📋 Planned)
 - Add `arti` as a Cargo dependency
 - Toggle in `juanita://config` to enable/disable
-- When enabled: register `.onion` resolver, optional clearnet routing
+- When enabled: register `.onion` resolver, optional navigation routing
 - SOCKS5 compatibility layer for WebKitGTK network stack
 
-### Phase 2 — Handshake resolver (🔭 Future)
+### Phase 2 — Handshake resolver (✅ Implemented)
 - FFI or subprocess bridge to `hnsd`
 - Integrate with resolver chain (configurable slot)
 - Per-domain pinning UI in config
@@ -175,7 +193,7 @@ activating the `.onion` resolver (though that would be unusual).
 - Subprocess to Java I2P router as initial path
 - Switch to `i2p-rs` when stable
 - Register `.i2p` resolver
-- Optional clearnet routing via I2P outproxies
+- Optional navigation routing via I2P outproxies
 
 ### Phase 4 — Native Rust HNS (🔭 Future)
 - Port `hnsd` SPV logic to Rust
@@ -204,8 +222,8 @@ If you know of another protocol that belongs here, open an issue.
 ## Configuration Surface (`juanita://config` → Network tab)
 
 ```
-[ Tor ]         [●] Enabled   [ ] Route all clearnet through Tor
-[ I2P ]         [○] Disabled  [ ] Route all clearnet through I2P
+[ Tor ]         [●] Enabled   [ ] Route all navigation through Tor
+[ I2P ]         [○] Disabled  [ ] Route all navigation through I2P
 [ Handshake ]   [○] Disabled
 
 Resolver order (drag to reorder):

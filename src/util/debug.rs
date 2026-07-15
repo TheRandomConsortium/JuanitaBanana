@@ -82,3 +82,37 @@ macro_rules! log {
         }
     };
 }
+
+pub fn console_override_script() -> &'static str {
+    r#"
+    (function() {
+        const intercept = (method) => {
+            const orig = console[method];
+            if (!orig) return;
+            console[method] = function(...args) {
+                orig.apply(console, args);
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.console) {
+                    const msg = args.map(a => {
+                        if (a === null) return "null";
+                        if (a === undefined) return "undefined";
+                        if (typeof a === 'object') {
+                            try {
+                                return JSON.stringify(a);
+                            } catch(e) {
+                                return String(a);
+                            }
+                        }
+                        return String(a);
+                    }).join(' ');
+                    window.webkit.messageHandlers.console.postMessage(`[${method.toUpperCase()}] ${msg}`);
+                }
+            };
+        };
+        intercept('log');
+        intercept('warn');
+        intercept('error');
+        intercept('info');
+        intercept('debug');
+    })();
+    "#
+}

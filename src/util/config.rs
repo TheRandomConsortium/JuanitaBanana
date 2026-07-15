@@ -37,6 +37,13 @@ pub struct AppConfig {
     pub local_html_default: String,
     pub resolver_order: Vec<String>,
     pub handshake_enabled: bool,
+    pub guilt_trip_enabled: bool,
+    pub guilt_trip_opacity: f64,
+    pub guilt_trip_threshold: usize,
+    pub guilt_trip_nsfw_rules: Vec<String>,
+    pub guilt_trip_news_rules: Vec<String>,
+    pub guilt_trip_shopping_rules: Vec<String>,
+    pub guilt_trip_social_rules: Vec<String>,
 }
 
 impl Default for AppConfig {
@@ -115,6 +122,33 @@ impl Default for AppConfig {
                 "System".to_string(),
             ],
             handshake_enabled: true,
+            guilt_trip_enabled: false,
+            guilt_trip_opacity: 0.015,
+            guilt_trip_threshold: 10,
+            guilt_trip_nsfw_rules: vec![
+                "porn".to_string(), "xxx".to_string(), "redtube".to_string(),
+                "xvideos".to_string(), "pornhub".to_string(), "hentai".to_string(),
+                "nsfw".to_string(), "erotic".to_string(), "sex".to_string(),
+                "chaturbate".to_string(), "onlyfans".to_string()
+            ],
+            guilt_trip_news_rules: vec![
+                "news".to_string(), "nytimes".to_string(), "cnn".to_string(),
+                "elpais".to_string(), "reuters".to_string(), "bbc".to_string(),
+                "guardian".to_string(), "huffpost".to_string(), "dailymail".to_string(),
+                "foxnews".to_string(), "msnbc".to_string(), "larazon".to_string(),
+                "lavozdegalicia".to_string(), "elmundo".to_string(), "marca".to_string()
+            ],
+            guilt_trip_shopping_rules: vec![
+                "shop".to_string(), "amazon".to_string(), "ebay".to_string(),
+                "aliexpress".to_string(), "gamble".to_string(), "casino".to_string(),
+                "bet".to_string(), "target".to_string(), "walmart".to_string(),
+                "bestbuy".to_string(), "poker".to_string(), "lottery".to_string()
+            ],
+            guilt_trip_social_rules: vec![
+                "twitter.com".to_string(), "x.com".to_string(), "reddit.com".to_string(),
+                "facebook.com".to_string(), "instagram.com".to_string(), "tiktok.com".to_string(),
+                "linkedin.com".to_string(), "pinterest.com".to_string()
+            ],
         }
     }
 }
