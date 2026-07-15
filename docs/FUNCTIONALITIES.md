@@ -77,7 +77,7 @@
 | **Local Static Ban Page** | ✅ Done | Banned domains route to a local HTML error page. |
 | **UI Ban Button** | ✅ Done | GTK HeaderBar button. Bans current domain and loads ban page immediately. |
 | **Toxic Site Warning** | ✅ Done | Injects a fixed bottom marquee warning users when a site exceeds the `toxic_threshold` of combined ads and trackers, with a button to ban the domain immediately. *Future improvement: implement smarter heuristics (e.g., distinguishing raw volume vs content ratios like news articles vs ad blocks) instead of a simple flat threshold.* |
-| **Contextual Guilt Trip Overlay** | 🔭 Future | Inject a semi-transparent, non-blocking contextual meme (e.g. Ceiling Cat for NSFW) over the entire page to induce guilt. Configurable. |
+| **Contextual Guilt Trip Overlay** | ✅ Done | Loaded real high-fidelity meme assets (Ceiling Cat, Trump, Fry, Wojak, and Banana fallback) at compile time and injected a semi-transparent, non-blocking contextual meme overlay on pages matching user-configurable keyword rules. |
 | **Mathematical Unban** | ✅ Done | Requires solving a randomly generated integral challenge in `juanita://unban?domain=...` to unban a site. Fully integrated with `BanList` and Vengeful Mode. |
 
 ---
@@ -135,6 +135,8 @@
 | **I2P resolver** | 🔭 Future | Resolves `.i2p` eepsite addresses when I2P transport is active. |
 | **Namespace collision handling** | ✅ Done | HNS and ICANN can both define same names. Resolver priority chain is the user's tiebreak — whoever is first in your chain is authoritative for you. |
 | **Per-domain pinning rules** | 🔭 Future | User rules in config: `example.bit → always Handshake`, `*.onion → always Tor`. Pinned domains bypass the chain entirely. |
+| **Non-blocking resolver fallback retry** | 🔭 Future | Once a resolver in the chain fails its first attempt, allow subsequent resolvers to start trying immediately (liberating the chain) while the initial resolver continues retrying in the background. If it eventually succeeds, it loads; if another resolver completes first or the user navigates away, background retries are stopped. |
+| **Navbar resolver override dropdown** | 🔭 Future | Provide a dropdown selector on the navbar showing the available resolvers + search, enabling the user to perform a quick one-off override for the current navigation. |
 
 ### Niche Protocols (Under Evaluation)
 

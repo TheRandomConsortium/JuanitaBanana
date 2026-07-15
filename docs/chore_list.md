@@ -62,3 +62,16 @@ This document maintains the tracking of known technical chores, API deprecations
 - **Considerations:**
   - error level => `eprintln!(...)`
   - warn, info, debug level => `println!(...)`
+
+### 8. Fix Depth Slider for Adblocking
+- **Chore:** Resolve issues with the adblocking depth slider being unresponsive or not saving values properly in the UI.
+- **Action Plan:**
+  - Audit templates/config.html and script/config.js for event handling and mapping of the depth slider input.
+  - Ensure config state updates properly on change.
+
+### 9. Investigate DoubleClick Ad Blocker Evasion
+- **Chore:** Determine why DoubleClick ads are evading blocking/poisoning in specific scenarios (e.g., repeating Toyota Yaris ads on La Voz de Galicia).
+- **Action Plan:**
+  - Analyze network request patterns and script contexts on affected pages.
+  - Check if specific subdomains or redirect paths bypass standard host/regex matching.
+

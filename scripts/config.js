@@ -14,6 +14,15 @@ if (window.location.href.includes('unlock_pass=') || window.location.href.includ
     showTab('secure-db');
 }
 
+// Update guilt trip opacity label in real-time
+const opacitySlider = document.getElementById('guilt-trip-opacity');
+if (opacitySlider) {
+    opacitySlider.addEventListener('input', (e) => {
+        const valSpan = document.getElementById('opacity-val');
+        if (valSpan) valSpan.textContent = e.target.value;
+    });
+}
+
 function showTab(tabId) {
     if (tabId !== 'unban' && window.location.hash === '#unban') return; // Enforce lock
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -76,6 +85,13 @@ function saveConfig() {
     configData.ad_intox_regex = document.getElementById('ad-intox-regex').value;
     configData.toxic_threshold = parseInt(document.getElementById('toxic-threshold').value, 10);
     configData.deep_crawl_max_pages = parseInt(document.getElementById('deep-crawl-max-pages').value, 10);
+    configData.guilt_trip_enabled = document.getElementById('guilt-trip-enabled').checked;
+    configData.guilt_trip_opacity = parseFloat(document.getElementById('guilt-trip-opacity').value);
+    configData.guilt_trip_threshold = parseInt(document.getElementById('guilt-trip-threshold').value, 10);
+    configData.guilt_trip_nsfw_rules = document.getElementById('guilt-trip-nsfw-rules').value.split(',').map(s => s.trim()).filter(Boolean);
+    configData.guilt_trip_news_rules = document.getElementById('guilt-trip-news-rules').value.split(',').map(s => s.trim()).filter(Boolean);
+    configData.guilt_trip_shopping_rules = document.getElementById('guilt-trip-shopping-rules').value.split(',').map(s => s.trim()).filter(Boolean);
+    configData.guilt_trip_social_rules = document.getElementById('guilt-trip-social-rules').value.split(',').map(s => s.trim()).filter(Boolean);
 
     const adRows = document.querySelectorAll('#ad-domains-tbody tr');
     const newAdDomains = [];

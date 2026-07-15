@@ -318,7 +318,7 @@ impl InternalPage for ConfigPage {
                                 webkit2gtk::UserContentInjectedFrames::AllFrames,
                                 webkit2gtk::UserScriptInjectionTime::Start,
                                 &[],
-                                &[],
+                                &["juanita://*"],
                             );
                             ucm.add_script(&fp_script);
 
@@ -327,7 +327,7 @@ impl InternalPage for ConfigPage {
                                 webkit2gtk::UserContentInjectedFrames::AllFrames,
                                 webkit2gtk::UserScriptInjectionTime::Start,
                                 &[],
-                                &[],
+                                &["juanita://*"],
                             );
                             ucm.add_script(&ad_script);
 
@@ -336,9 +336,47 @@ impl InternalPage for ConfigPage {
                                 webkit2gtk::UserContentInjectedFrames::TopFrame,
                                 webkit2gtk::UserScriptInjectionTime::Start,
                                 &[],
-                                &[],
+                                &["juanita://*"],
                             );
                             ucm.add_script(&toxic_script);
+
+                            if new_config.guilt_trip_enabled {
+                                let guilt_script = webkit2gtk::UserScript::new(
+                                    &crate::browsing::guilt::guilt_trip_script(&new_config),
+                                    webkit2gtk::UserContentInjectedFrames::TopFrame,
+                                    webkit2gtk::UserScriptInjectionTime::Start,
+                                    &[],
+                                    &["juanita://*"],
+                                );
+                                ucm.add_script(&guilt_script);
+                            }
+
+                            let form_mon_script = webkit2gtk::UserScript::new(
+                                crate::browsing::credentials_ui::form_monitor_script(),
+                                webkit2gtk::UserContentInjectedFrames::TopFrame,
+                                webkit2gtk::UserScriptInjectionTime::End,
+                                &[],
+                                &[],
+                            );
+                            ucm.add_script(&form_mon_script);
+
+                            let form_interact_script = webkit2gtk::UserScript::new(
+                                crate::browsing::credentials_ui::form_interact_script(),
+                                webkit2gtk::UserContentInjectedFrames::TopFrame,
+                                webkit2gtk::UserScriptInjectionTime::End,
+                                &[],
+                                &[],
+                            );
+                            ucm.add_script(&form_interact_script);
+
+                            let console_override = webkit2gtk::UserScript::new(
+                                crate::util::debug::console_override_script(),
+                                webkit2gtk::UserContentInjectedFrames::AllFrames,
+                                webkit2gtk::UserScriptInjectionTime::Start,
+                                &[],
+                                &[],
+                            );
+                            ucm.add_script(&console_override);
                         }
                     }
                 }

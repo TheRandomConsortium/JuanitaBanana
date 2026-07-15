@@ -25,6 +25,7 @@ make -j$(nproc)
 
 # 3. Copy hnsd to workspace bin/
 mkdir -p "$WORKSPACE_DIR/bin"
+rm -f "$WORKSPACE_DIR/bin/hnsd"
 cp hnsd "$WORKSPACE_DIR/bin/hnsd"
 
 echo "=========================================================="

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <title>Juanita Banana - Config</title>
@@ -12,54 +13,68 @@
             display: flex;
             height: 100vh;
         }
+
         #sidebar {
             width: 250px;
             background: #252526;
             padding: 20px 0;
             border-right: 1px solid #333;
         }
+
         #sidebar ul {
             list-style: none;
             padding: 0;
             margin: 0;
         }
+
         #sidebar li {
             padding: 15px 20px;
             cursor: pointer;
             border-bottom: 1px solid #333;
         }
-        #sidebar li:hover, #sidebar li.active {
+
+        #sidebar li:hover,
+        #sidebar li.active {
             background: #37373d;
         }
+
         #content {
             flex: 1;
             padding: 40px;
             overflow-y: auto;
         }
+
         .tab-content {
             display: none;
         }
+
         .tab-content.active {
             display: block;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
-        th, td {
+
+        th,
+        td {
             text-align: left;
             padding: 12px;
             border-bottom: 1px solid #444;
         }
+
         th {
             background-color: #2d2d30;
         }
+
         h2 {
             border-bottom: 2px solid #007acc;
             padding-bottom: 10px;
             margin-top: 0;
         }
+
         button {
             background: #007acc;
             color: white;
@@ -69,13 +84,18 @@
             border-radius: 3px;
             margin-top: 20px;
         }
+
         button:hover {
             background: #0098ff;
         }
+
         /* The unban section is completely hidden from sidebar */
-        #unban-section { display: none; }
+        #unban-section {
+            display: none;
+        }
     </style>
 </head>
+
 <body>
     <div id="sidebar">
         <ul>
@@ -97,25 +117,79 @@
             <div style="margin-top: 30px; padding: 15px; background: #2d2d30; border-radius: 5px;">
                 <h3 style="margin-top: 0;">Unsubscribe Crawler Settings</h3>
                 <label style="display: inline-block; width: 250px;">Deep Crawl Max Pages:</label>
-                <input type="number" id="deep-crawl-max-pages" value="{deep_crawl_max_pages}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;">
+                <input type="number" id="deep-crawl-max-pages" value="{deep_crawl_max_pages}"
+                    style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;">
+            </div>
+            <div style="margin-top: 30px; padding: 15px; background: #2d2d30; border-radius: 5px;">
+                <h3 style="margin-top: 0;">Guilt Trip Overlay Settings (Opt-in)</h3>
+                <label
+                    style="display: flex; align-items: center; cursor: pointer; color: #d4d4d4; margin-bottom: 15px;">
+                    <input type="checkbox" id="guilt-trip-enabled" {guilt_trip_enabled_checked}
+                        style="margin-right: 10px; width: 18px; height: 18px;">
+                    Enable Subliminal Guilt Trip Overlay
+                </label>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: inline-block; width: 250px;">Guilt Trip Toxicity Threshold:</label>
+                    <input type="number" id="guilt-trip-threshold" value="{guilt_trip_threshold}"
+                        style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: inline-block; width: 250px;">Overlay Opacity (Subliminal Level):</label>
+                    <input type="range" id="guilt-trip-opacity" min="0.002" max="0.1" step="0.001"
+                        value="{guilt_trip_opacity}" style="vertical-align: middle; width: 150px;">
+                    <span id="opacity-val"
+                        style="margin-left: 10px; font-family: monospace;">{guilt_trip_opacity}</span>
+                </div>
+                <div style="margin-top: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">NSFW Rules
+                        (comma-separated):</label>
+                    <input type="text" id="guilt-trip-nsfw-rules" value="{guilt_trip_nsfw_rules}"
+                        style="width: 100%; box-sizing: border-box; padding: 6px; background: #1e1e1e; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                </div>
+                <div style="margin-top: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">News Rules
+                        (comma-separated):</label>
+                    <input type="text" id="guilt-trip-news-rules" value="{guilt_trip_news_rules}"
+                        style="width: 100%; box-sizing: border-box; padding: 6px; background: #1e1e1e; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                </div>
+                <div style="margin-top: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Shopping/Gambling Rules
+                        (comma-separated):</label>
+                    <input type="text" id="guilt-trip-shopping-rules" value="{guilt_trip_shopping_rules}"
+                        style="width: 100%; box-sizing: border-box; padding: 6px; background: #1e1e1e; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                </div>
+                <div style="margin-top: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Social Media/Time Wasting
+                        Rules (comma-separated):</label>
+                    <input type="text" id="guilt-trip-social-rules" value="{guilt_trip_social_rules}"
+                        style="width: 100%; box-sizing: border-box; padding: 6px; background: #1e1e1e; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                </div>
             </div>
         </div>
         <div id="intoxication" class="tab-content">
             <div style="margin-bottom: 30px; padding: 15px; background: #2d2d30; border-radius: 5px;">
                 <h3 style="margin-top: 0; display: inline-block;">Intoxication Rules</h3>
-                <span title="⚠️ WARNING: Modifying these values can affect fingerprinting evasion, memory consumption, and make you wait unnecessarily." style="cursor: help; margin-left: 10px; font-size: 1.2em;">⚠️</span>
+                <span
+                    title="⚠️ WARNING: Modifying these values can affect fingerprinting evasion, memory consumption, and make you wait unnecessarily."
+                    style="cursor: help; margin-left: 10px; font-size: 1.2em;">⚠️</span>
                 <div style="margin-top: 10px;">
                     <label style="display: inline-block; width: 220px;">Max Concurrent Searches:</label>
-                    <input type="number" id="max-concurrent" value="{max_concurrent}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
-                    
-                    <label style="display: inline-block; width: 220px; margin-top: 10px;">Min Camouflage Delay (ms):</label>
-                    <input type="number" id="min-delay" value="{min_delay}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
-                    
-                    <label style="display: inline-block; width: 220px; margin-top: 10px;">Max Camouflage Delay (ms):</label>
-                    <input type="number" id="max-delay" value="{max_delay}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;">
+                    <input type="number" id="max-concurrent" value="{max_concurrent}"
+                        style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
+
+                    <label style="display: inline-block; width: 220px; margin-top: 10px;">Min Camouflage Delay
+                        (ms):</label>
+                    <input type="number" id="min-delay" value="{min_delay}"
+                        style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
+
+                    <label style="display: inline-block; width: 220px; margin-top: 10px;">Max Camouflage Delay
+                        (ms):</label>
+                    <input type="number" id="max-delay" value="{max_delay}"
+                        style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;">
 
                     <label style="display: inline-block; width: 220px; margin-top: 10px;">Hidden Queries Amount:</label>
-                    <input type="number" id="noise-amount" value="{noise_amount}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;">
+                    <input type="number" id="noise-amount" value="{noise_amount}"
+                        style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;">
                 </div>
             </div>
 
@@ -123,7 +197,12 @@
             <p>Define which search queries to intercept and poison.</p>
             <table>
                 <thead>
-                    <tr><th>Name</th><th>Domain Regex</th><th>Query Params (comma-sep)</th><th>Action</th></tr>
+                    <tr>
+                        <th>Name</th>
+                        <th>Domain Regex</th>
+                        <th>Query Params (comma-sep)</th>
+                        <th>Action</th>
+                    </tr>
                 </thead>
                 <tbody id="engines-tbody">
                     {engines_html}
@@ -132,45 +211,58 @@
             <div style="margin-top: 15px;">
                 <input type="text" id="new-engine-name" placeholder="Name" style="padding: 5px; width: 100px;">
                 <input type="text" id="new-engine-regex" placeholder="Regex" style="padding: 5px; width: 150px;">
-                <input type="text" id="new-engine-params" placeholder="Params (e.g. q,oq)" style="padding: 5px; width: 150px;">
+                <input type="text" id="new-engine-params" placeholder="Params (e.g. q,oq)"
+                    style="padding: 5px; width: 150px;">
                 <button onclick="addEngine()" style="margin-top: 0; padding: 6px 15px;">Add</button>
             </div>
         </div>
 
         <div id="ad-intox" class="tab-content">
             <h2>Ad Intoxication Settings</h2>
-             <div style="margin-bottom: 30px; padding: 15px; background: #2d2d30; border-radius: 5px;">
+            <div style="margin-bottom: 30px; padding: 15px; background: #2d2d30; border-radius: 5px;">
                 <label style="display: inline-block; width: 250px;">Ad Click Probability (0.0 to 1.0):</label>
-                <input type="number" step="0.01" min="0" max="1" id="ad-click-prob" value="{click_prob}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
-                
-                <label style="display: inline-block; width: 250px; margin-top: 10px;">Min Jitter Delay (seconds):</label>
-                <input type="number" id="ad-jitter-min" value="{jitter_min}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
-                
-                <label style="display: inline-block; width: 250px; margin-top: 10px;">Max Jitter Delay (seconds):</label>
-                <input type="number" id="ad-jitter-max" value="{jitter_max}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
+                <input type="number" step="0.01" min="0" max="1" id="ad-click-prob" value="{click_prob}"
+                    style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
+
+                <label style="display: inline-block; width: 250px; margin-top: 10px;">Min Jitter Delay
+                    (seconds):</label>
+                <input type="number" id="ad-jitter-min" value="{jitter_min}"
+                    style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
+
+                <label style="display: inline-block; width: 250px; margin-top: 10px;">Max Jitter Delay
+                    (seconds):</label>
+                <input type="number" id="ad-jitter-max" value="{jitter_max}"
+                    style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
 
                 <label style="display: inline-block; width: 250px; margin-top: 10px;">Max Surgery Depth:</label>
-                <input type="number" id="ad-intox-max-depth" value="{intox_max_depth}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
-                
+                <input type="number" id="ad-intox-max-depth" value="{intox_max_depth}"
+                    style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
+
                 <label style="display: inline-block; width: 250px; margin-top: 10px;">Ad Surgery Regex Pattern:</label>
-                <input type="text" id="ad-intox-regex" value="{intox_regex}" style="width: 350px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
+                <input type="text" id="ad-intox-regex" value="{intox_regex}"
+                    style="width: 350px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;"><br>
 
                 <label style="display: inline-block; width: 250px; margin-top: 10px;">Toxic Warning Threshold:</label>
-                <input type="number" id="toxic-threshold" value="{toxic_threshold}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;">
+                <input type="number" id="toxic-threshold" value="{toxic_threshold}"
+                    style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444;">
             </div>
 
             <h2>Learned Ad Domains</h2>
             <p>Domains checked against resources and link hrefs to detect ad intents.</p>
             <table>
                 <thead>
-                    <tr><th>Domain</th><th>Action</th></tr>
+                    <tr>
+                        <th>Domain</th>
+                        <th>Action</th>
+                    </tr>
                 </thead>
                 <tbody id="ad-domains-tbody">
                     {ad_domains_html}
                 </tbody>
             </table>
             <div style="margin-top: 15px;">
-                <input type="text" id="new-ad-domain" placeholder="Domain (e.g. tracking.com)" style="padding: 5px; width: 300px;">
+                <input type="text" id="new-ad-domain" placeholder="Domain (e.g. tracking.com)"
+                    style="padding: 5px; width: 300px;">
                 <button onclick="addAdDomain()" style="margin-top: 0; padding: 6px 15px;">Add</button>
             </div>
         </div>
@@ -180,7 +272,11 @@
             <p>RSS feeds used to pull real, trending search queries.</p>
             <table>
                 <thead>
-                    <tr><th>Name</th><th>URL</th><th>Action</th></tr>
+                    <tr>
+                        <th>Name</th>
+                        <th>URL</th>
+                        <th>Action</th>
+                    </tr>
                 </thead>
                 <tbody id="rss-tbody">
                     {rss_html}
@@ -199,11 +295,14 @@
         </div>
         <div id="resolver" class="tab-content">
             <h2>Resolver Stack Settings</h2>
-            <p>Configure the priority-ordered BIOS-style resolver chain. The first resolver in the list is queried first. If it cannot resolve the domain, the query falls back to the next resolver.</p>
-            <div style="background: #2d2d30; padding: 20px; border-radius: 5px; max-width: 500px; margin-top: 20px; margin-bottom: 20px;">
+            <p>Configure the priority-ordered BIOS-style resolver chain. The first resolver in the list is queried
+                first. If it cannot resolve the domain, the query falls back to the next resolver.</p>
+            <div
+                style="background: #2d2d30; padding: 20px; border-radius: 5px; max-width: 500px; margin-top: 20px; margin-bottom: 20px;">
                 <h3 style="margin-top: 0; color: #fff;">Handshake Resolver Daemon</h3>
                 <label style="display: flex; align-items: center; cursor: pointer; color: #d4d4d4;">
-                    <input type="checkbox" id="handshake-enabled" {handshake_enabled_checked} style="margin-right: 10px; width: 18px; height: 18px;">
+                    <input type="checkbox" id="handshake-enabled" {handshake_enabled_checked}
+                        style="margin-right: 10px; width: 18px; height: 18px;">
                     Enable Handshake resolution daemon (hnsd)
                 </label>
             </div>
@@ -230,4 +329,5 @@
         {config_js}
     </script>
 </body>
+
 </html>

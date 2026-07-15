@@ -47,3 +47,28 @@ pub fn generate_random_noise_bmp_b64() -> String {
 
     base64::engine::general_purpose::STANDARD.encode(&bmp)
 }
+
+pub fn get_ceiling_cat_b64() -> String {
+    let bytes = include_bytes!("../../assets/ceiling_cat.jpg");
+    base64::engine::general_purpose::STANDARD.encode(bytes)
+}
+
+pub fn get_trump_b64() -> String {
+    let bytes = include_bytes!("../../assets/trump.png");
+    base64::engine::general_purpose::STANDARD.encode(bytes)
+}
+
+pub fn get_fry_b64() -> String {
+    let bytes = include_bytes!("../../assets/fry.jpg");
+    base64::engine::general_purpose::STANDARD.encode(bytes)
+}
+
+pub fn get_wojak_b64() -> String {
+    let bytes = include_bytes!("../../assets/wojak.jpg");
+    base64::engine::general_purpose::STANDARD.encode(bytes)
+}
+
+pub fn get_banana_b64() -> String {
+    let bytes = include_bytes!("../../assets/banana.png");
+    base64::engine::general_purpose::STANDARD.encode(bytes)
+}
