@@ -26,18 +26,21 @@ else
     echo "Keeping version at $NEW_VERSION..."
 fi
 
-# Find highest release number for the current version in local repo or rpmbuild RPMS
+# Find highest release number across all built versions in local repo or rpmbuild RPMS
 REPO_DIR="$HOME/juanita-repo"
 RPM_ROOT=~/rpmbuild
 RELEASE=1
-EXISTING_RPMS=$(find "$REPO_DIR" "$RPM_ROOT/RPMS" -name "juanita-banana-${NEW_VERSION}-*.rpm" 2>/dev/null || true)
+EXISTING_RPMS=$(find "$REPO_DIR" "$RPM_ROOT/RPMS" -name "juanita-banana-*.rpm" 2>/dev/null || true)
 if [ -n "$EXISTING_RPMS" ]; then
     MAX_RELEASE=0
     for rpm in $EXISTING_RPMS; do
         fname=$(basename "$rpm")
-        rel_part=${fname#juanita-banana-${NEW_VERSION}-}
-        rel_num=${rel_part%%.*}
-        rel_num=${rel_num%%-*}
+        # Strip "juanita-banana-" prefix
+        rel_part="${fname#juanita-banana-}"
+        # Strip everything up to the first "-" (which separates version and release)
+        rel_part="${rel_part#*-}"
+        # Extract the release number (everything before the first ".")
+        rel_num="${rel_part%%.*}"
         if [[ "$rel_num" =~ ^[0-9]+$ ]]; then
             if [ "$rel_num" -gt "$MAX_RELEASE" ]; then
                 MAX_RELEASE=$rel_num
