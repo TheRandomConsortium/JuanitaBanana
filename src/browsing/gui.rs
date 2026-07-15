@@ -5,7 +5,7 @@ use std::rc::Rc;
 use webkit2gtk::{WebContext, WebView, WebViewExt};
 
 use crate::browsing::browser::SharedBanList;
-use crate::browsing::tab::{cleanup_killed_tabs, create_tab, Tab};
+use crate::browsing::tab::{create_tab, Tab};
 use crate::log;
 use crate::util::config::AppConfig;
 
@@ -147,6 +147,23 @@ pub fn run(banlist: SharedBanList) {
         let expected_unban: Rc<RefCell<Option<(String, i32)>>> = Rc::new(RefCell::new(None));
         let internal_pages = Rc::new(crate::browsing::internal::get_internal_pages());
 
+        // Shared noise provider and tab channels
+        let config = AppConfig::load();
+        let noise_provider = Rc::new(crate::search::noise::RssNoiseProvider::new(&config));
+        let (tab_tx, tab_rx) = async_channel::unbounded::<String>();
+
+        // Register window action for right-click context menu "Open Link in New Tab"
+        let open_in_new_tab_action = gtk::gio::SimpleAction::new("open-in-new-tab", Some(gtk::glib::VariantTy::new("s").unwrap()));
+        let tab_tx_act = tab_tx.clone();
+        open_in_new_tab_action.connect_activate(move |_, parameter| {
+            if let Some(p) = parameter {
+                if let Some(url) = p.str() {
+                    let _ = tab_tx_act.send_blocking(url.to_string());
+                }
+            }
+        });
+        window.add_action(&open_in_new_tab_action);
+
         // Helper to add a tab
         let notebook_c = notebook.clone();
         let tabs_c = tabs.clone();
@@ -163,6 +180,8 @@ pub fn run(banlist: SharedBanList) {
         let key_button_c = key_button.clone();
         let is_cleaning_c = is_cleaning.clone();
         let gw_c = gw_activate.clone();
+        let noise_provider_c = noise_provider.clone();
+        let tab_tx_c = tab_tx.clone();
 
         let add_new_tab = move |url: &str| {
             let tab = create_tab(
@@ -182,11 +201,24 @@ pub fn run(banlist: SharedBanList) {
                 &key_button_c,
                 &is_cleaning_c,
                 &gw_c,
+                &noise_provider_c,
+                &tab_tx_c,
             );
-            let mut tabs_borrow = tabs_c.borrow_mut();
-            tabs_borrow.push(tab);
-            notebook_c.set_current_page(Some((tabs_borrow.len() - 1) as u32));
+            let new_index = {
+                let mut tabs_borrow = tabs_c.borrow_mut();
+                tabs_borrow.push(tab);
+                tabs_borrow.len() - 1
+            };
+            notebook_c.set_current_page(Some(new_index as u32));
         };
+
+        // Listen for new tab creation requests
+        let add_tab_channel = add_new_tab.clone();
+        gtk::glib::spawn_future_local(async move {
+            while let Ok(url) = tab_rx.recv().await {
+                add_tab_channel(&url);
+            }
+        });
 
         // Add New Tab button "+" to headerbar
         let new_tab_btn = Button::with_label("+");
@@ -203,6 +235,7 @@ pub fn run(banlist: SharedBanList) {
         let global_webview_switch = gw_activate.clone();
         let current_uri_switch = current_uri.clone();
         let is_cleaning_switch = is_cleaning.clone();
+        let notebook_switch = notebook.clone();
 
         notebook.connect_switch_page(move |_, _page, page_num| {
             if *is_cleaning_switch.borrow() {
@@ -233,6 +266,27 @@ pub fn run(banlist: SharedBanList) {
                 };
                 key_button_switch.set_visible(has_creds);
             }
+
+            // Clean up killed tabs on idle so it doesn't interrupt page switching
+            let tabs_idle = tabs_switch.clone();
+            let notebook_idle = notebook_switch.clone();
+            let url_entry_idle = url_entry_switch.clone();
+            let gw_idle = global_webview_switch.clone();
+            let cur_idle = current_uri_switch.clone();
+            let key_idle = key_button_switch.clone();
+            let is_cleaning_idle = is_cleaning_switch.clone();
+            gtk::glib::idle_add_local(move || {
+                crate::browsing::tab_cleanup::cleanup_killed_tabs(
+                    &notebook_idle,
+                    &tabs_idle,
+                    &url_entry_idle,
+                    &gw_idle,
+                    &cur_idle,
+                    &key_idle,
+                    &is_cleaning_idle,
+                );
+                gtk::glib::ControlFlow::Break
+            });
         });
 
         // Focus in on url_entry and notebook to trigger cleanup
@@ -244,15 +298,13 @@ pub fn run(banlist: SharedBanList) {
         let key_cleanup1 = key_button.clone();
         let is_cleaning_cleanup1 = is_cleaning.clone();
         url_entry.connect_focus_in_event(move |entry, _| {
-            let config = AppConfig::load();
-            cleanup_killed_tabs(
+            crate::browsing::tab_cleanup::cleanup_killed_tabs(
                 &notebook_cleanup1,
                 &tabs_cleanup1,
                 &url_entry_cleanup1,
                 &gw_cleanup1,
                 &cur_cleanup1,
                 &key_cleanup1,
-                &config,
                 &is_cleaning_cleanup1,
             );
             let uri = cur_cleanup1.borrow();
@@ -280,16 +332,54 @@ pub fn run(banlist: SharedBanList) {
         let key_cleanup2 = key_button.clone();
         let is_cleaning_cleanup2 = is_cleaning.clone();
         notebook.connect_button_press_event(move |_, _| {
-            let config = AppConfig::load();
-            cleanup_killed_tabs(
+            crate::browsing::tab_cleanup::cleanup_killed_tabs(
                 &notebook_cleanup2,
                 &tabs_cleanup2,
                 &url_entry_cleanup2,
                 &gw_cleanup2,
                 &cur_cleanup2,
                 &key_cleanup2,
-                &config,
                 &is_cleaning_cleanup2,
+            );
+            gtk::glib::Propagation::Proceed
+        });
+
+        let tabs_cleanup3 = tabs.clone();
+        let notebook_cleanup3 = notebook.clone();
+        let url_entry_cleanup3 = url_entry.clone();
+        let gw_cleanup3 = gw_activate.clone();
+        let cur_cleanup3 = current_uri.clone();
+        let key_cleanup3 = key_button.clone();
+        let is_cleaning_cleanup3 = is_cleaning.clone();
+        notebook.connect_enter_notify_event(move |_, _| {
+            crate::browsing::tab_cleanup::cleanup_killed_tabs(
+                &notebook_cleanup3,
+                &tabs_cleanup3,
+                &url_entry_cleanup3,
+                &gw_cleanup3,
+                &cur_cleanup3,
+                &key_cleanup3,
+                &is_cleaning_cleanup3,
+            );
+            gtk::glib::Propagation::Proceed
+        });
+
+        let tabs_cleanup4 = tabs.clone();
+        let notebook_cleanup4 = notebook.clone();
+        let url_entry_cleanup4 = url_entry.clone();
+        let gw_cleanup4 = gw_activate.clone();
+        let cur_cleanup4 = current_uri.clone();
+        let key_cleanup4 = key_button.clone();
+        let is_cleaning_cleanup4 = is_cleaning.clone();
+        window.connect_focus_in_event(move |_, _| {
+            crate::browsing::tab_cleanup::cleanup_killed_tabs(
+                &notebook_cleanup4,
+                &tabs_cleanup4,
+                &url_entry_cleanup4,
+                &gw_cleanup4,
+                &cur_cleanup4,
+                &key_cleanup4,
+                &is_cleaning_cleanup4,
             );
             gtk::glib::Propagation::Proceed
         });
@@ -357,45 +447,12 @@ pub fn run(banlist: SharedBanList) {
 
         // Inactivity timeout loop checking for dead tabs
         let tabs_timer = tabs.clone();
+        let window_timer = window.clone();
         gtk::glib::timeout_add_seconds_local(5, move || {
-            let config = AppConfig::load();
-            let ttl_mins = config.tab_inactivity_ttl.clamp(1, 60);
-            let nuke_action = config.last_tab_nuke_action.clone();
-
-            let now = std::time::Instant::now();
-            let mut tabs_borrow = tabs_timer.borrow_mut();
-
-            let active_count = tabs_borrow.iter().filter(|t| !*t.is_killed.borrow()).count();
-
-            for tab in tabs_borrow.iter_mut() {
-                if *tab.is_killed.borrow() {
-                    continue;
-                }
-
-                let last_inter = *tab.last_interaction.borrow();
-                if now.duration_since(last_inter) >= std::time::Duration::from_secs(ttl_mins as u64 * 60) {
-                    if active_count == 1 {
-                        if nuke_action == "survive" {
-                            *tab.last_interaction.borrow_mut() = now;
-                            continue;
-                        } else if nuke_action == "home" {
-                            tab.webview.load_uri("juanita://home");
-                            *tab.last_interaction.borrow_mut() = now;
-                            continue;
-                        }
-                    }
-
-                    *tab.is_killed.borrow_mut() = true;
-                    tab.webview.load_html(
-                        "<html><body style='background:#1e1e1e;color:#888;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:sans-serif;'>
-                         <div>tab closed due to inactivity in 0 frames</div>
-                         </body></html>",
-                        Some("about:blank")
-                    );
-                    tab.label.set_text("tab closed due to inactivity in 0 frames");
-                }
+            if window_timer.in_destruction() {
+                return gtk::glib::ControlFlow::Break;
             }
-
+            crate::browsing::tab_cleanup::check_tab_inactivity(&tabs_timer);
             gtk::glib::ControlFlow::Continue
         });
 

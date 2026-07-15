@@ -25,7 +25,16 @@ mod search;
 mod unsubscribe;
 mod util;
 
+struct CleanupGuard;
+
+impl Drop for CleanupGuard {
+    fn drop(&mut self) {
+        crate::resolver::shutdown_resolver();
+    }
+}
+
 fn main() {
+    let _guard = CleanupGuard;
     let config = util::config::AppConfig::load();
     let state = browsing::browser::BanList::load(&config);
     config.save();
@@ -36,7 +45,4 @@ fn main() {
 
     // Launch GTK application
     browsing::gui::run(state);
-
-    // Stop local resolvers / daemon
-    resolver::shutdown_resolver();
 }

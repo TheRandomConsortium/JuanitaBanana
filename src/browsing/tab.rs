@@ -6,6 +6,7 @@ use webkit2gtk::{
     NavigationPolicyDecision, NavigationPolicyDecisionExt, PolicyDecisionType, URIRequestExt,
     UserContentInjectedFrames, UserContentManager, UserContentManagerExt, UserScript,
     UserScriptInjectionTime, WebContext, WebView, WebViewExt,
+    PolicyDecisionExt, HitTestResultExt,
 };
 
 use crate::browsing::browser::SharedBanList;
@@ -44,6 +45,8 @@ pub fn create_tab(
     key_button: &Button,
     _is_cleaning: &Rc<RefCell<bool>>,
     _global_webview: &Rc<RefCell<Option<WebView>>>,
+    noise_provider: &Rc<RssNoiseProvider>,
+    tab_tx: &async_channel::Sender<String>,
 ) -> Tab {
     let config = AppConfig::load();
     let ucm = UserContentManager::new();
@@ -159,7 +162,6 @@ pub fn create_tab(
     let unsub_plugin = AggressiveUnsubscribePlugin;
     unsub_plugin.setup(window, &webview, &ad_intox_engine);
 
-    let noise_provider = Rc::new(RssNoiseProvider::new(&config));
     let intox_engine = IntoxicationEngine::new(web_context, &webview, &config);
 
     let last_interaction = Rc::new(RefCell::new(std::time::Instant::now()));
@@ -167,6 +169,71 @@ pub fn create_tab(
     let original_title = Rc::new(RefCell::new(String::from("New Tab")));
 
     let label = gtk::Label::new(Some("New Tab"));
+
+    // Custom EventBox + Box for close buttons and middle click
+    let event_box = gtk::EventBox::new();
+    let tab_box = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+    tab_box.pack_start(&label, true, true, 0);
+
+    let close_btn = gtk::Button::builder()
+        .relief(gtk::ReliefStyle::None)
+        .focus_on_click(false)
+        .build();
+    let close_img = gtk::Image::from_icon_name(Some("window-close-symbolic"), gtk::IconSize::Menu);
+    close_btn.set_image(Some(&close_img));
+    tab_box.pack_start(&close_btn, false, false, 0);
+
+    event_box.add(&tab_box);
+    event_box.show_all();
+
+    let notebook_close = notebook.clone();
+    let tabs_close = _tabs.clone();
+    let webview_close = webview.clone();
+    let is_cleaning_close = _is_cleaning.clone();
+    let url_entry_close = url_entry.clone();
+    let gw_close = _global_webview.clone();
+    let cur_close = current_uri.clone();
+    let key_close = key_button.clone();
+
+    close_btn.connect_clicked(move |_| {
+        crate::browsing::tab_cleanup::manual_close_tab(
+            &notebook_close,
+            &tabs_close,
+            &webview_close,
+            &is_cleaning_close,
+            &url_entry_close,
+            &gw_close,
+            &cur_close,
+            &key_close,
+        );
+    });
+
+    let notebook_mc = notebook.clone();
+    let tabs_mc = _tabs.clone();
+    let webview_mc = webview.clone();
+    let is_cleaning_mc = _is_cleaning.clone();
+    let url_entry_mc = url_entry.clone();
+    let gw_mc = _global_webview.clone();
+    let cur_mc = current_uri.clone();
+    let key_mc = key_button.clone();
+
+    event_box.connect_button_press_event(move |_, event| {
+        if event.button() == 2 {
+            crate::browsing::tab_cleanup::manual_close_tab(
+                &notebook_mc,
+                &tabs_mc,
+                &webview_mc,
+                &is_cleaning_mc,
+                &url_entry_mc,
+                &gw_mc,
+                &cur_mc,
+                &key_mc,
+            );
+            gtk::glib::Propagation::Stop
+        } else {
+            gtk::glib::Propagation::Proceed
+        }
+    });
 
     let li_clone = last_interaction.clone();
     webview.connect_button_press_event(move |_, _| {
@@ -186,16 +253,10 @@ pub fn create_tab(
     let current_uri_nav = current_uri.clone();
     let li_clone = last_interaction.clone();
     let is_killed_clone = is_killed.clone();
-    let label_clone = label.clone();
 
     webview.connect_load_changed(move |wv, load_event| {
         if *is_killed_clone.borrow() {
-            if matches!(load_event, webkit2gtk::LoadEvent::Started) {
-                *is_killed_clone.borrow_mut() = false;
-                label_clone.set_text("Loading...");
-            } else {
-                return;
-            }
+            return;
         }
         *li_clone.borrow_mut() = std::time::Instant::now();
 
@@ -271,14 +332,21 @@ pub fn create_tab(
     let internal_pages_policy = internal_pages.clone();
     let ad_intox_engine_policy = ad_intox_engine.clone();
     let intox_engine_policy = intox_engine.clone();
+    let noise_provider_policy = noise_provider.clone();
 
+    let tab_tx_policy = tab_tx.clone();
     webview.connect_decide_policy(move |_, decision, decision_type| {
-        if decision_type == PolicyDecisionType::NavigationAction {
+        if decision_type == PolicyDecisionType::NavigationAction || decision_type == PolicyDecisionType::NewWindowAction {
             if let Some(nav_decision) = decision.downcast_ref::<NavigationPolicyDecision>() {
                 #[allow(deprecated)]
                 if let Some(req) = nav_decision.request() {
                     if let Some(uri) = req.uri() {
                         let uri_str = uri.as_str();
+                        if decision_type == PolicyDecisionType::NewWindowAction || nav_decision.mouse_button() == 2 {
+                            decision.ignore();
+                            let _ = tab_tx_policy.send_blocking(uri_str.to_string());
+                            return true;
+                        }
                         if crate::browsing::policy::handle_decide_policy(
                             decision,
                             uri_str,
@@ -289,12 +357,36 @@ pub fn create_tab(
                             &internal_pages_policy,
                             &ad_intox_engine_policy,
                             &intox_engine_policy,
-                            &noise_provider,
+                            &noise_provider_policy,
                         ) {
                             return true;
                         }
                     }
                 }
+            }
+        }
+        false
+    });
+
+    let window_menu = window.clone();
+    webview.connect_context_menu(move |_wv, menu, _event, hit_test| {
+        use webkit2gtk::{ContextMenuExt, ContextMenuItemExt};
+        if let Some(uri) = hit_test.link_uri() {
+            let items = menu.items();
+            for item in &items {
+                if item.stock_action() == webkit2gtk::ContextMenuAction::OpenLinkInNewWindow {
+                    menu.remove(item);
+                }
+            }
+
+            if let Some(open_act) = window_menu.lookup_action("open-in-new-tab") {
+                let uri_variant = uri.to_string().to_variant();
+                let item = webkit2gtk::ContextMenuItem::from_gaction(
+                    &open_act,
+                    "Open Link in New Tab",
+                    Some(&uri_variant),
+                );
+                menu.insert(&item, 0);
             }
         }
         false
@@ -333,9 +425,8 @@ pub fn create_tab(
         webview.load_uri(&normalized);
     }
 
-    notebook.append_page(&webview, Some(&label));
+    notebook.append_page(&webview, Some(&event_box));
     webview.show_all();
-    label.show_all();
 
     Tab {
         webview,
@@ -345,77 +436,5 @@ pub fn create_tab(
         original_title,
         intox_engine,
         ad_intox_engine,
-    }
-}
-
-pub fn cleanup_killed_tabs(
-    notebook: &gtk::Notebook,
-    tabs: &Rc<RefCell<Vec<Tab>>>,
-    url_entry: &Entry,
-    global_webview: &Rc<RefCell<Option<WebView>>>,
-    current_uri: &Rc<RefCell<String>>,
-    key_button: &Button,
-    _config: &AppConfig,
-    is_cleaning: &Rc<RefCell<bool>>,
-) {
-    if *is_cleaning.borrow() {
-        return;
-    }
-
-    let mut tabs_to_remove = Vec::new();
-    {
-        let tabs_borrow = tabs.borrow();
-        for (i, tab) in tabs_borrow.iter().enumerate() {
-            if *tab.is_killed.borrow() {
-                tabs_to_remove.push(i);
-            }
-        }
-    }
-
-    if tabs_to_remove.is_empty() {
-        return;
-    }
-
-    *is_cleaning.borrow_mut() = true;
-
-    tabs_to_remove.sort_by(|a, b| b.cmp(a));
-
-    let mut tabs_borrow = tabs.borrow_mut();
-    for idx in tabs_to_remove {
-        notebook.remove_page(Some(idx as u32));
-        tabs_borrow.remove(idx);
-    }
-
-    *is_cleaning.borrow_mut() = false;
-
-    // Refresh active tab UI state
-    if let Some(page_num) = notebook.current_page() {
-        if let Some(tab) = tabs_borrow.get(page_num as usize) {
-            let uri = tab.webview.uri().map(|s| s.to_string()).unwrap_or_default();
-            let restored_uri = crate::resolver::restore_original_domain_in_uri(&uri);
-            *current_uri.borrow_mut() = restored_uri.clone();
-            let display_uri = if let Some((base, _)) = restored_uri.split_once('?') {
-                base.to_string()
-            } else {
-                restored_uri
-            };
-            url_entry.set_text(&display_uri);
-            *global_webview.borrow_mut() = Some(tab.webview.clone());
-
-            crate::browsing::gui_plugin::ACTIVE_TAB.with(|at| {
-                *at.borrow_mut() = Some((tab.webview.clone(), tab.ad_intox_engine.clone()));
-            });
-
-            let has_creds = if !uri.is_empty()
-                && !uri.starts_with("juanita://")
-                && !uri.starts_with("about:")
-            {
-                let domain = crate::browsing::browser::extract_domain(&uri);
-                crate::util::credentials::CredentialIndex::load().has_credentials(&domain)
-            } else {
-                false
-            };
-            key_button.set_visible(has_creds);
-        }
     }
 }

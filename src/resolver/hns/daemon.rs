@@ -63,10 +63,15 @@ pub fn init_resolver() {
     }
 
     {
-        let lock = HNSD_PROCESS.lock().unwrap();
-        if lock.is_some() {
-            // Already running
-            return;
+        let mut lock = HNSD_PROCESS.lock().unwrap();
+        if let Some(ref mut child) = *lock {
+            if let Ok(None) = child.try_wait() {
+                // Process is still running, do not relaunch
+                return;
+            } else {
+                // Process has exited/failed, clean up handle so we can restart
+                *lock = None;
+            }
         }
     }
 

@@ -1,0 +1,8 @@
+Juanita Banana v1.5.5 Changelog
+================================
+
+Changes:
+- Refactored tab inactivity timeout checking into `tab_cleanup.rs` to keep `gui.rs` strictly under 500 lines (currently at 481 lines).
+- Added `in_destruction()` checks on notebook, entry, and button references to guard against double-free/use-after-free events during application shutdown.
+- Prevented background timers from executing during application termination by returning `ControlFlow::Break` if the main window is in destruction.
+- Refined Settings page `<select>` element styling with white background and black text to ensure visibility on all GTK themes.

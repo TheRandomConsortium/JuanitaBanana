@@ -7,3 +7,4 @@ pub mod internal;
 pub mod message_handler;
 pub mod policy;
 pub mod tab;
+pub mod tab_cleanup;
