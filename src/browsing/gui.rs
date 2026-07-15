@@ -348,7 +348,7 @@ pub fn run(banlist: SharedBanList) {
                         bl.ban(&domain);
                         bl.save();
                     }
-                    println!("[BAN] Banned domain: {}", domain);
+                    log!(Warn, GUI, "Banned domain: {}", domain);
                     let banned_html = crate::util::ban::banned_page(uri.as_str());
                     wv.load_html(&banned_html, Some("juanita://banned/"));
                 }

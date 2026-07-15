@@ -1,5 +1,6 @@
 use crate::ad_intoxication::AdIntoxicationEngine;
 use crate::browsing::browser::SharedBanList;
+use crate::log;
 use gtk::ApplicationWindow;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -40,7 +41,7 @@ pub fn handle_script_message(
                         bl.ban(domain);
                         bl.save();
                     }
-                    println!("[BAN] Banned domain: {}", domain);
+                    log!(Warn, MSG_HANDLER, "Banned domain: {}", domain);
                     let banned_html = crate::util::ban::banned_page(&format!("https://{}", domain));
                     webview.load_html(&banned_html, Some("juanita://banned/"));
                 }
@@ -50,8 +51,8 @@ pub fn handle_script_message(
                 {
                     let path = uri.strip_prefix("file://").unwrap_or(uri);
                     match std::fs::write(path, content) {
-                        Ok(_) => println!("[HTML_VIEWER] Saved: {}", path),
-                        Err(e) => println!("[HTML_VIEWER] Save error: {}", e),
+                        Ok(_) => log!(Info, HTML_VIEWER, "Saved: {}", path),
+                        Err(e) => log!(Error, HTML_VIEWER, "Save error: {}", e),
                     }
                 }
             } else if msg_val["type"] == "form_interact" {

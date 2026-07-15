@@ -1,0 +1,7 @@
+Juanita Banana v1.5.1 Changelog
+================================
+
+Changes:
+- Added a new Warn log level weight (1) to the LogLevel enum and environment variable parser in debug utilities.
+- Switched newly introduced and existing raw console outputs (println!) for domain banning in gui.rs and message_handler.rs to structured log! macro calls at the Warn level.
+- Migrated HTML viewer disk-saving console feedback to log! calls under the Info and Error levels.
