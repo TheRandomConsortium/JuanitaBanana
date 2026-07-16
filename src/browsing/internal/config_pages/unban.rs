@@ -62,7 +62,7 @@ impl InternalPage for UnbanPage {
 
             if let Some((expected_domain, expected_ans)) = ctx.expected_unban.borrow().as_ref() {
                 if *expected_domain == domain && answer == expected_ans.to_string() {
-                    println!("[UNBAN] User solved the math! Unbanning {}", domain);
+                    crate::log!(Info, UNBAN, "User solved the math! Unbanning {}", domain);
                     let mut bl = ctx.banlist.borrow_mut();
                     bl.unban(&domain);
                     bl.save();
@@ -71,7 +71,11 @@ impl InternalPage for UnbanPage {
                 }
             }
 
-            println!("[UNBAN] Incorrect math or tampered domain. Access denied.");
+            crate::log!(
+                Warn,
+                UNBAN,
+                "Incorrect math or tampered domain. Access denied."
+            );
             let banned_html = crate::util::ban::banned_page(&domain);
             ctx.webview
                 .load_html(&banned_html, Some("juanita://banned-page"));

@@ -95,20 +95,27 @@ pub fn handle_script_message(
                                                 Ok(_) => {
                                                     let mut idx = crate::util::credentials::CredentialIndex::load();
                                                     idx.remove(domain);
-                                                    println!(
-                                                        "[CREDS] Deleted credentials for: {}",
+                                                    crate::log!(
+                                                        Info,
+                                                        CREDS,
+                                                        "Deleted credentials for: {}",
                                                         domain
                                                     );
                                                 }
                                                 Err(e) => {
-                                                    println!("[CREDS] Failed to delete: {}", e);
+                                                    crate::log!(
+                                                        Error,
+                                                        CREDS,
+                                                        "Failed to delete: {}",
+                                                        e
+                                                    );
                                                 }
                                             }
                                         }
-                                        Err(e) => println!("[CREDS] DB open error: {}", e),
+                                        Err(e) => crate::log!(Error, CREDS, "DB open error: {}", e),
                                     }
                                 }
-                                Err(_) => println!("[CREDS] Wrong master password."),
+                                Err(_) => crate::log!(Warn, CREDS, "Wrong master password."),
                             }
                         }
                     }

@@ -108,9 +108,12 @@ pub fn crawl_domain(domain: String) -> CrawlResult {
     if emails.is_empty() {
         let config = crate::util::config::AppConfig::load();
         let max_pages = config.deep_crawl_max_pages;
-        println!(
-            "[CRAWLER] Quick search returned 0 results. Launching deep crawl (limit: {} pages) for {}",
-            max_pages, domain
+        crate::log!(
+            Info,
+            CRAWLER,
+            "Quick search returned 0 results. Launching deep crawl (limit: {} pages) for {}",
+            max_pages,
+            domain
         );
         let mut queue = Vec::new();
 

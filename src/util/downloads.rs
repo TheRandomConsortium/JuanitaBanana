@@ -196,9 +196,9 @@ fi
                 .spawn();
 
             if let Err(e) = status {
-                eprintln!("[SANDBOX] Failed to launch bwrap: {}", e);
+                crate::log!(Error, SANDBOX, "Failed to launch bwrap: {}", e);
             } else {
-                println!("[SANDBOX] Launched isolated viewer for {}", _filename);
+                crate::log!(Info, SANDBOX, "Launched isolated viewer for {}", _filename);
             }
         }
     }
@@ -211,9 +211,9 @@ fi
             let dest_path = dest_dir.join(filename);
 
             if let Err(e) = std::fs::copy(path, &dest_path) {
-                eprintln!("[SANDBOX] Failed to persist file: {}", e);
+                crate::log!(Error, SANDBOX, "Failed to persist file: {}", e);
             } else {
-                println!("[SANDBOX] File persisted to {:?}", dest_path);
+                crate::log!(raw: Info, SANDBOX, "File persisted to {:?}", dest_path);
                 // Also shred it from sandbox since we moved it
                 let _ = std::fs::remove_file(path);
                 if let Some(parent) = std::path::Path::new(path).parent() {
@@ -230,7 +230,7 @@ fi
             if let Some(parent) = std::path::Path::new(path).parent() {
                 let _ = std::fs::remove_dir(parent);
             }
-            println!("[SANDBOX] Shredded file {}", _filename);
+            crate::log!(Info, SANDBOX, "Shredded file {}", _filename);
         }
         self.active_downloads.remove(id);
     }
@@ -303,7 +303,7 @@ pub fn setup_downloads(
             if let Some(entry) = downloads_fin.borrow_mut().active_downloads.get_mut(&id_fin) {
                 entry.2 = true;
                 let filename = entry.1.clone();
-                println!("[SANDBOX] Download finished: {}", filename);
+                crate::log!(Info, SANDBOX, "Download finished: {}", filename);
 
                 let tx_thread = tx_clone.clone();
                 std::thread::spawn(move || {

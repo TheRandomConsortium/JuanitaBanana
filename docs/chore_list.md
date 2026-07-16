@@ -2,6 +2,9 @@
 
 This document maintains the tracking of known technical chores, API deprecations, and platform upgrades to preserve the security and robustness of the Juanita Banana browser.
 
+> [!NOTE]
+> Chores marked as Done will be removed from this list upon major or minor version bumps (e.g. vX.Y.0) to prevent the list from growing infinitely.
+
 ## 📋 Scheduled Chores
 
 ### 1. Refactor Legacy Channels
@@ -53,12 +56,13 @@ This document maintains the tracking of known technical chores, API deprecations
   - Parse the `not_after` field from the X.509 cert in `db_certs.rs` at load time using the `openssl` crate's `X509::not_after()`.
   - If within 90 days of expiry, show a non-blocking warning banner. If expired, treat as no-certificate (fall back to unsigned PDF) and show an error.
 
-### 7. Migrate all prints from `println` to `log!(...)`
+### 7. Migrate all prints from `println` to `log!(...)` (Done)
 - **Chore:** Use `log!(...)` macros for all debug output instead of `println!`.
+- **Status:** Completed.
 - **Action Plan:**
-  - Find all `println!` macros in the codebase.
-  - Replace them with `log!(...)`.
-  - Keep the `JUANITA_LOG` environment variable to control the log level.
+  - [x] Find all `println!` macros in the codebase.
+  - [x] Replace them with `log!(...)`.
+  - [x] Keep the `JUANITA_LOG` environment variable to control the log level.
 - **Considerations:**
   - error level => `eprintln!(...)`
   - warn, info, debug level => `println!(...)`
@@ -74,4 +78,12 @@ This document maintains the tracking of known technical chores, API deprecations
 - **Action Plan:**
   - Analyze network request patterns and script contexts on affected pages.
   - Check if specific subdomains or redirect paths bypass standard host/regex matching.
+
+### 10. Log Override Environment Variable (Done)
+- **Chore:** Support per-system log overrides via `JUANITA_LOG_OVERRIDE` environment variable.
+- **Status:** Completed.
+- **Action Plan:**
+  - [x] Parse `JUANITA_LOG_OVERRIDE` environment variable containing `sys,lvl` pairs.
+  - [x] Match each system name (e.g. `gui`, `ad_intox`) to its overridden level, overriding the global `JUANITA_LOG` level.
+
 

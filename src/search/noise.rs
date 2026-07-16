@@ -72,7 +72,12 @@ impl RssNoiseProvider {
 
                 if let Ok(mut lock) = keywords_clone.lock() {
                     *lock = all_words;
-                    println!("[NOISE] Loaded {} fresh keywords from RSS.", lock.len());
+                    crate::log!(
+                        Info,
+                        NOISE,
+                        "Loaded {} fresh keywords from RSS.",
+                        lock.len()
+                    );
                 }
             }
         });
