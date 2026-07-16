@@ -1,0 +1,5 @@
+Juanita Banana v1.5.2 Changelog
+================================
+
+Changes:
+- Fixed a RefCell mutably borrowed runtime panic that occurred when adding a new tab, caused by the switch-page signal firing while the tabs list RefCell was still mutably borrowed.

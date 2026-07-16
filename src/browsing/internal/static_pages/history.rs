@@ -1,4 +1,4 @@
-use super::{InternalPage, PageContext};
+use crate::browsing::internal::{InternalPage, PageContext};
 use webkit2gtk::WebViewExt;
 
 pub struct HistoryPage;
@@ -9,7 +9,7 @@ impl InternalPage for HistoryPage {
     }
 
     fn handle_input(&self, _input: &str, ctx: &PageContext) {
-        let html = include_str!("../../../templates/history.html");
+        let html = include_str!("../../../../templates/history.html");
         ctx.webview.load_html(html, Some("juanita://history-page/"));
     }
 
@@ -22,7 +22,7 @@ impl InternalPage for HistoryPage {
     }
 
     fn handle_policy(&self, _uri: &str, ctx: &PageContext) -> bool {
-        let html = include_str!("../../../templates/history.html");
+        let html = include_str!("../../../../templates/history.html");
         ctx.webview.load_html(html, Some("juanita://history-page/"));
         true
     }

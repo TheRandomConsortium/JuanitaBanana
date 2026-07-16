@@ -1,0 +1,8 @@
+Juanita Banana v1.5.4 Changelog
+================================
+
+Changes:
+- Fixed middle-click on links not opening in a new tab by checking `nav_decision.mouse_button() == 2`.
+- Fixed tab names getting cleared and loading/nuking infinitely when closed by inactivity by ignoring WebKit load events on killed tabs.
+- Added notebook hover (enter-notify) and window focus-in triggers to seamlessly execute tab cleanup when user attention returns.
+- Fixed Settings page dropdown visibility on dark mode by rendering options with black text on white background.

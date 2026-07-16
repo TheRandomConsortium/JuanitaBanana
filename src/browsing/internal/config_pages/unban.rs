@@ -1,4 +1,4 @@
-use super::{InternalPage, PageContext};
+use crate::browsing::internal::{InternalPage, PageContext};
 use webkit2gtk::WebViewExt;
 
 pub struct UnbanPage;

@@ -217,6 +217,17 @@ pub fn config_page_html(
         ""
     };
 
+    let last_tab_action_survive_selected = if config.last_tab_nuke_action == "survive" {
+        "selected"
+    } else {
+        ""
+    };
+    let last_tab_action_home_selected = if config.last_tab_nuke_action == "home" {
+        "selected"
+    } else {
+        ""
+    };
+
     html_template
         .replace("{config_js}", js_content)
         .replace("{default_btn}", default_btn)
@@ -262,6 +273,18 @@ pub fn config_page_html(
         .replace(
             "{guilt_trip_social_rules}",
             &config.guilt_trip_social_rules.join(", "),
+        )
+        .replace(
+            "{tab_inactivity_ttl}",
+            &config.tab_inactivity_ttl.to_string(),
+        )
+        .replace(
+            "{last_tab_action_survive_selected}",
+            last_tab_action_survive_selected,
+        )
+        .replace(
+            "{last_tab_action_home_selected}",
+            last_tab_action_home_selected,
         )
 }
 

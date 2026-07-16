@@ -1,0 +1,6 @@
+Juanita Banana v1.5.6 Changelog
+================================
+
+Changes:
+- Refactored browsing modules to keep them organized.
+- Cleaned up unused imports and dead code.

@@ -21,27 +21,20 @@ pub trait InternalPage {
     fn handle_policy(&self, uri: &str, ctx: &PageContext) -> bool;
 }
 
-mod about;
-mod competitors;
-mod config;
-mod contribute;
-mod downloads;
-mod history;
-mod home;
-mod local_html;
-mod passwords;
-mod unban;
+pub mod config_pages;
+pub mod static_pages;
+pub mod utils;
 
-pub use about::AboutPage;
-pub use competitors::CompetitorsPage;
-pub use config::ConfigPage;
-pub use contribute::ContributePage;
-pub use downloads::DownloadsPage;
-pub use history::HistoryPage;
-pub use home::HomePage;
-pub use local_html::LocalHtmlPage;
-pub use passwords::PasswordsPage;
-pub use unban::UnbanPage;
+pub use config_pages::competitors::CompetitorsPage;
+pub use config_pages::config::ConfigPage;
+pub use config_pages::unban::UnbanPage;
+pub use static_pages::about::AboutPage;
+pub use static_pages::contribute::ContributePage;
+pub use static_pages::history::HistoryPage;
+pub use static_pages::home::HomePage;
+pub use utils::downloads::DownloadsPage;
+pub use utils::local_html::LocalHtmlPage;
+pub use utils::passwords::PasswordsPage;
 
 pub fn get_internal_pages() -> Vec<Box<dyn InternalPage>> {
     vec![
