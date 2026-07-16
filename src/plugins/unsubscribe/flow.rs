@@ -56,14 +56,23 @@ impl GuiPlugin for AggressiveUnsubscribePlugin {
         webview: &WebView,
         _ad_engine: &crate::ad_intoxication::AdIntoxicationEngine,
     ) {
-        let unsub_action = gtk::gio::SimpleAction::new("aggressive-unsubscribe", None);
-        let window_act = window.clone();
-        let webview_act = webview.clone();
-
-        unsub_action.connect_activate(move |_, _| {
-            show_unsubscribe_wizard_flow(&window_act, &webview_act);
-        });
-        window.add_action(&unsub_action);
+        let unsub_action = if let Some(act) = window.lookup_action("aggressive-unsubscribe") {
+            act.downcast::<gtk::gio::SimpleAction>().unwrap()
+        } else {
+            let act = gtk::gio::SimpleAction::new("aggressive-unsubscribe", None);
+            let window_act = window.clone();
+            act.connect_activate(move |_, _| {
+                let active_wv = crate::browsing::gui_plugin::ACTIVE_TAB.with(|at| {
+                    at.borrow()
+                        .as_ref()
+                        .map(|(wv, _)| wv.clone())
+                        .expect("No active tab set!")
+                });
+                show_unsubscribe_wizard_flow(&window_act, &active_wv);
+            });
+            window.add_action(&act);
+            act
+        };
 
         let unsub_action_menu = unsub_action.clone();
         webview.connect_context_menu(move |_wv, menu, _event, _hit_test| {

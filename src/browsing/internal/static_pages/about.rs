@@ -1,4 +1,4 @@
-use super::{InternalPage, PageContext};
+use crate::browsing::internal::{InternalPage, PageContext};
 use webkit2gtk::WebViewExt;
 
 pub struct AboutPage;
@@ -23,7 +23,7 @@ impl InternalPage for AboutPage {
     fn handle_policy(&self, _uri: &str, ctx: &PageContext) -> bool {
         let b64_icon = crate::util::image::get_icon_b64();
         let b64_noise = crate::util::image::generate_random_noise_bmp_b64();
-        let html_template = include_str!("../../../templates/about.html");
+        let html_template = include_str!("../../../../templates/about.html");
         let html = html_template
             .replace("{b64_icon}", &b64_icon)
             .replace("{b64_noise}", &b64_noise);

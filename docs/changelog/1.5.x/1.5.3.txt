@@ -1,0 +1,12 @@
+Juanita Banana v1.5.3 Changelog
+================================
+
+Changes:
+- Added CleanupGuard to terminate local hnsd resolver daemon on application exit or panic.
+- Enhanced hnsd daemon initialization to check process status via try_wait() and clean up failed handles to prevent port collisions.
+- Refactored tab management and page removal/sync logic into a dedicated module tab_cleanup.rs to comply with the 500-line limit.
+- Replaced basic tab headers with interactive EventBox + GtkBox widgets containing a close button 'x' and support for middle-click closing.
+- Intercepted NewWindowAction policy decisions and added custom context menus to support "Open Link in New Tab" navigation.
+- Shared a single RssNoiseProvider across all tabs to prevent redundant RSS crawler thread spawns.
+- Fixed inactivity active_count tracking in the timer loop to prevent nuking the last active tab.
+- Preserved tab label titles when tabs are killed by TTL to prevent layout shifting.

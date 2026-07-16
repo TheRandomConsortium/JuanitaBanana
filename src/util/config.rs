@@ -44,6 +44,8 @@ pub struct AppConfig {
     pub guilt_trip_news_rules: Vec<String>,
     pub guilt_trip_shopping_rules: Vec<String>,
     pub guilt_trip_social_rules: Vec<String>,
+    pub tab_inactivity_ttl: usize,
+    pub last_tab_nuke_action: String,
 }
 
 impl Default for AppConfig {
@@ -149,6 +151,8 @@ impl Default for AppConfig {
                 "facebook.com".to_string(), "instagram.com".to_string(), "tiktok.com".to_string(),
                 "linkedin.com".to_string(), "pinterest.com".to_string()
             ],
+            tab_inactivity_ttl: 15,
+            last_tab_nuke_action: "survive".to_string(),
         }
     }
 }
@@ -247,5 +251,17 @@ mod tests {
             deserialized.search_engines.len()
         );
         assert_eq!(config.rss_sources[0].url, deserialized.rss_sources[0].url);
+    }
+
+    #[test]
+    fn test_tab_inactivity_settings() {
+        let config = AppConfig::default();
+        assert_eq!(config.tab_inactivity_ttl, 15);
+        assert_eq!(config.last_tab_nuke_action, "survive");
+
+        let json = serde_json::to_string(&config).unwrap();
+        let deserialized: AppConfig = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.tab_inactivity_ttl, 15);
+        assert_eq!(deserialized.last_tab_nuke_action, "survive");
     }
 }

@@ -1,0 +1,11 @@
+Juanita Banana v1.5.0 Changelog
+================================
+
+Changes:
+- Added customizable tab settings to AppConfig, allowing configuration of tab inactivity TTL (1 to 60 minutes) and last tab nuke behavior (survive or redirect to home).
+- Overhauled the browser UI layout by replacing the single WebView packing with a tabbed GtkNotebook widget, adding a dynamic new tab "+" button to the headerbar.
+- Integrated background inactivity audit monitoring that automatically shuts down inactive webviews in the background, updating tab labels to "tab closed due to inactivity in 0 frames" to preserve user attention.
+- Implemented deferred tab pruning: visually reordering and removing dead tabs occurs only when the notebook tab headers or url entry bar are focused by the user.
+- Decoupled context menus and unsubscribe flows to query active tab contexts dynamically using ACTIVE_TAB thread-local storage, ensuring correct target isolation in multi-tab workspaces.
+- Refactored gui.rs to extract all tab management code into its own submodule tab.rs, keeping gui.rs clean and under the 500-line budget limit.
+- Updated the local RPM builder (build_rpm.sh) to support auto-incrementing build releases when executing builds with version bump argument set to none.

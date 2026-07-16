@@ -4,9 +4,10 @@ use lazy_static::lazy_static;
 #[repr(u8)]
 pub enum LogLevel {
     Error = 0,
-    Info = 1,
-    Debug = 2,
-    Trace = 3,
+    Warn = 1,
+    Info = 2,
+    Debug = 3,
+    Trace = 4,
 }
 
 lazy_static! {
@@ -14,7 +15,8 @@ lazy_static! {
         match std::env::var("JUANITA_LOG") {
             Ok(val) => match val.to_lowercase().as_str() {
                 "error" | "0" => LogLevel::Error as u8,
-                "info" | "1" | "2" => LogLevel::Info as u8,
+                "warn" | "1" => LogLevel::Warn as u8,
+                "info" | "2" => LogLevel::Info as u8,
                 "debug" | "3" => LogLevel::Debug as u8,
                 "trace" | "4" => LogLevel::Trace as u8,
                 _ => LogLevel::Info as u8,

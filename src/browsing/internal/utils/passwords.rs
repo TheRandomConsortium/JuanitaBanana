@@ -7,7 +7,7 @@ use webkit2gtk::WebViewExt;
 
 pub struct PasswordsPage;
 
-const LOCKED_HTML: &str = include_str!("../../../templates/passwords_locked.html");
+const LOCKED_HTML: &str = include_str!("../../../../templates/passwords_locked.html");
 
 // ── In-memory session store ─────────────────────────────────────────────────
 // Maps opaque random token → master password.  The token travels in URLs;
@@ -92,7 +92,7 @@ fn vault_html(
         None => String::new(),
     };
 
-    include_str!("../../../templates/passwords_vault.html")
+    include_str!("../../../../templates/passwords_vault.html")
         .replace("{rows}", &rows)
         .replace("{error_html}", &error_html)
         .replace("{unlock_pass_esc}", session_token)
@@ -156,7 +156,7 @@ impl InternalPage for PasswordsPage {
 
             // ── Fresh unlock attempt: validate master password ────────────────
             (Some(raw_pass), _) => {
-                let unlocking_html = include_str!("../../../templates/passwords_unlocking.html");
+                let unlocking_html = include_str!("../../../../templates/passwords_unlocking.html");
                 let wv_unlocking = webview_clone.clone();
                 gtk::glib::idle_add_local(move || {
                     wv_unlocking.load_html(unlocking_html, Some("juanita://passwords-unlocking"));
@@ -244,7 +244,7 @@ impl InternalPage for PasswordsPage {
                     }
                     Some(master_pass) => {
                         let unlocking_html =
-                            include_str!("../../../templates/passwords_unlocking.html");
+                            include_str!("../../../../templates/passwords_unlocking.html");
                         let wv_unlocking = webview_clone.clone();
                         gtk::glib::idle_add_local(move || {
                             wv_unlocking
