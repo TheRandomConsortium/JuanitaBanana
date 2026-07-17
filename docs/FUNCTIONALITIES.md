@@ -122,7 +122,7 @@
 
 | Feature | Status | Notes |
 |---|---|---|
-| **Tor (onion routing)** | 📋 Planned | Integrated via [`arti`](https://gitlab.torproject.org/tpo/core/arti) — Tor Project's official Rust crate. No C dependency, no subprocess. Activating it: registers the `.onion` resolver; optionally routes all clearnet through Tor exit nodes. |
+| **Tor (onion routing)** | ✅ Done | Integrated via subprocess `arti` — Tor Project's official Rust binary. No C dependency. Activating it: starts arti SOCKS5 proxy on `127.0.0.1:9150`; registers the `.onion` resolver; applies SOCKS5 proxy to WebKit's `WebContext`; optionally routes all clearnet through Tor exit nodes. HNS-over-Tor via `torsocks` wrap of `hnsd` if installed. |
 | **I2P (garlic routing)** | 🔭 Future | Integrated via `i2p-rs` (Rust) when stable; subprocess fallback to Java I2P router initially. Garlic routing bundles multiple messages per payload — harder to traffic-analyse than Tor. Activating it: registers the `.i2p` resolver; optionally routes clearnet via I2P outproxies. |
 
 ### Resolver Stack
@@ -131,7 +131,7 @@
 |---|---|---|
 | **BIOS-style resolver chain** | ✅ Done | Priority-ordered chain: first resolver with an authoritative answer wins, rest skipped. Default order: Handshake → System DNS. Fully user-reorderable in `juanita://config`. |
 | **Handshake (HNS) resolver** | ✅ Done | Permissionless blockchain root DNS, parallel to ICANN. Integrated via local `hnsd` daemon managed automatically by the browser. |
-| **Onion resolver** | 📋 Planned | Resolves `.onion` v3 addresses when Tor transport is active. |
+| **Onion resolver** | ✅ Done | Resolves `.onion` v3 addresses when Tor transport is active. Returns sentinel `127.0.0.2` so `policy.rs` routes via the arti SOCKS5 proxy (no DNS lookup — `.onion` addresses are self-authenticating). |
 | **I2P resolver** | 🔭 Future | Resolves `.i2p` eepsite addresses when I2P transport is active. |
 | **Namespace collision handling** | ✅ Done | HNS and ICANN can both define same names. Resolver priority chain is the user's tiebreak — whoever is first in your chain is authoritative for you. |
 | **Per-domain pinning rules** | 🔭 Future | User rules in config: `example.bit → always Handshake`, `*.onion → always Tor`. Pinned domains bypass the chain entirely. |

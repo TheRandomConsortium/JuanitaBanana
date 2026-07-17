@@ -122,7 +122,21 @@ pub fn handle_decide_policy(
                 if let Ok(res) = rx.recv().await {
                     match res {
                         Ok((ip, is_sys)) => {
-                            if is_sys {
+                            // Check for the .onion sentinel IP returned by OnionResolver.
+                            // 127.0.0.2 means arti SOCKS5 will handle the rendezvous —
+                            // we must NOT rewrite the URI to this sentinel. Let WebKit
+                            // route the original .onion address through the SOCKS5 proxy.
+                            let is_onion_sentinel =
+                                ip == std::net::IpAddr::V4(crate::resolver::ONION_SENTINEL_IP);
+                            if is_sys || is_onion_sentinel {
+                                if is_onion_sentinel {
+                                    log!(
+                                        Info,
+                                        TOR,
+                                        "Routing '{}' via Tor SOCKS5 proxy (arti)",
+                                        host
+                                    );
+                                }
                                 decision.use_();
                             } else {
                                 let ip_str = ip.to_string();

@@ -141,6 +141,8 @@ pub fn run(banlist: SharedBanList) {
         let is_cleaning = Rc::new(RefCell::new(false));
 
         let web_context = WebContext::default().unwrap();
+        crate::tor::apply_tor_proxy(&web_context);
+
         let downloads = Rc::new(RefCell::new(crate::util::downloads::DownloadManager::new()));
         crate::util::downloads::setup_downloads(&web_context, &downloads, &tx_activate);
 

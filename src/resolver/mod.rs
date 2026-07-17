@@ -3,6 +3,7 @@ use std::net::IpAddr;
 
 pub mod helpers;
 pub mod hns;
+pub mod onion;
 pub mod system;
 
 // Re-export helper functions and cached state
@@ -11,6 +12,7 @@ pub use helpers::{
 };
 pub use hns::daemon::{init_resolver, shutdown_resolver};
 pub use hns::HandshakeResolver;
+pub use onion::{OnionResolver, ONION_SENTINEL_IP};
 pub use system::SystemResolver;
 
 /// A generic trait representing a domain name resolver.
@@ -39,11 +41,14 @@ pub fn resolve_domain_with_chain(domain: &str) -> Result<(IpAddr, String), Strin
             "Handshake" => {
                 resolvers.push(Box::new(HandshakeResolver::new(5350)));
             }
+            "Onion" => {
+                resolvers.push(Box::new(OnionResolver));
+            }
             "System" => {
                 resolvers.push(Box::new(SystemResolver));
             }
             _ => {
-                // Ignore other resolvers for now
+                // Ignore unknown resolvers
             }
         }
     }

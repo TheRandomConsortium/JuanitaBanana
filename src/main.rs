@@ -22,6 +22,7 @@ mod fingerprint;
 mod plugins;
 mod resolver;
 mod search;
+mod tor;
 mod unsubscribe;
 mod util;
 
@@ -29,6 +30,7 @@ struct CleanupGuard;
 
 impl Drop for CleanupGuard {
     fn drop(&mut self) {
+        crate::tor::shutdown_tor();
         crate::resolver::shutdown_resolver();
     }
 }
@@ -42,6 +44,9 @@ fn main() {
 
     // Start local resolvers / daemon
     resolver::init_resolver();
+
+    // Start Tor transport if enabled in config
+    tor::init_tor();
 
     // Launch GTK application
     browsing::gui::run(state);

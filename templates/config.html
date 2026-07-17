@@ -331,6 +331,28 @@
                 first. If it cannot resolve the domain, the query falls back to the next resolver.</p>
             <div
                 style="background: #2d2d30; padding: 20px; border-radius: 5px; max-width: 500px; margin-top: 20px; margin-bottom: 20px;">
+                <h3 style="margin-top: 0; color: #fff;">🧅 Tor Transport (arti)</h3>
+                <label style="display: flex; align-items: center; cursor: pointer; color: #d4d4d4; margin-bottom: 12px;">
+                    <input type="checkbox" id="tor-enabled" {tor_enabled_checked}
+                        style="margin-right: 10px; width: 18px; height: 18px;"
+                        onchange="document.getElementById('tor-route-all').disabled = !this.checked;">
+                    Enable Tor transport daemon (arti)
+                </label>
+                <label style="display: flex; align-items: center; cursor: pointer; color: #a0a0a8; margin-bottom: 12px; padding-left: 28px;">
+                    <input type="checkbox" id="tor-route-all" {tor_route_all_checked}
+                        style="margin-right: 10px; width: 18px; height: 18px;"
+                        {tor_enabled_checked_disabled}>
+                    Route <strong style="margin: 0 4px;">all</strong> navigation through Tor exit nodes
+                    (not just .onion)
+                </label>
+                <p style="margin: 0 0 8px 0; color: #666; font-size: 0.88em;">
+                    SOCKS5 proxy: <code style="color: #8be9fd;">127.0.0.1:9150</code> &nbsp;·&nbsp;
+                    .onion resolver registered when enabled &nbsp;·&nbsp;
+                    HNS-over-Tor uses <code style="color: #8be9fd;">torsocks</code> if installed
+                </p>
+            </div>
+            <div
+                style="background: #2d2d30; padding: 20px; border-radius: 5px; max-width: 500px; margin-bottom: 20px;">
                 <h3 style="margin-top: 0; color: #fff;">Handshake Resolver Daemon</h3>
                 <label style="display: flex; align-items: center; cursor: pointer; color: #d4d4d4;">
                     <input type="checkbox" id="handshake-enabled" {handshake_enabled_checked}

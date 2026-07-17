@@ -1,0 +1,23 @@
+Juanita Banana v1.6.0 Changelog
+================================
+
+Changes:
+- Tor transport implemented via arti subprocess (same lifecycle pattern as hnsd).
+- New src/tor/ module: daemon.rs manages arti process, webcontext.rs applies SOCKS5
+  proxy to WebKit's WebsiteDataManager.
+- New src/resolver/onion/ module: OnionResolver handles .onion v3 addresses — returns
+  sentinel IP 127.0.0.2 so policy.rs routes the original URI through the SOCKS5 proxy
+  without DNS (onion v3 addresses are self-authenticating).
+- arti built at compile time via scripts/build_arti.sh (cargo install arti).
+  Non-fatal: browser degrades gracefully when arti is unavailable at runtime.
+- HNS-over-Tor: hnsd subprocess wrapped with torsocks when Tor is enabled and torsocks
+  is installed; falls back with warning if torsocks not found.
+- Config: tor_enabled (default false) and tor_route_all (default false) added to AppConfig.
+  Default resolver order updated to [Handshake, Onion, System].
+- Config UI: Tor Transport card added to juanita://config -> Resolver Stack tab.
+- gui.rs reduced below 500 lines by extracting Tor proxy setup into tor/webcontext.rs.
+- build.rs extended: builds both hnsd and arti at compile time when binaries are absent.
+- clippy and fmt clean.
+- Wiki Overlay-Networks.md updated: Tor status, implementation details, HNS-over-Tor
+  current approach vs. Phase 4 in-process arti-client target.
+- docs/OVERLAY_NETWORKS.md and docs/FUNCTIONALITIES.md status updated to Done.

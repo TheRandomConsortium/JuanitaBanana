@@ -26,13 +26,42 @@ Each transport is an independently togglable module. Activating one:
 | Property | Value |
 |---|---|
 | Address space | `.onion` (v3 hidden services) |
-| Rust implementation | [`arti`](https://gitlab.torproject.org/tpo/core/arti) — Tor Project's official Rust port |
+| Rust binary | [`arti`](https://gitlab.torproject.org/tpo/core/arti) — Tor Project's official Rust port |
 | Clearnet routing | Optional: all traffic via Tor exit nodes |
-| Status | 📋 Planned |
+| Status | ✅ Implemented (subprocess) |
 
 Tor provides onion routing: traffic is encrypted in three layers and relayed through three nodes.
-No single node knows both source and destination. `arti` is the official Tor Project Rust implementation
-and is the target integration — no C dependency, no subprocess, in-process async circuit management.
+No single node knows both source and destination.
+
+#### Current implementation — `arti` subprocess
+
+The current integration spawns `arti proxy --socks-port 9150` as a background subprocess, identical
+to how `hnsd` is managed. When enabled, the browser sets the SOCKS5 proxy on its WebKit `WebsiteDataManager`,
+so all connections (or only `.onion` connections, depending on the `tor_route_all` toggle) flow through
+the arti tunnel.
+
+**Known tradeoff**: the subprocess runs for the entire browser session as a persistent daemon, even
+when no `.onion` page is being loaded. This is the same tradeoff `hnsd` makes. For most users this
+is acceptable — arti is a low-resource process — but it is not the ideal architecture.
+
+#### Target final architecture — in-process `arti-client`
+
+The final architecture, deferred to the **Phase 4 / native Rust Tor integration** milestone, will
+eliminate the subprocess entirely and embed `arti-client` directly:
+
+- **On-demand circuit management**: a Tor circuit is opened only when a `.onion` URL is navigated
+  to, or when `tor_route_all` is active. No persistent proxy daemon runs at idle.
+- **In-process SOCKS5 stream**: `arti-client` exposes a `TorClient::connect()` API that returns
+  an async stream. We will intercept WebKit's TCP connection at the Rust level (via a custom
+  `NetworkSession` or by driving connections ourselves) and hand the stream to WebKit's fetch
+  machinery — no external proxy port needed.
+- **HNS-over-Tor Option 2**: once Handshake is ported to native Rust (`hnsd` SPV logic in-process),
+  its P2P UDP queries can be forced through `arti-client` circuits natively, implementing the
+  "Tor-forced daemon resolution" option that is architecturally impossible with the C `hnsd`
+  subprocess approach.
+- **Dependency note**: `arti-client` pulls in a significant async dependency tree (tokio, rustls).
+  This is acceptable for the Rust HNS milestone where the project already has async infrastructure,
+  but would have been disproportionate overhead for the current phase.
 
 ### 🧄 I2P — Garlic Routing
 
@@ -166,8 +195,8 @@ activating the `.onion` resolver (though that would be unusual).
 > [!NOTE]
 > **Handshake over Tor / I2P Resolution**: When routing navigation through Tor or I2P, resolving Handshake domains presents similar architectural options:
 > - **Tor Resolution**:
->   1. **Proxying queries**: Routing standard Handshake IP traffic through Tor's proxy wrapper.
->   2. **Tor-forced daemon resolution**: Forcing the `hnsd` daemon to query the P2P network completely through Tor. This is significantly more secure. If the C-based `hnsd` daemon is unable to support this natively, we will implement it directly within our planned native Rust port of the resolver.
+>   1. **Proxying queries** *(current implementation)*: Wrapping the `hnsd` subprocess with `torsocks` so its P2P UDP traffic routes through Tor. Applied automatically when both Tor and Handshake are enabled. If `torsocks` is not installed, a warning is logged and `hnsd` runs directly.
+>   2. **Tor-forced daemon resolution** *(target architecture)*: Forcing the resolver to query the P2P network completely through `arti-client` circuits natively. This is only achievable with a native Rust HNS port (Phase 4) — the C `hnsd` subprocess cannot have its internal sockets redirected from Rust.
 > - **I2P Resolution**:
 >   1. **Outproxying queries**: Wrapping Handshake P2P requests in garlic encryption and routing them through I2P outproxies to reach the clearnet P2P network.
 >   2. **Native I2P tunnel resolution**: Querying Handshake P2P seed nodes that exist directly inside the I2P network (as `.i2p` destinations) via native I2P client tunnels, avoiding outproxy reliance entirely.
@@ -177,15 +206,18 @@ activating the `.onion` resolver (though that would be unusual).
 
 ## Implementation Roadmap
 
-### Phase 1 — Tor via `arti` (📋 Planned)
-- Add `arti` as a Cargo dependency
-- Toggle in `juanita://config` to enable/disable
-- When enabled: register `.onion` resolver, optional navigation routing
-- SOCKS5 compatibility layer for WebKitGTK network stack
+### Phase 1 — Tor via `arti` subprocess (✅ Implemented)
+- `arti proxy --socks-port 9150` daemon lifecycle (same pattern as `hnsd`)
+- Toggle in `juanita://config` → Resolver Stack tab to enable/disable
+- Optional `tor_route_all`: route all clearnet navigation through Tor exit nodes
+- WebKit `WebsiteDataManager` SOCKS5 proxy configured when Tor starts
+- `OnionResolver` registered in resolver chain (returns sentinel IP `127.0.0.2`)
+- `policy.rs` sentinel detection: keeps `.onion` URI intact, `decision.use_()` routes via proxy
+- HNS-over-Tor via `torsocks hnsd ...` if `torsocks` is in `PATH`, with fallback warning
 
 ### Phase 2 — Handshake resolver (✅ Implemented)
-- FFI or subprocess bridge to `hnsd`
-- Integrate with resolver chain (configurable slot)
+- Subprocess bridge to `hnsd` C binary
+- Integrated with resolver chain (configurable slot)
 - Per-domain pinning UI in config
 - Conflict visualisation: show which resolver answered
 
@@ -195,9 +227,12 @@ activating the `.onion` resolver (though that would be unusual).
 - Register `.i2p` resolver
 - Optional navigation routing via I2P outproxies
 
-### Phase 4 — Native Rust HNS (🔭 Future)
-- Port `hnsd` SPV logic to Rust
-- Full in-house maintenance, no C FFI
+### Phase 4 — Native Rust HNS + in-process arti-client (🔭 Future)
+- Port `hnsd` SPV logic to Rust (full in-house, no C FFI)
+- Migrate Tor from `arti` subprocess to `arti-client` in-process:
+  - On-demand circuit management (no persistent daemon at idle)
+  - Native in-process stream for `.onion` connections
+  - HNS-over-Tor Option 2: force HNS P2P queries through `arti-client` circuits natively
 
 ---
 

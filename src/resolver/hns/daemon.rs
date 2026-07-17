@@ -97,20 +97,64 @@ pub fn init_resolver() {
         hnsd_bin.to_string_lossy()
     );
 
-    match Command::new(&hnsd_bin)
-        .arg("-n")
-        .arg("127.0.0.1:5349")
-        .arg("-r")
-        .arg("127.0.0.1:5350")
-        .arg("-p")
-        .arg("8")
-        .arg("-x")
-        .arg(&state_dir)
-        .arg("-t")
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-    {
+    // When Tor is enabled, attempt to route hnsd's P2P UDP traffic through Tor
+    // by wrapping the subprocess with torsocks (HNS-over-Tor, Option 1).
+    // If torsocks is not available, fall back to direct hnsd with a clear warning.
+    let config_for_tor = AppConfig::load();
+    let use_torsocks = config_for_tor.tor_enabled
+        && std::process::Command::new("which")
+            .arg("torsocks")
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false);
+
+    if use_torsocks {
+        crate::log!(
+            Info,
+            RESOLVER,
+            "torsocks detected — wrapping hnsd with torsocks for HNS-over-Tor"
+        );
+    } else if config_for_tor.tor_enabled {
+        crate::log!(
+            Info,
+            RESOLVER,
+            "torsocks not found in PATH — hnsd will query the HNS P2P network directly \
+             (not through Tor). Install torsocks for full HNS-over-Tor support."
+        );
+    }
+
+    let spawn_result = if use_torsocks {
+        Command::new("torsocks")
+            .arg(&hnsd_bin)
+            .arg("-n")
+            .arg("127.0.0.1:5349")
+            .arg("-r")
+            .arg("127.0.0.1:5350")
+            .arg("-p")
+            .arg("8")
+            .arg("-x")
+            .arg(&state_dir)
+            .arg("-t")
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+    } else {
+        Command::new(&hnsd_bin)
+            .arg("-n")
+            .arg("127.0.0.1:5349")
+            .arg("-r")
+            .arg("127.0.0.1:5350")
+            .arg("-p")
+            .arg("8")
+            .arg("-x")
+            .arg(&state_dir)
+            .arg("-t")
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+    };
+
+    match spawn_result {
         Ok(mut child) => {
             if let Some(stdout) = child.stdout.take() {
                 std::thread::spawn(move || {
