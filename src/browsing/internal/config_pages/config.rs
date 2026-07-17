@@ -308,7 +308,11 @@ impl InternalPage for ConfigPage {
                     if let Ok(new_config) = serde_json::from_str::<AppConfig>(&decoded) {
                         new_config.save();
                         crate::resolver::init_resolver();
-                        println!("[CONFIG] Configuration saved successfully. Reloading scripts.");
+                        crate::log!(
+                            Info,
+                            CONFIG,
+                            "Configuration saved successfully. Reloading scripts."
+                        );
 
                         if let Some(ucm) = webview_clone.user_content_manager() {
                             ucm.remove_all_scripts();
@@ -417,7 +421,7 @@ impl InternalPage for ConfigPage {
                     .spawn()
                     .ok();
 
-                println!("[CONFIG] Set as default browser!");
+                crate::log!(Info, CONFIG, "Set as default browser!");
                 webview_clone.load_uri("juanita://config");
                 return gtk::glib::ControlFlow::Break;
             }

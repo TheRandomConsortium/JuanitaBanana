@@ -76,7 +76,8 @@
 | **Persistent Ban List** | ✅ Done | Domains saved to `~/.local/share/juanita-banana/banlist.bin` (cryptographically signed). |
 | **Local Static Ban Page** | ✅ Done | Banned domains route to a local HTML error page. |
 | **UI Ban Button** | ✅ Done | GTK HeaderBar button. Bans current domain and loads ban page immediately. |
-| **Toxic Site Warning** | ✅ Done | Injects a fixed bottom marquee warning users when a site exceeds the `toxic_threshold` of combined ads and trackers, with a button to ban the domain immediately. *Future improvement: implement smarter heuristics (e.g., distinguishing raw volume vs content ratios like news articles vs ad blocks) instead of a simple flat threshold.* |
+| **Toxic Site Warning** | ✅ Done | Injects a fixed bottom marquee warning users when a site exceeds the `toxic_threshold` of combined ads and trackers, with a button to ban the domain immediately. |
+| **Clever Heuristic for Toxicity** | 📋 Planned | Implement smarter heuristics (e.g., distinguishing raw volume vs content ratios like news articles vs ad blocks) instead of a simple flat threshold warning. |
 | **Contextual Guilt Trip Overlay** | ✅ Done | Loaded real high-fidelity meme assets (Ceiling Cat, Trump, Fry, Wojak, and Banana fallback) at compile time and injected a semi-transparent, non-blocking contextual meme overlay on pages matching user-configurable keyword rules. |
 | **Mathematical Unban** | ✅ Done | Requires solving a randomly generated integral challenge in `juanita://unban?domain=...` to unban a site. Fully integrated with `BanList` and Vengeful Mode. |
 
@@ -98,6 +99,7 @@
 |---|---|---|
 | **Fake Downloads to Sandbox** | ✅ Done | Clicking a download link doesn't truly download the file. It saves it to a temporary `tmpfs` RAM disk that can only be opened inside a restricted sandbox environment using `bwrap` (Bubblewrap) preventing network and home directory access. |
 | **`juanita://downloads` Persistence** | ✅ Done | If the user decides to keep the file permanently and open it on their real OS, they must navigate to `juanita://downloads` and manually persist the file. Otherwise, it is securely deleted. Features native OS notifications and progress bars. |
+| **Configurable Make Permanent Download Location** | 📋 Planned | Allow configuring the destination folder for permanent downloads (or provide a right-click contextual menu choice) instead of hardcoding to `~/Downloads`. |
 
 ---
 

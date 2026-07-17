@@ -2,6 +2,9 @@
 
 This document maintains the tracking of known technical chores, API deprecations, and platform upgrades to preserve the security and robustness of the Juanita Banana browser.
 
+> [!NOTE]
+> Chores marked as Done will be removed from this list upon major or minor version bumps (e.g. vX.Y.0) to prevent the list from growing infinitely.
+
 ## 📋 Scheduled Chores
 
 ### 1. Refactor Legacy Channels
@@ -53,16 +56,6 @@ This document maintains the tracking of known technical chores, API deprecations
   - Parse the `not_after` field from the X.509 cert in `db_certs.rs` at load time using the `openssl` crate's `X509::not_after()`.
   - If within 90 days of expiry, show a non-blocking warning banner. If expired, treat as no-certificate (fall back to unsigned PDF) and show an error.
 
-### 7. Migrate all prints from `println` to `log!(...)`
-- **Chore:** Use `log!(...)` macros for all debug output instead of `println!`.
-- **Action Plan:**
-  - Find all `println!` macros in the codebase.
-  - Replace them with `log!(...)`.
-  - Keep the `JUANITA_LOG` environment variable to control the log level.
-- **Considerations:**
-  - error level => `eprintln!(...)`
-  - warn, info, debug level => `println!(...)`
-
 ### 8. Fix Depth Slider for Adblocking
 - **Chore:** Resolve issues with the adblocking depth slider being unresponsive or not saving values properly in the UI.
 - **Action Plan:**
@@ -75,3 +68,8 @@ This document maintains the tracking of known technical chores, API deprecations
   - Analyze network request patterns and script contexts on affected pages.
   - Check if specific subdomains or redirect paths bypass standard host/regex matching.
 
+### 11. Verify Hardware Security Key (FIDO2/WebAuthn) Support
+- **Chore:** Verify that physical hardware keys (USB/NFC) function correctly for WebAuthn/U2F flows within the WebKitGTK environment, given the architectural rejection of cloud-based CaBLE passkeys.
+- **Action Plan:**
+  - Test WebAuthn registration and authentication flows on standard services using a physical hardware key (e.g., YubiKey, Nitrokey).
+  - Ensure the browser successfully communicates with local daemon services (`pcscd`, `libfido2`) and that strict sandboxing/hardening layers do not inadvertently block hardware USB polling.
