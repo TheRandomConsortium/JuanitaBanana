@@ -1,6 +1,8 @@
 use lazy_static::lazy_static;
+use std::collections::HashMap;
 
 // Asignamos pesos numéricos directamente a los identificadores
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum LogLevel {
     Error = 0,
@@ -24,6 +26,35 @@ lazy_static! {
             Err(_) => LogLevel::Info as u8,
         }
     };
+    pub static ref LOG_OVERRIDES: HashMap<String, u8> = {
+        let mut map = HashMap::new();
+        if let Ok(val) = std::env::var("JUANITA_LOG_OVERRIDE") {
+            let parts: Vec<&str> = val.split(',').map(|s| s.trim()).collect();
+            for chunk in parts.chunks_exact(2) {
+                let sys = chunk[0].to_lowercase();
+                let lvl_str = chunk[1].to_lowercase();
+                let lvl = match lvl_str.as_str() {
+                    "error" | "0" => LogLevel::Error as u8,
+                    "warn" | "1" => LogLevel::Warn as u8,
+                    "info" | "2" => LogLevel::Info as u8,
+                    "debug" | "3" => LogLevel::Debug as u8,
+                    "trace" | "4" => LogLevel::Trace as u8,
+                    _ => continue,
+                };
+                map.insert(sys, lvl);
+            }
+        }
+        map
+    };
+}
+
+pub fn should_log(sys: &str, level: LogLevel) -> bool {
+    let level_u8 = level as u8;
+    if let Some(&override_lvl) = LOG_OVERRIDES.get(&sys.to_lowercase()) {
+        level_u8 <= override_lvl
+    } else {
+        level_u8 <= *CURRENT_LEVEL
+    }
 }
 
 pub fn redact_uri(uri: &str) -> String {
@@ -48,7 +79,7 @@ pub fn redact_uri(uri: &str) -> String {
 macro_rules! log {
     // Specialized Error variant (always prints to stderr via eprintln!)
     (Error, $sys:ident, $fmt:literal $(, $arg:expr)* $(,)?) => {
-        if ($crate::util::debug::LogLevel::Error as u8) <= *$crate::util::debug::CURRENT_LEVEL {
+        if $crate::util::debug::should_log(stringify!($sys), $crate::util::debug::LogLevel::Error) {
             eprintln!(
                 concat!("[Error] [", stringify!($sys), "] ", $fmt)
                 $(, $crate::util::debug::redact_uri(&$arg.to_string()))*
@@ -56,7 +87,7 @@ macro_rules! log {
         }
     };
     (raw: Error, $sys:ident, $fmt:literal $(, $arg:expr)* $(,)?) => {
-        if ($crate::util::debug::LogLevel::Error as u8) <= *$crate::util::debug::CURRENT_LEVEL {
+        if $crate::util::debug::should_log(stringify!($sys), $crate::util::debug::LogLevel::Error) {
             eprintln!(
                 concat!("[Error] [", stringify!($sys), "] ", $fmt)
                 $(, $arg)*
@@ -66,7 +97,7 @@ macro_rules! log {
 
     // Generic safe variant
     ($lvl:ident, $sys:ident, $fmt:literal $(, $arg:expr)* $(,)?) => {
-        if ($crate::util::debug::LogLevel::$lvl as u8) <= *$crate::util::debug::CURRENT_LEVEL {
+        if $crate::util::debug::should_log(stringify!($sys), $crate::util::debug::LogLevel::$lvl) {
             println!(
                 concat!("[", stringify!($lvl), "] [", stringify!($sys), "] ", $fmt)
                 $(, $crate::util::debug::redact_uri(&$arg.to_string()))*
@@ -76,7 +107,7 @@ macro_rules! log {
 
     // Generic raw variant
     (raw: $lvl:ident, $sys:ident, $fmt:literal $(, $arg:expr)* $(,)?) => {
-        if ($crate::util::debug::LogLevel::$lvl as u8) <= *$crate::util::debug::CURRENT_LEVEL {
+        if $crate::util::debug::should_log(stringify!($sys), $crate::util::debug::LogLevel::$lvl) {
             println!(
                 concat!("[", stringify!($lvl), "] [", stringify!($sys), "] ", $fmt)
                 $(, $arg)*
