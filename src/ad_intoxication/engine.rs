@@ -1,7 +1,6 @@
 use crate::util::config::AppConfig;
 use gtk::glib;
 use gtk::prelude::Cast;
-use gtk::prelude::WidgetExtManual;
 use rand::Rng;
 use std::cell::RefCell;
 use std::collections::{HashSet, VecDeque};
@@ -300,14 +299,7 @@ impl AdIntoxicationEngine {
         let mut active = self.active_view.borrow_mut();
         if let Some(ref active_wv) = *active {
             if active_wv == wv {
-                crate::log!(Info, AD_INTOX, "Destroying headless WebView session");
-                let wv_to_destroy = wv.clone();
-                glib::idle_add_local(move || {
-                    unsafe {
-                        wv_to_destroy.destroy();
-                    }
-                    glib::ControlFlow::Break
-                });
+                crate::log!(Info, AD_INTOX, "Cleaning up headless WebView session");
                 *active = None;
             }
         }
@@ -335,7 +327,7 @@ pub fn ad_intoxication_script(config: &AppConfig) -> String {
     let regex_json =
         serde_json::to_string(&config.ad_intox_regex).unwrap_or_else(|_| "\"\"".to_string());
     let max_depth = config.ad_intox_max_depth;
-    include_str!("../../scripts/ad_intoxication.js")
+    include_str!("../../scripts/js/ad_intoxication.js")
         .replace("AD_DOMAINS_PLACEHOLDER", &domains_json)
         .replace("AD_REGEX_PLACEHOLDER", &regex_json)
         .replace("AD_MAX_DEPTH_PLACEHOLDER", &max_depth.to_string())

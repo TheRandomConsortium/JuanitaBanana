@@ -38,6 +38,39 @@ fn find_hnsd_path() -> Option<PathBuf> {
     None
 }
 
+/// Locates the torsocks binary / wrapper in standard locations.
+fn find_torsocks_path() -> Option<PathBuf> {
+    // 1. Check relative to current working directory: bin/torsocks
+    let local = PathBuf::from("bin/torsocks");
+    if local.exists() {
+        return Some(local);
+    }
+    // 2. Check next to the executable
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(parent) = exe_path.parent() {
+            let next_to_exe = parent.join("torsocks");
+            if next_to_exe.exists() {
+                return Some(next_to_exe);
+            }
+            let next_to_exe_bin = parent.join("bin").join("torsocks");
+            if next_to_exe_bin.exists() {
+                return Some(next_to_exe_bin);
+            }
+        }
+    }
+    // 3. System PATH lookup
+    if let Ok(output) = Command::new("which").arg("torsocks").output() {
+        if output.status.success() {
+            let path_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            let path = PathBuf::from(&path_str);
+            if path.exists() {
+                return Some(path);
+            }
+        }
+    }
+    None
+}
+
 fn base_data_dir() -> PathBuf {
     let base = std::env::var("XDG_DATA_HOME")
         .map(PathBuf::from)
@@ -60,6 +93,14 @@ pub fn init_resolver() {
         );
         shutdown_resolver();
         return;
+    }
+
+    // Kill any orphan hnsd processes from previous crashed runs
+    // to free up port 5349/5350.
+    #[cfg(unix)]
+    {
+        let _ = Command::new("pkill").arg("-f").arg("hnsd").status();
+        std::thread::sleep(std::time::Duration::from_millis(100));
     }
 
     {
@@ -101,30 +142,30 @@ pub fn init_resolver() {
     // by wrapping the subprocess with torsocks (HNS-over-Tor, Option 1).
     // If torsocks is not available, fall back to direct hnsd with a clear warning.
     let config_for_tor = AppConfig::load();
-    let use_torsocks = config_for_tor.tor_enabled
-        && std::process::Command::new("which")
-            .arg("torsocks")
-            .output()
-            .map(|o| o.status.success())
-            .unwrap_or(false);
+    let torsocks_bin = if config_for_tor.tor_enabled {
+        find_torsocks_path()
+    } else {
+        None
+    };
 
-    if use_torsocks {
+    if let Some(ref path) = torsocks_bin {
         crate::log!(
             Info,
             RESOLVER,
-            "torsocks detected — wrapping hnsd with torsocks for HNS-over-Tor"
+            "torsocks detected at {:?} — wrapping hnsd with torsocks for HNS-over-Tor",
+            path.to_string_lossy()
         );
     } else if config_for_tor.tor_enabled {
         crate::log!(
             Info,
             RESOLVER,
-            "torsocks not found in PATH — hnsd will query the HNS P2P network directly \
-             (not through Tor). Install torsocks for full HNS-over-Tor support."
+            "torsocks not found — hnsd will query the HNS P2P network directly \
+             (not through Tor). Install or compile torsocks for full HNS-over-Tor support."
         );
     }
 
-    let spawn_result = if use_torsocks {
-        Command::new("torsocks")
+    let spawn_result = if let Some(ref path) = torsocks_bin {
+        Command::new(path)
             .arg(&hnsd_bin)
             .arg("-n")
             .arg("127.0.0.1:5349")

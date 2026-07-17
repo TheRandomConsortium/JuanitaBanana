@@ -190,11 +190,24 @@ impl AppConfig {
 
     pub fn load() -> Self {
         let path = Self::config_path();
-        if let Ok(data) = fs::read_to_string(&path) {
+        let mut cfg = if let Ok(data) = fs::read_to_string(&path) {
             serde_json::from_str(&data).unwrap_or_default()
         } else {
             Self::default()
+        };
+        // If "Onion" is missing from the resolver order (e.g. legacy config),
+        // automatically inject it after Handshake or before System, and persist.
+        if !cfg.resolver_order.iter().any(|r| r == "Onion") {
+            if let Some(pos) = cfg.resolver_order.iter().position(|r| r == "Handshake") {
+                cfg.resolver_order.insert(pos + 1, "Onion".to_string());
+            } else if let Some(pos) = cfg.resolver_order.iter().position(|r| r == "System") {
+                cfg.resolver_order.insert(pos, "Onion".to_string());
+            } else {
+                cfg.resolver_order.push("Onion".to_string());
+            }
+            cfg.save();
         }
+        cfg
     }
 
     pub fn save(&self) {

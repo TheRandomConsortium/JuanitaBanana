@@ -203,7 +203,7 @@ pub fn config_page_html(
     }
 
     let html_template = include_str!("../../templates/config.html");
-    let js_content = include_str!("../../scripts/config.js");
+    let js_content = include_str!("../../scripts/js/config.js");
 
     let handshake_enabled_checked = if config.handshake_enabled {
         "checked"

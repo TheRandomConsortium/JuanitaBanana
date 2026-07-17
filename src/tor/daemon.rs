@@ -76,6 +76,14 @@ pub fn init_tor() {
         return;
     }
 
+    // Kill any orphan arti processes from previous crashed runs
+    // to free up the SOCKS5 proxy port.
+    #[cfg(unix)]
+    {
+        let _ = Command::new("pkill").arg("-f").arg("arti proxy").status();
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+
     {
         let mut lock = ARTI_PROCESS.lock().unwrap();
         if let Some(ref mut child) = *lock {
@@ -117,10 +125,10 @@ pub fn init_tor() {
     // arti proxy --socks-port 9150 --state-dir <dir>
     match Command::new(&arti_bin)
         .arg("proxy")
-        .arg("--socks-port")
+        .arg("-p")
         .arg(ARTI_SOCKS_PORT.to_string())
-        .arg("--state-dir")
-        .arg(&state_dir)
+        .arg("-o")
+        .arg(format!("storage.state_dir = \"{}\"", state_dir.display()))
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
@@ -152,6 +160,32 @@ pub fn init_tor() {
                 "arti daemon started — SOCKS5 proxy listening on {}",
                 socks_addr
             );
+
+            // Wait for the SOCKS5 proxy port to become active (up to 5 seconds)
+            // to ensure WebKit requests don't hit a closed port on first try.
+            let start_wait = std::time::Instant::now();
+            if let Ok(addr) = socks_addr.parse::<std::net::SocketAddr>() {
+                loop {
+                    if std::net::TcpStream::connect_timeout(
+                        &addr,
+                        std::time::Duration::from_millis(50),
+                    )
+                    .is_ok()
+                    {
+                        crate::log!(Info, TOR, "arti SOCKS5 listener is active and ready");
+                        break;
+                    }
+                    if start_wait.elapsed() > std::time::Duration::from_secs(5) {
+                        crate::log!(
+                            Warn,
+                            TOR,
+                            "Timed out waiting for arti SOCKS5 listener to open"
+                        );
+                        break;
+                    }
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                }
+            }
         }
         Err(e) => {
             crate::log!(Info, TOR, "Failed to start arti daemon: {}", e);
