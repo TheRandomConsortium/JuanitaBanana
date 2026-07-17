@@ -34,12 +34,20 @@ impl BanList {
             if let Ok(content) = fs::read(&path) {
                 if let Ok(mut loaded_state) = bincode::deserialize::<BanList>(&content) {
                     if loaded_state.secret_id != expected_secret {
-                        println!("[BAN] CRITICAL: Secret ID mismatch! File was copied from another machine.");
+                        crate::log!(
+                            Error,
+                            BAN,
+                            "CRITICAL: Secret ID mismatch! File was copied from another machine."
+                        );
                         loaded_state.vengeful_mode = true;
                     }
                     loaded_state
                 } else {
-                    println!("[BAN] CRITICAL: banlist.bin is corrupted! Tampering detected.");
+                    crate::log!(
+                        Error,
+                        BAN,
+                        "CRITICAL: banlist.bin is corrupted! Tampering detected."
+                    );
                     BanList {
                         vengeful_mode: true,
                         ..Default::default()
@@ -60,11 +68,19 @@ impl BanList {
             // We assume that if config exists, the directory existed before.
             // But actually, we know it's not a fresh install if they have modified config or we can just rely on first_launch_epoch.
             // If they deleted banlist.bin, it's missing but expected.
-            println!("[BAN] Missing banlist.bin. Treating as fresh install or tampering.");
+            crate::log!(
+                Warn,
+                BAN,
+                "Missing banlist.bin. Treating as fresh install or tampering."
+            );
             // To be truly vengeful: if the path parent exists and has config.json, but no banlist, we brick.
             let config_path = path.parent().unwrap().join("config.json");
             if config_path.exists() {
-                println!("[BAN] CRITICAL: config.json exists but banlist.bin is missing! Tampering detected.");
+                crate::log!(
+                    Error,
+                    BAN,
+                    "CRITICAL: config.json exists but banlist.bin is missing! Tampering detected."
+                );
                 s.vengeful_mode = true;
             }
             s

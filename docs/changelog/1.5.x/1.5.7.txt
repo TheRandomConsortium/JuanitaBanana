@@ -1,0 +1,7 @@
+Juanita Banana v1.5.7 Changelog
+================================
+
+Changes:
+- Migrated all println! and eprintln! calls in application source files to the structured log! macro with proper categories and levels.
+- Implemented support for the JUANITA_LOG_OVERRIDE environment variable to allow per-system log level overrides.
+- Updated documentation to list "Clever Heuristic for Toxicity" under planned features.

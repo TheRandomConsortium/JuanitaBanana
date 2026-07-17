@@ -60,9 +60,12 @@ impl AdIntoxicationEngine {
         }
         processed.insert(key);
 
-        println!(
-            "[AD_INTOX] Queued ad from {}: {}",
-            task.page_url, task.ad_url
+        crate::log!(
+            Info,
+            AD_INTOX,
+            "Queued ad from {}: {}",
+            task.page_url,
+            task.ad_url
         );
         self.queue.borrow_mut().push_back(task);
     }
@@ -73,7 +76,7 @@ impl AdIntoxicationEngine {
         }
         let mut config = AppConfig::load();
         if !config.ad_domains.contains(&domain) {
-            println!("[AD_INTOX] Learning new ad domain: {}", domain);
+            crate::log!(Info, AD_INTOX, "Learning new ad domain: {}", domain);
             config.ad_domains.push(domain);
             config.save();
         }
@@ -113,9 +116,12 @@ impl AdIntoxicationEngine {
             let jitter_secs = rng.gen_range(self.jitter_min_secs..=self.jitter_max_secs);
             let engine_clone = self.clone();
 
-            println!(
-                "[AD_INTOX] Processing ad. Click dice result: {}. Waiting jitter of {}s...",
-                click, jitter_secs
+            crate::log!(
+                Info,
+                AD_INTOX,
+                "Processing ad. Click dice result: {}. Waiting jitter of {}s...",
+                click,
+                jitter_secs
             );
 
             glib::timeout_add_local(Duration::from_secs(jitter_secs), move || {
@@ -128,8 +134,10 @@ impl AdIntoxicationEngine {
     }
 
     fn execute_click(&self, task: AdTask) {
-        println!(
-            "[AD_INTOX] Launching headless clone for page: {}",
+        crate::log!(
+            Info,
+            AD_INTOX,
+            "Launching headless clone for page: {}",
             task.page_url
         );
 
@@ -164,7 +172,7 @@ impl AdIntoxicationEngine {
         let hidden_wv_timeout = hidden_wv.clone();
         let engine_timeout = self.clone();
         glib::timeout_add_local(Duration::from_secs(15), move || {
-            println!("[AD_INTOX] Headless session timed out. Cleaning up.");
+            crate::log!(Info, AD_INTOX, "Headless session timed out. Cleaning up.");
             engine_timeout.cleanup_session(&hidden_wv_timeout);
             glib::ControlFlow::Break
         });
@@ -174,12 +182,14 @@ impl AdIntoxicationEngine {
         hidden_wv.connect_load_changed(move |wv, load_event| {
             if load_event == LoadEvent::Finished {
                 let current_uri = wv.uri().unwrap_or_default().to_string();
-                println!("[AD_INTOX] Finished loading: {}", current_uri);
+                crate::log!(Info, AD_INTOX, "Finished loading: {}", current_uri);
 
                 if !*clicked_clone.borrow() {
                     *clicked_clone.borrow_mut() = true;
-                    println!(
-                        "[AD_INTOX] Simulating ghost mouse on: {}",
+                    crate::log!(
+                        Info,
+                        AD_INTOX,
+                        "Simulating ghost mouse on: {}",
                         task_clone.selector
                     );
 
@@ -262,7 +272,7 @@ impl AdIntoxicationEngine {
                         None::<&webkit2gtk::gio::Cancellable>,
                         |res| {
                             if let Err(e) = res {
-                                println!("[AD_INTOX] Ghost mouse JS error: {:?}", e);
+                                crate::log!(raw: Error, AD_INTOX, "Ghost mouse JS error: {:?}", e);
                             }
                         },
                     );
@@ -271,8 +281,10 @@ impl AdIntoxicationEngine {
                         && !current_uri.contains("googleads")
                         && !current_uri.contains("doubleclick");
                     if is_real_dest {
-                        println!(
-                            "[AD_INTOX] Successfully reached final landing destination: {}",
+                        crate::log!(
+                            Info,
+                            AD_INTOX,
+                            "Successfully reached final landing destination: {}",
                             current_uri
                         );
                         engine_clone.cleanup_session(wv);
@@ -288,7 +300,7 @@ impl AdIntoxicationEngine {
         let mut active = self.active_view.borrow_mut();
         if let Some(ref active_wv) = *active {
             if active_wv == wv {
-                println!("[AD_INTOX] Destroying headless WebView session");
+                crate::log!(Info, AD_INTOX, "Destroying headless WebView session");
                 let wv_to_destroy = wv.clone();
                 glib::idle_add_local(move || {
                     unsafe {

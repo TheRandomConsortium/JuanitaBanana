@@ -83,7 +83,7 @@ impl IntoxicationEngine {
                     }
                     drop(allowed);
 
-                    println!("[INTOX] Intercepted search on {}", rule.name);
+                    crate::log!(Info, INTOX, "Intercepted search on {}", rule.name);
 
                     let mut tasks = Vec::new();
                     let fake_terms = noise.get_keywords(config.noise_queries_amount);
@@ -161,7 +161,7 @@ impl IntoxicationEngine {
             glib::timeout_add_local(Duration::from_millis(delay), move || {
                 match &task {
                     IntoxicationTask::FakeSearch(uri) => {
-                        println!("[INTOX] Firing background noise: {}", uri);
+                        crate::log!(Info, INTOX, "Firing background noise: {}", uri);
                         let settings = webkit2gtk::Settings::builder()
                             .user_agent("JuanitaBanana/0.1 (FOSS; Not-Google; Linux)")
                             .build();
@@ -202,8 +202,10 @@ impl IntoxicationEngine {
                         session_id,
                     } => {
                         if *engine.search_session_id.borrow() == *session_id {
-                            println!(
-                                "[INTOX] Rending REAL search after camouflage delay: {}",
+                            crate::log!(
+                                Info,
+                                INTOX,
+                                "Rending REAL search after camouflage delay: {}",
                                 uri
                             );
                             *engine.active_count.borrow_mut() -= 1;
@@ -213,8 +215,10 @@ impl IntoxicationEngine {
                                 .insert(signature.clone(), Instant::now());
                             engine.main_webview.load_uri(uri);
                         } else {
-                            println!(
-                                "[INTOX] Discarding stale search (user navigated away): {}",
+                            crate::log!(
+                                Info,
+                                INTOX,
+                                "Discarding stale search (user navigated away): {}",
                                 uri
                             );
                             *engine.active_count.borrow_mut() -= 1;

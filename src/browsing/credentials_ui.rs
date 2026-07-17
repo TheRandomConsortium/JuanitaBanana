@@ -271,7 +271,7 @@ pub fn handle_save_suggest(
                     Ok(_) => {
                         let mut idx = crate::util::credentials::CredentialIndex::load();
                         idx.register(&domain);
-                        println!("[CREDS] Saved credentials for: {}", domain);
+                        crate::log!(Info, CREDS, "Saved credentials for: {}", domain);
                     }
                     Err(e) => show_error(window, &format!("Failed to save: {}", e)),
                 }
