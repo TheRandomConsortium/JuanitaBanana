@@ -65,10 +65,6 @@ echo "Preparing build files..."
 cp target/release/juanita-banana $RPM_ROOT/BUILD/
 cp bin/hnsd $RPM_ROOT/BUILD/
 cp bin/arti $RPM_ROOT/BUILD/ 2>/dev/null || echo "WARNING: bin/arti not found — Tor transport will not be available in this RPM."
-cp bin/torsocks $RPM_ROOT/BUILD/ 2>/dev/null || echo "WARNING: bin/torsocks not found."
-if [ -d bin/torsocks_env ]; then
-    cp -r bin/torsocks_env $RPM_ROOT/BUILD/
-fi
 cp assets/icon.png $RPM_ROOT/BUILD/juanita-banana.png
 
 cat > $RPM_ROOT/BUILD/juanita-banana.desktop << 'EOF'
@@ -103,11 +99,6 @@ mkdir -p %{buildroot}/usr/share/pixmaps
 cp %{_topdir}/BUILD/juanita-banana %{buildroot}/usr/bin/
 cp %{_topdir}/BUILD/hnsd %{buildroot}/usr/bin/
 if [ -f %{_topdir}/BUILD/arti ]; then cp %{_topdir}/BUILD/arti %{buildroot}/usr/bin/; fi
-if [ -f %{_topdir}/BUILD/torsocks ]; then cp %{_topdir}/BUILD/torsocks %{buildroot}/usr/bin/; fi
-if [ -d %{_topdir}/BUILD/torsocks_env ]; then
-    mkdir -p %{buildroot}/usr/lib/juanita-banana
-    cp -r %{_topdir}/BUILD/torsocks_env %{buildroot}/usr/lib/juanita-banana/
-fi
 cp %{_topdir}/BUILD/juanita-banana.desktop %{buildroot}/usr/share/applications/
 cp %{_topdir}/BUILD/juanita-banana.png %{buildroot}/usr/share/pixmaps/
 
@@ -115,8 +106,6 @@ cp %{_topdir}/BUILD/juanita-banana.png %{buildroot}/usr/share/pixmaps/
 /usr/bin/juanita-banana
 /usr/bin/hnsd
 %ghost /usr/bin/arti
-%ghost /usr/bin/torsocks
-%ghost /usr/lib/juanita-banana/torsocks_env
 /usr/share/applications/juanita-banana.desktop
 /usr/share/pixmaps/juanita-banana.png
 EOF

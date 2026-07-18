@@ -307,6 +307,7 @@ impl InternalPage for ConfigPage {
                 if let Ok(decoded) = urlencoding::decode(data_str) {
                     if let Ok(new_config) = serde_json::from_str::<AppConfig>(&decoded) {
                         new_config.save();
+                        crate::tor::init_tor();
                         crate::resolver::init_resolver();
                         crate::log!(
                             Info,

@@ -1,0 +1,7 @@
+Juanita Banana v1.6.5 Changelog
+================================
+
+Changes:
+- Added dynamic Tor initialization: when the user updates and saves settings in the
+  juanita://config page, the config save handler now calls crate::tor::init_tor()
+  to start or stop the arti daemon immediately without requiring a browser restart.

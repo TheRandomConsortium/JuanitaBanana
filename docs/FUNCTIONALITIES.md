@@ -124,7 +124,7 @@
 
 | Feature | Status | Notes |
 |---|---|---|
-| **Tor (onion routing)** | ✅ Done | Integrated via subprocess `arti` — Tor Project's official Rust binary. No C dependency. Activating it: starts arti SOCKS5 proxy on `127.0.0.1:9150`; registers the `.onion` resolver; applies SOCKS5 proxy to WebKit's `WebContext`; optionally routes all clearnet through Tor exit nodes. HNS-over-Tor via `torsocks` wrap of `hnsd` if installed. |
+| **Tor (onion routing)** | ✅ Done | Integrated via subprocess `arti` — Tor Project's official Rust binary. No C dependency. Activating it: starts arti SOCKS5 proxy on `127.0.0.1:9150`; registers the `.onion` resolver; applies SOCKS5 proxy to WebKit's `WebContext`; optionally routes all clearnet through Tor exit nodes. HNS-over-Tor via secure local DNS-over-Tor forwarding (unbound.conf forwarding queries to Tor's local DNSPort). |
 | **I2P (garlic routing)** | 🔭 Future | Integrated via `i2p-rs` (Rust) when stable; subprocess fallback to Java I2P router initially. Garlic routing bundles multiple messages per payload — harder to traffic-analyse than Tor. Activating it: registers the `.i2p` resolver; optionally routes clearnet via I2P outproxies. |
 
 ### Resolver Stack

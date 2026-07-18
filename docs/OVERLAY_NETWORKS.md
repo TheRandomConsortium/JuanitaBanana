@@ -195,11 +195,36 @@ activating the `.onion` resolver (though that would be unusual).
 > [!NOTE]
 > **Handshake over Tor / I2P Resolution**: When routing navigation through Tor or I2P, resolving Handshake domains presents similar architectural options:
 > - **Tor Resolution**:
->   1. **Proxying queries** *(current implementation)*: Wrapping the `hnsd` subprocess with `torsocks` so its P2P UDP traffic routes through Tor. Applied automatically when both Tor and Handshake are enabled. If `torsocks` is not installed, a warning is logged and `hnsd` runs directly.
->   2. **Tor-forced daemon resolution** *(target architecture)*: Forcing the resolver to query the P2P network completely through `arti-client` circuits natively. This is only achievable with a native Rust HNS port (Phase 4) — the C `hnsd` subprocess cannot have its internal sockets redirected from Rust.
+>   1. **Local DNS-over-Tor Forwarding** *(current implementation)*: Running `hnsd` directly for trustless header validation while forwarding all external recursive DNS lookup queries over localhost to Tor's DNS listener port (`proxy.dns_listen="127.0.0.1:9053"`). This keeps nameserver queries private and anonymous over Tor, while blockchain P2P sync remains local and robust. Wrapping `hnsd` with `torsocks` has been fully deprecated due to UDP loopback socket blocking (`Function not implemented` errors) and Tor exit nodes blocking P2P port `12013`.
+>   2. **Tor-forced daemon resolution** *(target architecture)*: Forcing the resolver to query the P2P network completely through `arti-client` circuits natively. This is only achievable with a native Rust HNS port (Phase 4) where header sync and nameserver queries can be easily hidden under Tor natively with our own implementation — easy peasy!
 > - **I2P Resolution**:
 >   1. **Outproxying queries**: Wrapping Handshake P2P requests in garlic encryption and routing them through I2P outproxies to reach the clearnet P2P network.
 >   2. **Native I2P tunnel resolution**: Querying Handshake P2P seed nodes that exist directly inside the I2P network (as `.i2p` destinations) via native I2P client tunnels, avoiding outproxy reliance entirely.
+>
+> ### 🧅 Hosting a Handshake Onion Node (Onion Peer)
+> To completely hide blockchain header sync from your ISP and route P2P traffic through Tor without hitches from exit node port blocks, we can connect our client directly to Handshake Onion nodes (peers running as Tor Hidden Services).
+> 
+> Hosting an Onion Peer is trivial:
+> 1. **Configure Tor Hidden Service**: On a server running a Handshake full node (`hsd`), add the following to `/etc/tor/torrc`:
+>    ```text
+>    HiddenServiceDir /var/lib/tor/hns-peer/
+>    HiddenServicePort 12038 127.0.0.1:12038
+>    ```
+> 2. **Get your Onion Hostname**: Restart Tor to generate the private keys and hostname:
+>    ```bash
+>    sudo systemctl restart tor
+>    sudo cat /var/lib/tor/hns-peer/hostname
+>    # Yields: abcdef1234567890.onion
+>    ```
+> 3. **Run hsd in Onion Mode**: Start your `hsd` full node, binding its public host configuration to the `.onion` address:
+>    ```bash
+>    hsd --listen --bip37=true --public-host="abcdef1234567890.onion"
+>    ```
+> 4. **Connect hnsd to Onion Node**: Pass the onion peer directly to `hnsd` via the SOCKS5 proxy:
+>    ```bash
+>    hnsd -s <peer_identity_key>@abcdef1234567890.onion:12038
+>    ```
+>    Since Tor handles hidden service routing internally, connections to `.onion` targets never leave the Tor network. Exit node port policies are completely bypassed, providing secure and private P2P block header synchronization.
 
 
 ---
@@ -213,7 +238,7 @@ activating the `.onion` resolver (though that would be unusual).
 - WebKit `WebsiteDataManager` SOCKS5 proxy configured when Tor starts
 - `OnionResolver` registered in resolver chain (returns sentinel IP `127.0.0.2`)
 - `policy.rs` sentinel detection: keeps `.onion` URI intact, `decision.use_()` routes via proxy
-- HNS-over-Tor via `torsocks hnsd ...` if `torsocks` is in `PATH`, with fallback warning
+- HNS-over-Tor via local DNS-over-Tor forwarding (unbound.conf forwarding queries to arti's local DNSPort on 127.0.0.1:9053). torsocks wrapping has been fully removed.
 
 ### Phase 2 — Handshake resolver (✅ Implemented)
 - Subprocess bridge to `hnsd` C binary
@@ -232,7 +257,13 @@ activating the `.onion` resolver (though that would be unusual).
 - Migrate Tor from `arti` subprocess to `arti-client` in-process:
   - On-demand circuit management (no persistent daemon at idle)
   - Native in-process stream for `.onion` connections
-  - HNS-over-Tor Option 2: force HNS P2P queries through `arti-client` circuits natively
+  - HNS-over-Tor Option 2: force HNS block header sync and name resolution queries through `arti-client` circuits natively (easy-peasy with our own native Rust implementation!)
+
+### Phase 5 — Self-Healing DHT-based Tor-HNS Mesh (🔭 Future)
+To build a completely decentralized, secure P2P validation network over Tor without relying on any centralized seeding/hosting infrastructure (since hosting is not in our DNA):
+- **Full Node Build/Mode:** Compile/run a hybrid build of Juanita that operates a Handshake full node rather than a light client.
+- **Onion Directory Advertising:** The full-node instance dynamically spins up its own Tor Onion Hidden Service and automatically advertises its `.onion` address over Juanita's decentralized search DHT network.
+- **Automated Peer Discovery:** SPV light client instances of Juanita query the DHT to discover active full-node `.onion` addresses and use them as their P2P seeds over Tor, creating a self-healing overlay mesh where peer discovery and header sync are fully private and automated.
 
 ---
 

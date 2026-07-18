@@ -122,13 +122,15 @@ pub fn init_tor() {
         arti_bin.to_string_lossy()
     );
 
-    // arti proxy --socks-port 9150 --state-dir <dir>
+    // arti proxy --socks-port 9150 --state-dir <dir> -o proxy.dns_listen="127.0.0.1:9053"
     match Command::new(&arti_bin)
         .arg("proxy")
         .arg("-p")
         .arg(ARTI_SOCKS_PORT.to_string())
         .arg("-o")
         .arg(format!("storage.state_dir = \"{}\"", state_dir.display()))
+        .arg("-o")
+        .arg("proxy.dns_listen=\"127.0.0.1:9053\"")
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
@@ -162,30 +164,33 @@ pub fn init_tor() {
             );
 
             // Wait for the SOCKS5 proxy port to become active (up to 5 seconds)
-            // to ensure WebKit requests don't hit a closed port on first try.
-            let start_wait = std::time::Instant::now();
-            if let Ok(addr) = socks_addr.parse::<std::net::SocketAddr>() {
-                loop {
-                    if std::net::TcpStream::connect_timeout(
-                        &addr,
-                        std::time::Duration::from_millis(50),
-                    )
-                    .is_ok()
-                    {
-                        crate::log!(Info, TOR, "arti SOCKS5 listener is active and ready");
-                        break;
+            // in a background thread to ensure WebKit requests don't hit a closed port on first try,
+            // while preventing blocking of the main GTK GUI thread on startup.
+            std::thread::spawn(move || {
+                let start_wait = std::time::Instant::now();
+                if let Ok(addr) = socks_addr.parse::<std::net::SocketAddr>() {
+                    loop {
+                        if std::net::TcpStream::connect_timeout(
+                            &addr,
+                            std::time::Duration::from_millis(50),
+                        )
+                        .is_ok()
+                        {
+                            crate::log!(Info, TOR, "arti SOCKS5 listener is active and ready");
+                            break;
+                        }
+                        if start_wait.elapsed() > std::time::Duration::from_secs(5) {
+                            crate::log!(
+                                Warn,
+                                TOR,
+                                "Timed out waiting for arti SOCKS5 listener to open"
+                            );
+                            break;
+                        }
+                        std::thread::sleep(std::time::Duration::from_millis(100));
                     }
-                    if start_wait.elapsed() > std::time::Duration::from_secs(5) {
-                        crate::log!(
-                            Warn,
-                            TOR,
-                            "Timed out waiting for arti SOCKS5 listener to open"
-                        );
-                        break;
-                    }
-                    std::thread::sleep(std::time::Duration::from_millis(100));
                 }
-            }
+            });
         }
         Err(e) => {
             crate::log!(Info, TOR, "Failed to start arti daemon: {}", e);

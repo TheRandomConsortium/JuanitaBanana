@@ -38,39 +38,6 @@ fn find_hnsd_path() -> Option<PathBuf> {
     None
 }
 
-/// Locates the torsocks binary / wrapper in standard locations.
-fn find_torsocks_path() -> Option<PathBuf> {
-    // 1. Check relative to current working directory: bin/torsocks
-    let local = PathBuf::from("bin/torsocks");
-    if local.exists() {
-        return Some(local);
-    }
-    // 2. Check next to the executable
-    if let Ok(exe_path) = std::env::current_exe() {
-        if let Some(parent) = exe_path.parent() {
-            let next_to_exe = parent.join("torsocks");
-            if next_to_exe.exists() {
-                return Some(next_to_exe);
-            }
-            let next_to_exe_bin = parent.join("bin").join("torsocks");
-            if next_to_exe_bin.exists() {
-                return Some(next_to_exe_bin);
-            }
-        }
-    }
-    // 3. System PATH lookup
-    if let Ok(output) = Command::new("which").arg("torsocks").output() {
-        if output.status.success() {
-            let path_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            let path = PathBuf::from(&path_str);
-            if path.exists() {
-                return Some(path);
-            }
-        }
-    }
-    None
-}
-
 fn base_data_dir() -> PathBuf {
     let base = std::env::var("XDG_DATA_HOME")
         .map(PathBuf::from)
@@ -138,62 +105,35 @@ pub fn init_resolver() {
         hnsd_bin.to_string_lossy()
     );
 
-    // When Tor is enabled, attempt to route hnsd's P2P UDP traffic through Tor
-    // by wrapping the subprocess with torsocks (HNS-over-Tor, Option 1).
-    // If torsocks is not available, fall back to direct hnsd with a clear warning.
     let config_for_tor = AppConfig::load();
-    let torsocks_bin = if config_for_tor.tor_enabled {
-        find_torsocks_path()
-    } else {
-        None
-    };
+    let mut cmd = Command::new(&hnsd_bin);
+    cmd.arg("-n")
+        .arg("127.0.0.1:5349")
+        .arg("-r")
+        .arg("127.0.0.1:5350")
+        .arg("-p")
+        .arg("8")
+        .arg("-x")
+        .arg(&state_dir)
+        .arg("-t");
 
-    if let Some(ref path) = torsocks_bin {
-        crate::log!(
-            Info,
-            RESOLVER,
-            "torsocks detected at {:?} — wrapping hnsd with torsocks for HNS-over-Tor",
-            path.to_string_lossy()
-        );
-    } else if config_for_tor.tor_enabled {
-        crate::log!(
-            Info,
-            RESOLVER,
-            "torsocks not found — hnsd will query the HNS P2P network directly \
-             (not through Tor). Install or compile torsocks for full HNS-over-Tor support."
-        );
+    if config_for_tor.tor_enabled && config_for_tor.tor_route_all {
+        let unbound_conf = base_data_dir().join("unbound.conf");
+        let conf_content = "server:\n  do-not-query-localhost: no\nforward-zone:\n  name: \".\"\n  forward-addr: 127.0.0.1@9053\n";
+        if std::fs::write(&unbound_conf, conf_content).is_ok() {
+            crate::log!(
+                Info,
+                RESOLVER,
+                "Tor route-all active — configuring hnsd recursive resolver to query Tor's DNSPort (127.0.0.1:9053) securely"
+            );
+            cmd.arg("-u").arg(&unbound_conf);
+        }
     }
 
-    let spawn_result = if let Some(ref path) = torsocks_bin {
-        Command::new(path)
-            .arg(&hnsd_bin)
-            .arg("-n")
-            .arg("127.0.0.1:5349")
-            .arg("-r")
-            .arg("127.0.0.1:5350")
-            .arg("-p")
-            .arg("8")
-            .arg("-x")
-            .arg(&state_dir)
-            .arg("-t")
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-    } else {
-        Command::new(&hnsd_bin)
-            .arg("-n")
-            .arg("127.0.0.1:5349")
-            .arg("-r")
-            .arg("127.0.0.1:5350")
-            .arg("-p")
-            .arg("8")
-            .arg("-x")
-            .arg(&state_dir)
-            .arg("-t")
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-    };
+    let spawn_result = cmd
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn();
 
     match spawn_result {
         Ok(mut child) => {
@@ -221,6 +161,7 @@ pub fn init_resolver() {
                     }
                 });
             }
+
             let mut lock = HNSD_PROCESS.lock().unwrap();
             *lock = Some(child);
             crate::log!(

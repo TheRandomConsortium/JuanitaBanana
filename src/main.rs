@@ -42,11 +42,11 @@ fn main() {
     config.save();
     state.borrow().save();
 
-    // Start local resolvers / daemon
-    resolver::init_resolver();
-
     // Start Tor transport if enabled in config
     tor::init_tor();
+
+    // Start local resolvers / daemon
+    resolver::init_resolver();
 
     // Launch GTK application
     browsing::gui::run(state);

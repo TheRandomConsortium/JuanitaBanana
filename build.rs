@@ -40,23 +40,4 @@ fn main() {
         }
     }
 
-    // ── torsocks ────────────────────────────────────────────────────────
-    let build_torsocks = std::env::var("CARGO_FEATURE_TORSOCKS").is_ok();
-    if build_torsocks {
-        println!("cargo:rerun-if-changed=scripts/sh/build_torsocks.sh");
-        if !std::path::Path::new("bin/torsocks").exists() {
-            let status = Command::new("bash")
-                .arg("./scripts/sh/build_torsocks.sh")
-                .status()
-                .expect("Failed to execute scripts/sh/build_torsocks.sh");
-
-            if !status.success() {
-                eprintln!(
-                    "WARNING: build_torsocks.sh failed (exit {:?}). \
-                     HNS-over-Tor wrapping might not function unless system torsocks is installed.",
-                    status.code()
-                );
-            }
-        }
-    }
 }
