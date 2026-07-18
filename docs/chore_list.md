@@ -73,3 +73,12 @@ This document maintains the tracking of known technical chores, API deprecations
 - **Action Plan:**
   - Test WebAuthn registration and authentication flows on standard services using a physical hardware key (e.g., YubiKey, Nitrokey).
   - Ensure the browser successfully communicates with local daemon services (`pcscd`, `libfido2`) and that strict sandboxing/hardening layers do not inadvertently block hardware USB polling.
+
+### 12. Create a Unified Internal Stylesheet
+- **Files:** `templates/`, `src/browsing/internal/`, `src/browsing/tabs/tab.rs`, all inline HTML in Rust source
+- **Chore:** All internal pages (`juanita://home`, `juanita://config`, `juanita://downloads`, `juanita://unban`, `juanita://mail`, error pages, TLS warning page, ban page, unsubscribe wizard, etc.) currently have ad-hoc inline CSS with inconsistent colors, fonts, spacing, and border-radius values.
+- **Action Plan:**
+  - Define a single CSS design token file (`templates/juanita.css` or `assets/internal.css`) containing all shared variables: color palette, font families, font sizes, spacing scale, border-radius, button styles, card styles, section-title styles.
+  - Embed this stylesheet via `include_str!` so it is compiled into the binary and injected into every internal page's `<head>`.
+  - Migrate all internal HTML templates and inline Rust format strings to reference the shared CSS classes instead of their own ad-hoc rules.
+  - Retire redundant per-page style blocks once migrated.
