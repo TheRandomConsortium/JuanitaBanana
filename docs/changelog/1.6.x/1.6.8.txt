@@ -1,0 +1,9 @@
+Juanita Banana v1.6.8 Changelog
+================================
+
+Changes:
+- Implemented Local SOCKS5 Proxy Architecture (port 9151) to intercept WebKit connection requests.
+- Resolved Tor SOCKS5 IP-as-hostname lookup failures by converting IP-as-hostname strings into native IP addresses before proxying to Tor.
+- Restored native HTTPS and TLS certificate validation for Handshake domains by eliminating URI-to-IP rewriting and HTTP downgrading hacks.
+- Enabled seamless Handshake subresource loading (scripts, stylesheets, images) over Tor by resolving Handshake domains locally and tunneling assets securely.
+- Intercepted load failures due to TLS errors on Handshake/custom domains (non-system resolvable) to show a custom warning page asking the user if they'd prefer to reload via HTTP, avoiding silent bypasses or standard browser TLS warnings.

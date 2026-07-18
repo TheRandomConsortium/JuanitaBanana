@@ -313,6 +313,35 @@ pub fn create_tab(
         }
     });
 
+    webview.connect_load_failed_with_tls_errors(move |wv, failing_uri, _cert, _errors| {
+        let domain = crate::browsing::browser::extract_domain(failing_uri);
+        let host = crate::resolver::clean_host(&domain);
+        if !host.is_empty() && !crate::resolver::is_system_resolvable(&host) {
+            let http_uri = failing_uri.replace("https://", "http://");
+            let error_html = format!(
+                "<html><head><style>
+                body {{ background: #121214; color: #e1e1e6; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: monospace; text-align: center; }}
+                .card {{ background: #1a1a1e; border: 1px solid #29292e; padding: 40px; border-radius: 12px; max-width: 600px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }}
+                h1 {{ color: #ff5555; font-size: 2rem; margin: 0 0 20px 0; }}
+                p {{ color: #a9a9b3; font-size: 1.1rem; line-height: 1.6; margin: 0 0 30px 0; }}
+                .btn {{ background: #ff79c6; color: #121214; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 1.1rem; transition: background 0.2s; }}
+                .btn:hover {{ background: #ff92df; }}
+                </style></head><body>
+                <div class=\"card\">
+                    <h1>https does not fly here son</h1>
+                    <p>This website does not support standard SSL/TLS certificates. Would you prefer trying with HTTP?<br><span style=\"font-size: 0.85rem; color: #ff5555;\">might not be as secure doe</span></p>
+                    <a class=\"btn\" href=\"{}\">Try HTTP</a>
+                </div>
+                </body></html>",
+                http_uri
+            );
+            wv.load_html(&error_html, Some(failing_uri));
+            true
+        } else {
+            false
+        }
+    });
+
     let webview_create = webview.clone();
     webview.connect_create(move |_wv, nav_action| {
         #[allow(deprecated)]

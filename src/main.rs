@@ -42,6 +42,9 @@ fn main() {
     config.save();
     state.borrow().save();
 
+    // Start local SOCKS5 proxy server for Handshake & Tor resolution
+    tor::start_local_proxy();
+
     // Start Tor transport if enabled in config
     tor::init_tor();
 

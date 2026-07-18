@@ -105,7 +105,6 @@ pub fn init_resolver() {
         hnsd_bin.to_string_lossy()
     );
 
-    let config_for_tor = AppConfig::load();
     let mut cmd = Command::new(&hnsd_bin);
     cmd.arg("-n")
         .arg("127.0.0.1:5349")
@@ -116,19 +115,6 @@ pub fn init_resolver() {
         .arg("-x")
         .arg(&state_dir)
         .arg("-t");
-
-    if config_for_tor.tor_enabled && config_for_tor.tor_route_all {
-        let unbound_conf = base_data_dir().join("unbound.conf");
-        let conf_content = "server:\n  do-not-query-localhost: no\nforward-zone:\n  name: \".\"\n  forward-addr: 127.0.0.1@9053\n";
-        if std::fs::write(&unbound_conf, conf_content).is_ok() {
-            crate::log!(
-                Info,
-                RESOLVER,
-                "Tor route-all active — configuring hnsd recursive resolver to query Tor's DNSPort (127.0.0.1:9053) securely"
-            );
-            cmd.arg("-u").arg(&unbound_conf);
-        }
-    }
 
     let spawn_result = cmd
         .stdout(Stdio::piped())
