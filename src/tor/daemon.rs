@@ -1,3 +1,14 @@
+//! # `daemon.rs` — `arti` subprocess lifecycle — DEPRECATED
+//!
+//! > **⚠️ Phase 4 target: DELETE this file.**
+//!
+//! Manages the `arti proxy` subprocess (SOCKS5 on port 9150) as an external daemon.
+//! In Phase 4 this entire file is replaced by the `arti-client` crate embedded directly
+//! in-process. The subprocess model, the `ARTI_PROCESS` mutex, the port constant, and
+//! all lifecycle functions (`init_tor`, `shutdown_tor`, `is_tor_running`) disappear.
+//!
+//! **Replacement:** `arti-client::TorClient::bootstrap()` + on-demand circuit management.
+
 use crate::util::config::AppConfig;
 use lazy_static::lazy_static;
 use std::io::BufRead;

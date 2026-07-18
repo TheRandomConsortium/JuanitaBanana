@@ -7,9 +7,7 @@ pub mod onion;
 pub mod system;
 
 // Re-export helper functions and cached state
-pub use helpers::{
-    clean_host, restore_original_domain_in_uri,
-};
+pub use helpers::{clean_host, restore_original_domain_in_uri};
 pub use hns::daemon::{init_resolver, shutdown_resolver};
 pub use hns::HandshakeResolver;
 pub use onion::OnionResolver;

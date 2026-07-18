@@ -116,10 +116,7 @@ pub fn init_resolver() {
         .arg(&state_dir)
         .arg("-t");
 
-    let spawn_result = cmd
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn();
+    let spawn_result = cmd.stdout(Stdio::piped()).stderr(Stdio::piped()).spawn();
 
     match spawn_result {
         Ok(mut child) => {

@@ -1,3 +1,22 @@
+//! # `webcontext.rs` — WebKit proxy configuration — PARTIALLY DEPRECATED
+//!
+//! > **⚠️ Phase 4: proxy logic in this file will be removed. The file may survive in reduced form.**
+//!
+//! Currently configures WebKit's `WebsiteDataManager` to use the local SOCKS5 helper
+//! (port 9151) when Tor or Handshake is active.
+//!
+//! **What dies in Phase 4:**
+//! - `socks5://127.0.0.1:9151` proxy URI configuration (local helper removed)
+//! - `ARTI_SOCKS_PORT` / `LOCAL_PROXY_PORT` references (both ports disappear)
+//!
+//! **What may survive:**
+//! - Any non-proxy WebContext/WebsiteDataManager configuration (e.g. TLS settings,
+//!   content filters, data storage paths) that is unrelated to the SOCKS5 hop chain.
+//!   Evaluate at Phase 4 implementation time.
+//!
+//! **Replacement for the proxy part:** `arti-client` intercepts connections in-process;
+//! no external proxy URI needs to be set on WebKit at all.
+
 use crate::log;
 use crate::util::config::AppConfig;
 use webkit2gtk::{
@@ -36,6 +55,11 @@ pub fn apply_tor_proxy(web_context: &WebContext) {
     if let Some(data_manager) = web_context.website_data_manager() {
         data_manager
             .set_network_proxy_settings(NetworkProxyMode::Custom, Some(&mut proxy_settings));
-        log!(Info, TOR, "WebKit SOCKS5 proxy configured to local helper: {}", socks_uri);
+        log!(
+            Info,
+            TOR,
+            "WebKit SOCKS5 proxy configured to local helper: {}",
+            socks_uri
+        );
     }
 }

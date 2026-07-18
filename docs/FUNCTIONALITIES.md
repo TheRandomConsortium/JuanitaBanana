@@ -23,6 +23,7 @@
 | **Battery API Spoofing** | ✅ Done | Override `navigator.getBattery()` to always report 100% charging and charging status. |
 | **Session-Randomized Spoofing** | 📋 Planned | Make spoofed parameters (memory, cores, dimensions, platform) configurable and session-randomized. Values remain static within a session to prevent inconsistency tracking, but mutate on launch within logical boundaries. |
 | **Font Enumeration Protection** | ✅ Done | Overrides canvas text measurements and CSS font loading to report that only `Webdings` and `Monospace` are installed (until session-randomized font pools are implemented). |
+
 | **Prototype toString Protection** | 📋 Planned | Override `Function.prototype.toString` to return standard native function representation (`function () { [native code] }`) when called on any spoofed/overridden APIs, avoiding detection by bot detectors verifying `toString` outputs. |
 | **Proxy-based API Hooking** | 📋 Planned | Migrate all manually overridden/monkeypatched properties and methods to use ES6 `Proxy` wrappers, creating a more uniform, robust, and clean interception system. |
 | **Web Audio API Spoofing** | 🔭 Future | Procedurally generated acoustic signatures (Soviet 1980s sound card) to poison oscillator fingerprinting. |
@@ -124,7 +125,8 @@
 
 | Feature | Status | Notes |
 |---|---|---|
-| **Tor (onion routing)** | ✅ Done | Integrated via subprocess `arti` — Tor Project's official Rust binary. No C dependency. Activating it: starts arti SOCKS5 proxy on `127.0.0.1:9150`; registers the `.onion` resolver; applies SOCKS5 proxy to WebKit's `WebContext` via our local helper (port 9151); optionally routes all clearnet through Tor exit nodes. HNS-over-Tor resolved locally via local SOCKS5 proxy and tunneled over Tor exit nodes. |
+| **Tor (onion routing)** | ✅ Done | Integrated via subprocess `arti` — Tor Project's official Rust binary. No C dependency. Activating it: starts arti SOCKS5 proxy on `127.0.0.1:9150`; registers the `.onion` resolver; configures WebKit via local SOCKS5 helper (port `9151`); optionally routes all clearnet through Tor exit nodes. |
+| **Local SOCKS5 Proxy Helper** (interim) | ⚠️ Deprecated | Introduced in v1.6.8 to fix WebKit's IP-as-hostname SOCKS5 delegation failures with `arti`. Sits between WebKit and `arti`, resolves HNS domains locally, converts IP strings to native addresses. **Will be removed in Phase 4** when `arti-client` is embedded in-process — see `docs/OVERLAY_NETWORKS.md`. |
 | **I2P (garlic routing)** | 🔭 Future | Integrated via `i2p-rs` (Rust) when stable; subprocess fallback to Java I2P router initially. Garlic routing bundles multiple messages per payload — harder to traffic-analyse than Tor. Activating it: registers the `.i2p` resolver; optionally routes clearnet via I2P outproxies. |
 
 ### Resolver Stack
@@ -139,6 +141,23 @@
 | **Per-domain pinning rules** | 🔭 Future | User rules in config: `example.bit → always Handshake`, `*.onion → always Tor`. Pinned domains bypass the chain entirely. |
 | **Non-blocking resolver fallback retry** | 🔭 Future | Once a resolver in the chain fails its first attempt, allow subsequent resolvers to start trying immediately (liberating the chain) while the initial resolver continues retrying in the background. If it eventually succeeds, it loads; if another resolver completes first or the user navigates away, background retries are stopped. |
 | **Navbar resolver override dropdown** | 🔭 Future | Provide a dropdown selector on the navbar showing the available resolvers + search, enabling the user to perform a quick one-off override for the current navigation. |
+
+### Phase 4 — Native Rust HNS + in-process `arti-client` (🔭 Future)
+
+**Goal: eliminate all interim workarounds from the current architecture.**
+
+| Component removed | Replacement |
+|---|---|
+| `src/tor/proxy.rs` — local SOCKS5 helper (port 9151) | `arti-client` intercepts WebKit connections natively |
+| `arti` subprocess + SOCKS5 daemon (port 9150) | `arti-client` crate, on-demand circuit management |
+| `hnsd` C subprocess | Native Rust SPV implementation (in-process) |
+
+Current hop chain:
+`WebKit → helper :9151 → arti :9150 → Tor exit → destination`
+After Phase 4:
+`WebKit → arti-client (in-process) → Tor exit → destination`
+
+HNS subdomain nameserver queries also move through Tor circuits for the first time, achieving **full HNS-over-Tor privacy** (currently they still go over clearnet because `hnsd` is a C subprocess with no Tor circuit awareness).
 
 ### Niche Protocols (Under Evaluation)
 
