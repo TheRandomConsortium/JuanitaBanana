@@ -329,6 +329,21 @@ pub fn create_tab(
         }
     });
 
+    webview.connect_load_failed(move |wv, _load_event, failing_uri, error| {
+        if let Some(network_error) = error.kind::<webkit2gtk::NetworkError>() {
+            if matches!(network_error, webkit2gtk::NetworkError::Cancelled) {
+                return false;
+            }
+        }
+        let broken_pipe_img = crate::util::image::get_juanita_broken_pipe_b64();
+        let error_message = error.message();
+        let error_html = include_str!("../../../templates/proxy_error.html")
+            .replace("{{BROKEN_PIPE_IMG}}", &broken_pipe_img)
+            .replace("{{ERROR_MESSAGE}}", error_message);
+        wv.load_html(&error_html, Some(failing_uri));
+        true
+    });
+
     let webview_create = webview.clone();
     webview.connect_create(move |_wv, nav_action| {
         #[allow(deprecated)]

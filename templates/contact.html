@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Contact the Consortium — Juanita Banana</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #0d0d10;
+            color: #c9c9d4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', 'Inter', monospace;
+            padding: 24px;
+        }
+        .card {
+            background: #16161a;
+            border: 1px solid #2a2a33;
+            padding: 48px 40px;
+            border-radius: 16px;
+            max-width: 680px;
+            width: 100%;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+            text-align: center;
+        }
+        .juanita-img {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 4px 16px rgba(0,0,0,0.5));
+        }
+        h1 {
+            color: #f5c518;
+            font-size: 2.2em;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        p {
+            font-size: 1.1em;
+            margin-bottom: 24px;
+            line-height: 1.6;
+            color: #a0a0b0;
+        }
+        .contact-method {
+            text-align: left;
+            background: #1c1c22;
+            border: 1px solid #2a2a33;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .method-title {
+            color: #f5c518;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .method-desc {
+            font-size: 0.95em;
+            color: #a0a0b0;
+            line-height: 1.5;
+        }
+        .method-value {
+            font-family: monospace;
+            background: #0d0d10;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 10px;
+            color: #00ff66;
+            word-break: break-all;
+            user-select: all;
+            border: 1px solid #22222a;
+        }
+        a {
+            color: #0098ff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .btn-row {
+            margin-top: 24px;
+        }
+        .btn {
+            background: #8b1a1a;
+            color: #f0d0d0;
+            text-decoration: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            border: 1px solid #b02020;
+            transition: background 0.2s, border-color 0.2s;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #a02020;
+            border-color: #cc2a2a;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <img class="juanita-img" src="data:image/png;base64,{b64_icon}" alt="Juanita Logo" />
+    <h1>Contact the Consortium</h1>
+    <p>We currently do not host public forums, chat groups, or mailing lists. Use the following channels to reach us:</p>
+
+    <div class="contact-method">
+        <div class="method-title">🐙 GitHub Issues & Discussions</div>
+        <div class="method-desc">
+            For code, bug reports, and features. For bug reports, providing steps to reproduce and logs in <strong>TRACE</strong> level is highly appreciated!
+        </div>
+        <div class="method-value">
+            <a href="https://github.com/TheRandomConsortium/JuanitaBanana" target="_blank">TheRandomConsortium/JuanitaBanana</a>
+        </div>
+    </div>
+
+    <div class="contact-method">
+        <div class="method-title">✉️ ProtonMail (Encrypted Email)</div>
+        <div class="method-desc">
+            For direct inquiries. If you email us using a Proton account, the communication is fully end-to-end encrypted.
+        </div>
+        <div class="method-value">juanita@therandomconsortium.org</div>
+    </div>
+
+    <div class="contact-method">
+        <div class="method-title">💬 Tox (Metadata-free Messaging)</div>
+        <div class="method-desc">
+            For extremely private, end-to-end encrypted and metadata-free communications.
+        </div>
+        <div class="method-value" style="color: #ff5555; font-style: italic;">
+            Inactive / Currently Disabled (See Chore 13 to configure and deploy a Tox contact node)
+        </div>
+    </div>
+
+
+    <div class="btn-row">
+        <a class="btn" href="juanita://home">Go Home</a>
+    </div>
+</div>
+</body>
+</html>

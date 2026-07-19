@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>HTTPS Not Supported — Juanita Banana</title>
+    <title>Connection Failed — Juanita Banana</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -105,46 +105,52 @@
             background: #a02020;
             border-color: #cc2a2a;
         }
-        .caveat {
-            font-size: 0.78rem;
-            color: #555566;
-            margin-top: 12px;
-            text-align: center;
+        .error-details {
+            font-size: 0.85rem;
+            color: #ff5555;
+            background: #221212;
+            border: 1px solid #551111;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 24px;
+            text-align: left;
+            font-family: monospace;
+            word-break: break-all;
         }
     </style>
 </head>
 <body>
 <div class="card">
-    <img class="juanita-img" src="data:image/png;base64,{{CERTBOT_IMG}}" alt="Juanita defeating certbot" />
-    <h1>https does not fly here son</h1>
+    <img class="juanita-img" src="data:image/png;base64,{{BROKEN_PIPE_IMG}}" alt="Juanita shrugging next to broken network pipe" />
+    <h1>connection went down the drain</h1>
+
+    <div class="error-details">
+        <strong>Error:</strong> {{ERROR_MESSAGE}}
+    </div>
 
     <details>
         <summary>Why does this happen?</summary>
         <p>
-            Could be any of the following: a <em>random developer who forgot to set up their certificates</em>, or was too lazy to bother.
-            It could be <em>ICANN tyranny</em> — the centralised certificate authority cartel simply doesn't issue certs for domains outside their monopoly (hi, Handshake).
-            It could be a <em>malicious actor</em> trying to intercept your traffic.
-            Or — in <em>99.99% of cases</em> — it's just someone whose <em>certbot forgot to autorenew</em> and the cert expired at 3am on a Sunday.
+            It is usually one of the following: your local <em>SOCKS5 proxy helper (port 9151)</em> or the underlying <em>arti daemon (port 9150)</em> crashed or refused to start.
+            It could be that you are <em>completely offline</em> (or Tor is blocked by your ISP), or the target service itself is dead.
+            Or, because we route traffic through a complex multi-hop overlay transport, the <em>Tor circuit build failed</em> or timed out.
+            Alternatively, <em>WebKit might have been too impatient</em> and decided not to wait for the proxy handshake to finish before giving up.
         </p>
     </details>
+
 
     <details>
         <summary>What does this actually mean?</summary>
         <p>
-            TLS/SSL encrypts your connection in transit — it stops your ISP or a café router from reading the raw bytes going by.
-            What it <em>doesn't</em> do is tell you the server is trustworthy, or that the software running on it is safe,
-            or that the company behind it isn't selling your data anyway.
-            The certificate just means someone paid $0 to Let's Encrypt and ran one command.
-            The padlock icon was always theatre — it protects the wire, not the destination.
-            Connecting via HTTP exposes your traffic to passive interception on the network path,
-            which on Tor or a VPN is already largely mitigated. Decide accordingly.
+            Rather than connecting directly, Juanita routes requests through local daemons and onion relays to mask your network signature.
+            When any link in this chain breaks—whether it's our internal proxy helper, a local Tor node, or the destination server—the whole request drops dead.
+            You can try checking the Tor / Handshake status in <a href="juanita://config" style="color: #f5c518; text-decoration: underline;">juanita://config</a>, or making sure you have an active network connection.
         </p>
     </details>
 
     <div class="btn-row">
-        <a class="btn" href="{{HTTP_URI}}">Try HTTP anyway</a>
+        <a class="btn" href="javascript:location.reload()">Try Reconnecting</a>
     </div>
-    <p class="caveat">might not be as secure doe</p>
     <div style="margin-top: 24px; font-size: 0.85rem;">
         <a href="juanita://contact" style="color: #0098ff; text-decoration: none;">Contact the Consortium</a>
     </div>

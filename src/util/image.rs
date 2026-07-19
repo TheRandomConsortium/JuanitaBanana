@@ -21,6 +21,11 @@ pub fn get_juanita_certbot_b64() -> String {
     base64::engine::general_purpose::STANDARD.encode(bytes)
 }
 
+pub fn get_juanita_broken_pipe_b64() -> String {
+    let bytes = include_bytes!("../../assets/juanita_broken_pipe.png");
+    base64::engine::general_purpose::STANDARD.encode(bytes)
+}
+
 pub fn generate_random_noise_bmp_b64() -> String {
     let mut rng = rand::thread_rng();
     let width = 256;

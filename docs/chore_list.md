@@ -82,3 +82,19 @@ This document maintains the tracking of known technical chores, API deprecations
   - Embed this stylesheet via `include_str!` so it is compiled into the binary and injected into every internal page's `<head>`.
   - Migrate all internal HTML templates and inline Rust format strings to reference the shared CSS classes instead of their own ad-hoc rules.
   - Retire redundant per-page style blocks once migrated.
+
+### 13. Deploy and Integrate Tox Contact Channel
+- **Files:** `templates/contact.html`
+- **Chore:** Establish a metadata-free, serverless Tox account for Consortium support queries.
+- **Action Plan:**
+  - Spin up a dedicated Tox node using a secure client (e.g. standard aTox or qTox instance).
+  - Extract the public Tox ID.
+  - Replace the "Inactive / Currently Disabled" placeholder in templates/contact.html with the active Tox ID.
+  - Document operational guidelines for incoming queries.
+
+### 14. Configure WebKit Proxy Timeout Patience
+- **Files:** `src/browsing/tabs/tab.rs`, `src/tor/webcontext.rs`
+- **Chore:** WebKit's internal network stack has highly aggressive connection and proxy handshake timeout thresholds. When Tor circuit building is slow, WebKit aborts prematurely and issues a load-failed event before the local SOCKS5 proxy gets a chance to establish the circuit.
+- **Action Plan:**
+  - Investigate WebKitGTK setting interfaces, environment variables (e.g., Soup settings or system variables), and system-level configuration parameters that govern request connection timeouts.
+  - Find a way to make WebKit more patient and wait longer for proxy handshakes to resolve before aborting.
