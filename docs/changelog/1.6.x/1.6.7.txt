@@ -1,0 +1,5 @@
+Juanita Banana v1.6.7 Changelog
+================================
+
+Changes:
+- Restored direct local hnsd daemon resolution for Handshake domains, ensuring both TLDs and subdomains (like nathan.woodburn) resolve successfully.

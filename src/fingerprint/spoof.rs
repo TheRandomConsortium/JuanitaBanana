@@ -11,7 +11,7 @@
 /// JS payload injected into EVERY page and EVERY sub-frame
 /// before any page script executes.
 pub fn anti_fingerprint_script() -> &'static str {
-    include_str!("../../scripts/anti_fingerprint.js")
+    include_str!("../../scripts/js/anti_fingerprint.js")
 }
 
 #[cfg(test)]

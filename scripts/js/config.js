@@ -109,6 +109,8 @@ function saveConfig() {
     });
     configData.resolver_order = newResolverOrder;
     configData.handshake_enabled = document.getElementById('handshake-enabled').checked;
+    configData.tor_enabled = document.getElementById('tor-enabled').checked;
+    configData.tor_route_all = document.getElementById('tor-route-all').checked;
     configData.tab_inactivity_ttl = parseInt(document.getElementById('tab-inactivity-ttl').value, 10);
     configData.last_tab_nuke_action = document.getElementById('last-tab-nuke-action').value;
 

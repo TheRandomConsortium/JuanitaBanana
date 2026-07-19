@@ -1,0 +1,13 @@
+Juanita Banana v1.6.3 Changelog
+================================
+
+Changes:
+- Decoupled torsocks compilation from the main tor feature in Cargo.toml and build.rs:
+  - Created a separate torsocks Cargo feature.
+  - default and all-resolvers features enable handshake and tor (building hnsd
+    and arti but skipping torsocks to keep basic builds lightweight).
+  - fullsuite feature enables all-resolvers and torsocks (building hnsd, arti,
+    and compiling torsocks locally).
+- Updated build_rpm.sh to compile the release target using --features fullsuite,
+  guaranteeing that official RPM packages bundle hnsd, arti, and the local
+  torsocks wrapper environment.

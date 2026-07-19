@@ -62,6 +62,14 @@ pub fn init_resolver() {
         return;
     }
 
+    // Kill any orphan hnsd processes from previous crashed runs
+    // to free up port 5349/5350.
+    #[cfg(unix)]
+    {
+        let _ = Command::new("pkill").arg("-f").arg("hnsd").status();
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+
     {
         let mut lock = HNSD_PROCESS.lock().unwrap();
         if let Some(ref mut child) = *lock {
@@ -97,8 +105,8 @@ pub fn init_resolver() {
         hnsd_bin.to_string_lossy()
     );
 
-    match Command::new(&hnsd_bin)
-        .arg("-n")
+    let mut cmd = Command::new(&hnsd_bin);
+    cmd.arg("-n")
         .arg("127.0.0.1:5349")
         .arg("-r")
         .arg("127.0.0.1:5350")
@@ -106,11 +114,11 @@ pub fn init_resolver() {
         .arg("8")
         .arg("-x")
         .arg(&state_dir)
-        .arg("-t")
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-    {
+        .arg("-t");
+
+    let spawn_result = cmd.stdout(Stdio::piped()).stderr(Stdio::piped()).spawn();
+
+    match spawn_result {
         Ok(mut child) => {
             if let Some(stdout) = child.stdout.take() {
                 std::thread::spawn(move || {
@@ -136,6 +144,7 @@ pub fn init_resolver() {
                     }
                 });
             }
+
             let mut lock = HNSD_PROCESS.lock().unwrap();
             *lock = Some(child);
             crate::log!(

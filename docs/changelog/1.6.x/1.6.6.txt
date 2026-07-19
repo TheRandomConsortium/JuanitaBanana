@@ -1,0 +1,8 @@
+Juanita Banana v1.6.6 Changelog
+================================
+
+Changes:
+- Implemented secure trustless local DNS-over-Tor forwarding for Handshake resolution.
+  When Tor route-all is active, hnsd runs directly (to perform local SPV validation) and forwards
+  outbound nameserver lookup queries to Tor's DNS listener port (dns_listen="127.0.0.1:9053") on localhost.
+- Removed torsocks dependency and wrapping features entirely, eliminating UDP loopback connection blocking and P2P connection failures over Tor exit nodes.

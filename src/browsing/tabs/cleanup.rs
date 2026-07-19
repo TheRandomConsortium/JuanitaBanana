@@ -195,3 +195,114 @@ pub fn check_tab_inactivity(tabs: &Rc<RefCell<Vec<Tab>>>) {
         }
     }
 }
+
+#[allow(clippy::too_many_arguments)]
+pub fn setup_cleanup_triggers(
+    window: &gtk::ApplicationWindow,
+    notebook: &Notebook,
+    tabs: &Rc<RefCell<Vec<Tab>>>,
+    url_entry: &Entry,
+    global_webview: &Rc<RefCell<Option<WebView>>>,
+    current_uri: &Rc<RefCell<String>>,
+    key_button: &Button,
+    is_cleaning: &Rc<RefCell<bool>>,
+) {
+    // 1. url_entry Focus In
+    let tabs_c = tabs.clone();
+    let notebook_c = notebook.clone();
+    let url_entry_c = url_entry.clone();
+    let gw_c = global_webview.clone();
+    let cur_c = current_uri.clone();
+    let key_c = key_button.clone();
+    let is_clean_c = is_cleaning.clone();
+    url_entry.connect_focus_in_event(move |entry, _| {
+        cleanup_killed_tabs(
+            &notebook_c,
+            &tabs_c,
+            &url_entry_c,
+            &gw_c,
+            &cur_c,
+            &key_c,
+            &is_clean_c,
+        );
+        let uri = cur_c.borrow();
+        entry.set_text(&crate::util::debug::redact_uri(&uri));
+        gtk::glib::Propagation::Proceed
+    });
+
+    // 2. url_entry Focus Out
+    let cur_blur = current_uri.clone();
+    url_entry.connect_focus_out_event(move |entry, _| {
+        let uri = cur_blur.borrow();
+        let display_uri = if let Some((base, _)) = uri.split_once('?') {
+            base.to_string()
+        } else {
+            uri.to_string()
+        };
+        entry.set_text(&display_uri);
+        gtk::glib::Propagation::Proceed
+    });
+
+    // 3. notebook Button Press
+    let tabs_c = tabs.clone();
+    let notebook_c = notebook.clone();
+    let url_entry_c = url_entry.clone();
+    let gw_c = global_webview.clone();
+    let cur_c = current_uri.clone();
+    let key_c = key_button.clone();
+    let is_clean_c = is_cleaning.clone();
+    notebook.connect_button_press_event(move |_, _| {
+        cleanup_killed_tabs(
+            &notebook_c,
+            &tabs_c,
+            &url_entry_c,
+            &gw_c,
+            &cur_c,
+            &key_c,
+            &is_clean_c,
+        );
+        gtk::glib::Propagation::Proceed
+    });
+
+    // 4. notebook Enter Notify
+    let tabs_c = tabs.clone();
+    let notebook_c = notebook.clone();
+    let url_entry_c = url_entry.clone();
+    let gw_c = global_webview.clone();
+    let cur_c = current_uri.clone();
+    let key_c = key_button.clone();
+    let is_clean_c = is_cleaning.clone();
+    notebook.connect_enter_notify_event(move |_, _| {
+        cleanup_killed_tabs(
+            &notebook_c,
+            &tabs_c,
+            &url_entry_c,
+            &gw_c,
+            &cur_c,
+            &key_c,
+            &is_clean_c,
+        );
+        gtk::glib::Propagation::Proceed
+    });
+
+    // 5. window Focus In
+    let tabs_c = tabs.clone();
+    let notebook_c = notebook.clone();
+    let url_entry_c = url_entry.clone();
+    let gw_c = global_webview.clone();
+    let cur_c = current_uri.clone();
+    let key_c = key_button.clone();
+    let is_clean_c = is_cleaning.clone();
+    window.connect_focus_in_event(move |_, _| {
+        cleanup_killed_tabs(
+            &notebook_c,
+            &tabs_c,
+            &url_entry_c,
+            &gw_c,
+            &cur_c,
+            &key_c,
+            &is_clean_c,
+        );
+        gtk::glib::Propagation::Proceed
+    });
+}

@@ -1,0 +1,21 @@
+Juanita Banana v1.6.9 Changelog
+================================
+
+Changes:
+- Redesigned TLS certificate error page: replaced placeholder text with two collapsible sections
+  explaining why the error happens (certbot, ICANN monopoly, malicious actors, expired autorenew)
+  and what TLS/SSL actually means (cynical but accurate technical breakdown).
+- Moved TLS error page HTML from inline Rust format string to templates/tls_error.html, reducing
+  tab.rs from 572 lines to 460 lines.
+- Added Juanita vs certbot illustration (Juanita smacking a dead certbot robot with a bat)
+  embedded in the TLS error page via base64 data URI.
+- Changed TLS error page h1 to banana gold (#f5c518) and button to dark crimson (#8b1a1a).
+- Added collapsible <details>/<summary> sections for the two explanatory paragraphs.
+- Marked entire src/tor/ module as deprecated (interim subprocess architecture):
+  daemon.rs, proxy.rs, and webcontext.rs annotated with //! deprecation doc comments.
+  Public re-exports in mod.rs marked with #[deprecated(since = "1.6.8", note = "...")] attributes.
+  All deprecated items describe their Phase 4 replacement (arti-client in-process).
+- Updated docs/OVERLAY_NETWORKS.md and docs/FUNCTIONALITIES.md with full deprecation rationale,
+  hop chain diagrams, and Phase 4 elimination plan.
+- Added chore 12 to docs/chore_list.md: create a unified internal stylesheet for all juanita://
+  pages to replace ad-hoc per-page inline CSS.

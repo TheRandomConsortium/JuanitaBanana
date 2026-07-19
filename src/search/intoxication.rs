@@ -1,5 +1,4 @@
 use gtk::glib;
-use gtk::prelude::WidgetExtManual;
 use rand::Rng;
 use regex::Regex;
 use std::cell::RefCell;
@@ -181,13 +180,6 @@ impl IntoxicationEngine {
                                 let mut views = engine_clone.active_views.borrow_mut();
                                 if views.contains(wv) {
                                     views.retain(|v| v != wv);
-                                    let wv_to_destroy = wv.clone();
-                                    glib::idle_add_local(move || {
-                                        unsafe {
-                                            wv_to_destroy.destroy();
-                                        }
-                                        glib::ControlFlow::Break
-                                    });
                                     *engine_clone.active_count.borrow_mut() -= 1;
                                     engine_clone.process_queue(); // Trigger next
                                 }

@@ -3,14 +3,14 @@ use std::net::IpAddr;
 
 pub mod helpers;
 pub mod hns;
+pub mod onion;
 pub mod system;
 
 // Re-export helper functions and cached state
-pub use helpers::{
-    clean_host, register_resolved_ip, restore_original_domain_in_uri, rewrite_uri_host,
-};
+pub use helpers::{clean_host, restore_original_domain_in_uri};
 pub use hns::daemon::{init_resolver, shutdown_resolver};
 pub use hns::HandshakeResolver;
+pub use onion::OnionResolver;
 pub use system::SystemResolver;
 
 /// A generic trait representing a domain name resolver.
@@ -39,11 +39,14 @@ pub fn resolve_domain_with_chain(domain: &str) -> Result<(IpAddr, String), Strin
             "Handshake" => {
                 resolvers.push(Box::new(HandshakeResolver::new(5350)));
             }
+            "Onion" => {
+                resolvers.push(Box::new(OnionResolver));
+            }
             "System" => {
                 resolvers.push(Box::new(SystemResolver));
             }
             _ => {
-                // Ignore other resolvers for now
+                // Ignore unknown resolvers
             }
         }
     }
@@ -143,25 +146,5 @@ mod tests {
             "103.152.197.116"
         );
         assert_eq!(clean_host("nathan.woodburn:8080"), "nathan.woodburn");
-    }
-
-    #[test]
-    fn test_rewrite_uri_host() {
-        assert_eq!(
-            rewrite_uri_host(
-                "http://nathan.woodburn/path/to/nathan.woodburn.html",
-                "nathan.woodburn",
-                "103.152.197.116"
-            ),
-            "http://103.152.197.116/path/to/nathan.woodburn.html"
-        );
-        assert_eq!(
-            rewrite_uri_host(
-                "http://nathan.woodburn:8080/path",
-                "nathan.woodburn",
-                "103.152.197.116"
-            ),
-            "http://103.152.197.116:8080/path"
-        );
     }
 }

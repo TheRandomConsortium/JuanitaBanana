@@ -37,6 +37,8 @@ pub struct AppConfig {
     pub local_html_default: String,
     pub resolver_order: Vec<String>,
     pub handshake_enabled: bool,
+    pub tor_enabled: bool,
+    pub tor_route_all: bool,
     pub guilt_trip_enabled: bool,
     pub guilt_trip_opacity: f64,
     pub guilt_trip_threshold: usize,
@@ -121,9 +123,12 @@ impl Default for AppConfig {
             local_html_default: "edit".to_string(),
             resolver_order: vec![
                 "Handshake".to_string(),
+                "Onion".to_string(),
                 "System".to_string(),
             ],
             handshake_enabled: true,
+            tor_enabled: false,
+            tor_route_all: false,
             guilt_trip_enabled: false,
             guilt_trip_opacity: 0.015,
             guilt_trip_threshold: 10,
@@ -185,11 +190,24 @@ impl AppConfig {
 
     pub fn load() -> Self {
         let path = Self::config_path();
-        if let Ok(data) = fs::read_to_string(&path) {
+        let mut cfg = if let Ok(data) = fs::read_to_string(&path) {
             serde_json::from_str(&data).unwrap_or_default()
         } else {
             Self::default()
+        };
+        // If "Onion" is missing from the resolver order (e.g. legacy config),
+        // automatically inject it after Handshake or before System, and persist.
+        if !cfg.resolver_order.iter().any(|r| r == "Onion") {
+            if let Some(pos) = cfg.resolver_order.iter().position(|r| r == "Handshake") {
+                cfg.resolver_order.insert(pos + 1, "Onion".to_string());
+            } else if let Some(pos) = cfg.resolver_order.iter().position(|r| r == "System") {
+                cfg.resolver_order.insert(pos, "Onion".to_string());
+            } else {
+                cfg.resolver_order.push("Onion".to_string());
+            }
+            cfg.save();
         }
+        cfg
     }
 
     pub fn save(&self) {

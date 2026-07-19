@@ -116,32 +116,15 @@ pub fn handle_decide_policy(
             // Await the response asynchronously on the main thread
             let decision = decision.clone();
             let webview_nav = webview_nav.clone();
-            let uri_str = uri_str.to_string();
             let host = host.to_string();
             gtk::glib::spawn_future_local(async move {
                 if let Ok(res) = rx.recv().await {
                     match res {
-                        Ok((ip, is_sys)) => {
-                            if is_sys {
-                                decision.use_();
-                            } else {
-                                let ip_str = ip.to_string();
-                                crate::resolver::register_resolved_ip(ip_str.clone(), host.clone());
-                                // Force http:// to avoid TLS SNI unrecognized name alert issues
-                                let new_uri =
-                                    crate::resolver::rewrite_uri_host(&uri_str, &host, &ip_str)
-                                        .replace("https://", "http://");
-                                log!(
-                                    Info,
-                                    RESOLVER,
-                                    "Rewriting navigation from '{}' to IP '{}' (new URI: '{}')",
-                                    host,
-                                    ip_str,
-                                    new_uri
-                                );
-                                webview_nav.load_uri(&new_uri);
-                                decision.ignore();
-                            }
+                        Ok(_) => {
+                            // Since we run a local SOCKS5 proxy that handles all DNS resolutions
+                            // and proxying dynamically, we do not need to rewrite URIs to plain IPs
+                            // or downgrade HTTPS. We simply let WebKit use the connection.
+                            decision.use_();
                         }
                         Err(e) => {
                             log!(

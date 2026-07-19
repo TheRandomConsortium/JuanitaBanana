@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Connection Failed — Juanita Banana</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #0d0d10;
+            color: #c9c9d4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', 'Inter', monospace;
+            padding: 24px;
+        }
+        .card {
+            background: #16161a;
+            border: 1px solid #2a2a33;
+            padding: 48px 40px;
+            border-radius: 16px;
+            max-width: 680px;
+            width: 100%;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+            text-align: center;
+        }
+        .juanita-img {
+            width: 180px;
+            height: 180px;
+            object-fit: contain;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 4px 16px rgba(0,0,0,0.5));
+        }
+        h1 {
+            color: #f5c518;
+            font-size: 1.9rem;
+            font-weight: 700;
+            margin-bottom: 28px;
+            line-height: 1.2;
+        }
+        details {
+            text-align: left;
+            margin-bottom: 16px;
+            border: 1px solid #2a2a33;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        summary {
+            color: #888899;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            padding: 12px 16px;
+            cursor: pointer;
+            user-select: none;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1c1c22;
+            transition: background 0.15s;
+        }
+        summary:hover { background: #22222a; }
+        summary::after {
+            content: '▸';
+            font-size: 0.9rem;
+            color: #555566;
+            transition: transform 0.2s;
+        }
+        details[open] summary::after { transform: rotate(90deg); }
+        details p {
+            color: #a0a0b0;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            padding: 16px;
+            text-align: left;
+            border-top: 1px solid #2a2a33;
+        }
+        details p em {
+            color: #c9c9d4;
+            font-style: normal;
+            font-weight: 600;
+        }
+        .btn-row {
+            display: flex;
+            justify-content: center;
+            margin-top: 24px;
+        }
+        .btn {
+            background: #8b1a1a;
+            color: #f0d0d0;
+            text-decoration: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            border: 1px solid #b02020;
+            transition: background 0.2s, border-color 0.2s;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: #a02020;
+            border-color: #cc2a2a;
+        }
+        .error-details {
+            font-size: 0.85rem;
+            color: #ff5555;
+            background: #221212;
+            border: 1px solid #551111;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 24px;
+            text-align: left;
+            font-family: monospace;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <img class="juanita-img" src="data:image/png;base64,{{BROKEN_PIPE_IMG}}" alt="Juanita shrugging next to broken network pipe" />
+    <h1>connection went down the drain</h1>
+
+    <div class="error-details">
+        <strong>Error:</strong> {{ERROR_MESSAGE}}
+    </div>
+
+    <details>
+        <summary>Why does this happen?</summary>
+        <p>
+            It is usually one of the following: your local <em>SOCKS5 proxy helper (port 9151)</em> or the underlying <em>arti daemon (port 9150)</em> crashed or refused to start.
+            It could be that you are <em>completely offline</em> (or Tor is blocked by your ISP), or the target service itself is dead.
+            Or, because we route traffic through a complex multi-hop overlay transport, the <em>Tor circuit build failed</em> or timed out.
+            Alternatively, <em>WebKit might have been too impatient</em> and decided not to wait for the proxy handshake to finish before giving up.
+        </p>
+    </details>
+
+
+    <details>
+        <summary>What does this actually mean?</summary>
+        <p>
+            Rather than connecting directly, Juanita routes requests through local daemons and onion relays to mask your network signature.
+            When any link in this chain breaks—whether it's our internal proxy helper, a local Tor node, or the destination server—the whole request drops dead.
+            You can try checking the Tor / Handshake status in <a href="juanita://config" style="color: #f5c518; text-decoration: underline;">juanita://config</a>, or making sure you have an active network connection.
+        </p>
+    </details>
+
+    <div class="btn-row">
+        <a class="btn" href="javascript:location.reload()">Try Reconnecting</a>
+    </div>
+    <div style="margin-top: 24px; font-size: 0.85rem;">
+        <a href="juanita://contact" style="color: #0098ff; text-decoration: none;">Contact the Consortium</a>
+    </div>
+
+</div>
+</body>
+</html>
