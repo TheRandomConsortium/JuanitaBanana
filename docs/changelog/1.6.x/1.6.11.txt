@@ -1,0 +1,6 @@
+Juanita Banana v1.6.11 Changelog
+=================================
+
+Changes:
+- Configured and enabled the active Tox contact channel (Tox ID: 4EEA789C455A42E27C203755D3397365C59947EA0B20FCD7DEC075F9F3371E260DA7441FA0F3) in templates/contact.html.
+- Marked Chore 13 (Deploy and Integrate Tox Contact Channel) as Done in docs/chore_list.md.

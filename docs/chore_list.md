@@ -83,7 +83,8 @@ This document maintains the tracking of known technical chores, API deprecations
   - Migrate all internal HTML templates and inline Rust format strings to reference the shared CSS classes instead of their own ad-hoc rules.
   - Retire redundant per-page style blocks once migrated.
 
-### 13. Deploy and Integrate Tox Contact Channel
+### 13. Deploy and Integrate Tox Contact Channel (Done)
+
 - **Files:** `templates/contact.html`
 - **Chore:** Establish a metadata-free, serverless Tox account for Consortium support queries.
 - **Action Plan:**
