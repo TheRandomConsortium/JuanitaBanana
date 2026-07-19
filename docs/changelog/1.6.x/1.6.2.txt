@@ -1,0 +1,12 @@
+Juanita Banana v1.6.2 Changelog
+================================
+
+Changes:
+- Reorganized scripts folder to prevent folder bloat (> 9 items):
+  - Created scripts/js/ for all JavaScript files.
+  - Created scripts/sh/ for all shell build scripts.
+  - Updated build.rs rerun paths and runner commands to point to scripts/sh/.
+  - Updated include_str! macro paths in config_html.rs, engine.rs, ban.rs,
+    spoof.rs, and credentials_ui.rs.
+- Resolved clippy warning: too-many-arguments on setup_cleanup_triggers.
+- Updated wiki/Overlay-Networks.md to reflect the new scripts/sh/ directory layout.

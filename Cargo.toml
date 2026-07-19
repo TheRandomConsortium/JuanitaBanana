@@ -1,6 +1,6 @@
 [package]
 name = "juanita-banana"
-version = "1.5.7"
+version = "1.6.11"
 edition = "2021"
 
 # ── Engine Stack ──────────────────────────────────────────────
@@ -17,7 +17,7 @@ lazy_static = "1.4"
 gtk = "0.18"
 webkit2gtk = { version = "2.0", features = ["v2_40"] }
 javascriptcore = { package = "javascriptcore-rs", version = "1.1" }
-reqwest = { version = "0.12", features = ["blocking", "json"] }
+reqwest = { version = "0.12", features = ["blocking", "json", "socks"] }
 regex = "1.10"
 rand = "0.8"
 roxmltree = "0.19"
@@ -38,3 +38,12 @@ async-channel = "2.3"
 opt-level = 3
 lto = true
 codegen-units = 1
+
+[features]
+default = ["handshake", "tor"]
+handshake = []
+tor = []
+just-system = []
+all-resolvers = ["handshake", "tor"]
+fullsuite = ["all-resolvers"]
+

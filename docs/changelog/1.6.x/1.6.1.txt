@@ -1,0 +1,22 @@
+Juanita Banana v1.6.1 Changelog
+================================
+
+Changes:
+- Fixed a startup race condition where the first tab opened did not synchronize
+  with the global webview reference, causing the navigation bar to be unresponsive.
+- Pre-emptively kill any orphan hnsd or arti processes on startup to prevent port
+  binding conflicts (EFAILURE) when the browser is restarted.
+- Fixed the double-free / heap corruption crash (free(): corrupted unsorted chunks)
+  by removing unsafe destroy() calls on headless WebViews, allowing GObject to
+  manage their lifecycle cleanly.
+- Added self-healing configuration: AppConfig::load() now automatically injects the
+  "Onion" resolver into the priority list for legacy config files.
+- Trimmed src/browsing/gui.rs down to 438 lines (respecting the 500-line threshold)
+  by extracting all GTK cleanup triggers into src/browsing/tabs/cleanup.rs.
+- Added Cargo compile-time features: default, handshake, tor, just-system,
+  all-resolvers, fullsuite. Building with --no-default-features --features just-system
+  skips all external daemon building.
+- Added scripts/build_torsocks.sh to automatically compile and build a local
+  torsocks installation at build time when the tor feature is active.
+- Packaged local torsocks and its environment lib into the RPM under /usr/bin/ and
+  /usr/lib/juanita-banana/.

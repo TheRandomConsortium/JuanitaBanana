@@ -1,0 +1,12 @@
+Juanita Banana v1.6.10 Changelog
+=================================
+
+Changes:
+- Added a custom connection / proxy error page for when the underlying daemon (arti, hnsd), network proxy (local proxy 9151), or general connections fail.
+- Extracted and styled the page via templates/proxy_error.html with a banana gold title, crimson buttons, and explanations of proxy and connection failure modes.
+- Added and embedded a custom cartoon illustration (juanita_broken_pipe.png) depicting Juanita shrugging next to a broken network cable.
+- Hooked into WebKit's connect_load_failed signal to intercept network errors and display this custom page instead of the generic browser fallback.
+- Added a new internal contact static page registered at `juanita://contact` using templates/contact.html.
+- Provided contact options (GitHub, ProtonMail, and placeholder for Tox). Fictitious .onion contact details were omitted.
+- Added "Contact the Consortium" links to the TLS error page, connection/proxy error page, and home page.
+- Appended Chore 13 (implementing a Tox contact node) and Chore 14 (investigating and configuring WebKit proxy timeout patience/settings) to docs/chore_list.md.

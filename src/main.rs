@@ -22,6 +22,7 @@ mod fingerprint;
 mod plugins;
 mod resolver;
 mod search;
+mod tor;
 mod unsubscribe;
 mod util;
 
@@ -29,6 +30,7 @@ struct CleanupGuard;
 
 impl Drop for CleanupGuard {
     fn drop(&mut self) {
+        crate::tor::shutdown_tor();
         crate::resolver::shutdown_resolver();
     }
 }
@@ -39,6 +41,12 @@ fn main() {
     let state = browsing::browser::BanList::load(&config);
     config.save();
     state.borrow().save();
+
+    // Start local SOCKS5 proxy server for Handshake & Tor resolution
+    tor::start_local_proxy();
+
+    // Start Tor transport if enabled in config
+    tor::init_tor();
 
     // Start local resolvers / daemon
     resolver::init_resolver();

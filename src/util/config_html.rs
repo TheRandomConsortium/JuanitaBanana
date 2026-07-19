@@ -203,13 +203,18 @@ pub fn config_page_html(
     }
 
     let html_template = include_str!("../../templates/config.html");
-    let js_content = include_str!("../../scripts/config.js");
+    let js_content = include_str!("../../scripts/js/config.js");
 
     let handshake_enabled_checked = if config.handshake_enabled {
         "checked"
     } else {
         ""
     };
+
+    let tor_enabled_checked = if config.tor_enabled { "checked" } else { "" };
+    let tor_route_all_checked = if config.tor_route_all { "checked" } else { "" };
+    // The route-all checkbox should be disabled when Tor itself is not enabled
+    let tor_enabled_checked_disabled = if config.tor_enabled { "" } else { "disabled" };
 
     let guilt_trip_enabled_checked = if config.guilt_trip_enabled {
         "checked"
@@ -249,6 +254,12 @@ pub fn config_page_html(
         .replace("{secure_db_html}", &secure_db_html)
         .replace("{resolver_list_html}", &resolver_list_html)
         .replace("{handshake_enabled_checked}", handshake_enabled_checked)
+        .replace("{tor_enabled_checked}", tor_enabled_checked)
+        .replace("{tor_route_all_checked}", tor_route_all_checked)
+        .replace(
+            "{tor_enabled_checked_disabled}",
+            tor_enabled_checked_disabled,
+        )
         .replace("{guilt_trip_enabled_checked}", guilt_trip_enabled_checked)
         .replace(
             "{guilt_trip_opacity}",

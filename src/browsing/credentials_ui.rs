@@ -118,7 +118,7 @@ fn inject_autofill(
 ) {
     let u = username_or_email.replace('\\', "\\\\").replace('\'', "\\'");
     let p = password.replace('\\', "\\\\").replace('\'', "\\'");
-    let js = include_str!("../../scripts/autofill_injection.js")
+    let js = include_str!("../../scripts/js/autofill_injection.js")
         .replace("USERNAME_PLACEHOLDER", &u)
         .replace("PASSWORD_PLACEHOLDER", &p);
 
@@ -301,13 +301,13 @@ fn show_error(parent: &ApplicationWindow, msg: &str) {
 /// JavaScript injected into every page to detect login form submissions
 /// and suggest saving credentials.
 pub fn form_monitor_script() -> &'static str {
-    include_str!("../../scripts/form_monitor.js")
+    include_str!("../../scripts/js/form_monitor.js")
 }
 
 /// JavaScript injected to detect when the user interacts (clicks or focuses)
 /// with a login form input, triggering interactive autofill.
 pub fn form_interact_script() -> &'static str {
-    include_str!("../../scripts/form_interact.js")
+    include_str!("../../scripts/js/form_interact.js")
 }
 
 /// Called when the user interacts with a login form on the page.

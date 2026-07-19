@@ -141,6 +141,8 @@ pub fn run(banlist: SharedBanList) {
         let is_cleaning = Rc::new(RefCell::new(false));
 
         let web_context = WebContext::default().unwrap();
+        crate::tor::apply_tor_proxy(&web_context);
+
         let downloads = Rc::new(RefCell::new(crate::util::downloads::DownloadManager::new()));
         crate::util::downloads::setup_downloads(&web_context, &downloads, &tx_activate);
 
@@ -207,12 +209,48 @@ pub fn run(banlist: SharedBanList) {
                 &noise_provider_c,
                 &tab_tx_c,
             );
-            let new_index = {
+            let (new_index, tab_webview, tab_ad) = {
                 let mut tabs_borrow = tabs_c.borrow_mut();
                 tabs_borrow.push(tab);
-                tabs_borrow.len() - 1
+                let idx = tabs_borrow.len() - 1;
+                (
+                    idx,
+                    tabs_borrow[idx].webview.clone(),
+                    tabs_borrow[idx].ad_intox_engine.clone(),
+                )
             };
             notebook_c.set_current_page(Some(new_index as u32));
+
+            // Sync the active tab state manually. Since the switch-page signal fires
+            // synchronously inside create_tab during append_page (before the tab is pushed to the vector),
+            // the switch-page signal handler fails to find the tab in the empty vector.
+            if notebook_c.current_page() == Some(new_index as u32) {
+                let uri = tab_webview.uri().map(|s| s.to_string()).unwrap_or_default();
+                let restored_uri = crate::resolver::restore_original_domain_in_uri(&uri);
+                *current_uri_c.borrow_mut() = restored_uri.clone();
+                let display_uri = if let Some((base, _)) = restored_uri.split_once('?') {
+                    base.to_string()
+                } else {
+                    restored_uri
+                };
+                url_entry_c.set_text(&display_uri);
+                *gw_c.borrow_mut() = Some(tab_webview.clone());
+
+                crate::browsing::gui_plugin::ACTIVE_TAB.with(|at| {
+                    *at.borrow_mut() = Some((tab_webview.clone(), tab_ad));
+                });
+
+                let has_creds = if !uri.is_empty()
+                    && !uri.starts_with("juanita://")
+                    && !uri.starts_with("about:")
+                {
+                    let domain = crate::browsing::browser::extract_domain(&uri);
+                    crate::util::credentials::CredentialIndex::load().has_credentials(&domain)
+                } else {
+                    false
+                };
+                key_button_c.set_visible(has_creds);
+            }
         };
 
         // Listen for new tab creation requests
@@ -295,100 +333,17 @@ pub fn run(banlist: SharedBanList) {
             });
         });
 
-        // Focus in on url_entry and notebook to trigger cleanup
-        let tabs_cleanup1 = tabs.clone();
-        let notebook_cleanup1 = notebook.clone();
-        let url_entry_cleanup1 = url_entry.clone();
-        let gw_cleanup1 = gw_activate.clone();
-        let cur_cleanup1 = current_uri.clone();
-        let key_cleanup1 = key_button.clone();
-        let is_cleaning_cleanup1 = is_cleaning.clone();
-        url_entry.connect_focus_in_event(move |entry, _| {
-            crate::browsing::tab_cleanup::cleanup_killed_tabs(
-                &notebook_cleanup1,
-                &tabs_cleanup1,
-                &url_entry_cleanup1,
-                &gw_cleanup1,
-                &cur_cleanup1,
-                &key_cleanup1,
-                &is_cleaning_cleanup1,
-            );
-            let uri = cur_cleanup1.borrow();
-            entry.set_text(&crate::util::debug::redact_uri(&uri));
-            gtk::glib::Propagation::Proceed
-        });
-
-        let current_uri_blur = current_uri.clone();
-        url_entry.connect_focus_out_event(move |entry, _| {
-            let uri = current_uri_blur.borrow();
-            let display_uri = if let Some((base, _)) = uri.split_once('?') {
-                base.to_string()
-            } else {
-                uri.to_string()
-            };
-            entry.set_text(&display_uri);
-            gtk::glib::Propagation::Proceed
-        });
-
-        let tabs_cleanup2 = tabs.clone();
-        let notebook_cleanup2 = notebook.clone();
-        let url_entry_cleanup2 = url_entry.clone();
-        let gw_cleanup2 = gw_activate.clone();
-        let cur_cleanup2 = current_uri.clone();
-        let key_cleanup2 = key_button.clone();
-        let is_cleaning_cleanup2 = is_cleaning.clone();
-        notebook.connect_button_press_event(move |_, _| {
-            crate::browsing::tab_cleanup::cleanup_killed_tabs(
-                &notebook_cleanup2,
-                &tabs_cleanup2,
-                &url_entry_cleanup2,
-                &gw_cleanup2,
-                &cur_cleanup2,
-                &key_cleanup2,
-                &is_cleaning_cleanup2,
-            );
-            gtk::glib::Propagation::Proceed
-        });
-
-        let tabs_cleanup3 = tabs.clone();
-        let notebook_cleanup3 = notebook.clone();
-        let url_entry_cleanup3 = url_entry.clone();
-        let gw_cleanup3 = gw_activate.clone();
-        let cur_cleanup3 = current_uri.clone();
-        let key_cleanup3 = key_button.clone();
-        let is_cleaning_cleanup3 = is_cleaning.clone();
-        notebook.connect_enter_notify_event(move |_, _| {
-            crate::browsing::tab_cleanup::cleanup_killed_tabs(
-                &notebook_cleanup3,
-                &tabs_cleanup3,
-                &url_entry_cleanup3,
-                &gw_cleanup3,
-                &cur_cleanup3,
-                &key_cleanup3,
-                &is_cleaning_cleanup3,
-            );
-            gtk::glib::Propagation::Proceed
-        });
-
-        let tabs_cleanup4 = tabs.clone();
-        let notebook_cleanup4 = notebook.clone();
-        let url_entry_cleanup4 = url_entry.clone();
-        let gw_cleanup4 = gw_activate.clone();
-        let cur_cleanup4 = current_uri.clone();
-        let key_cleanup4 = key_button.clone();
-        let is_cleaning_cleanup4 = is_cleaning.clone();
-        window.connect_focus_in_event(move |_, _| {
-            crate::browsing::tab_cleanup::cleanup_killed_tabs(
-                &notebook_cleanup4,
-                &tabs_cleanup4,
-                &url_entry_cleanup4,
-                &gw_cleanup4,
-                &cur_cleanup4,
-                &key_cleanup4,
-                &is_cleaning_cleanup4,
-            );
-            gtk::glib::Propagation::Proceed
-        });
+        // Focus in on url_entry, notebook and window to trigger cleanup
+        crate::browsing::tab_cleanup::setup_cleanup_triggers(
+            &window,
+            &notebook,
+            &tabs,
+            &url_entry,
+            &gw_activate,
+            &current_uri,
+            &key_button,
+            &is_cleaning,
+        );
 
         // URL entry activate handler navigates the active webview
         let gw_act_entry = gw_activate.clone();

@@ -56,17 +56,6 @@ This document maintains the tracking of known technical chores, API deprecations
   - Parse the `not_after` field from the X.509 cert in `db_certs.rs` at load time using the `openssl` crate's `X509::not_after()`.
   - If within 90 days of expiry, show a non-blocking warning banner. If expired, treat as no-certificate (fall back to unsigned PDF) and show an error.
 
-### 7. Migrate all prints from `println` to `log!(...)` (Done)
-- **Chore:** Use `log!(...)` macros for all debug output instead of `println!`.
-- **Status:** Completed.
-- **Action Plan:**
-  - [x] Find all `println!` macros in the codebase.
-  - [x] Replace them with `log!(...)`.
-  - [x] Keep the `JUANITA_LOG` environment variable to control the log level.
-- **Considerations:**
-  - error level => `eprintln!(...)`
-  - warn, info, debug level => `println!(...)`
-
 ### 8. Fix Depth Slider for Adblocking
 - **Chore:** Resolve issues with the adblocking depth slider being unresponsive or not saving values properly in the UI.
 - **Action Plan:**
@@ -79,11 +68,34 @@ This document maintains the tracking of known technical chores, API deprecations
   - Analyze network request patterns and script contexts on affected pages.
   - Check if specific subdomains or redirect paths bypass standard host/regex matching.
 
-### 10. Log Override Environment Variable (Done)
-- **Chore:** Support per-system log overrides via `JUANITA_LOG_OVERRIDE` environment variable.
-- **Status:** Completed.
+### 11. Verify Hardware Security Key (FIDO2/WebAuthn) Support
+- **Chore:** Verify that physical hardware keys (USB/NFC) function correctly for WebAuthn/U2F flows within the WebKitGTK environment, given the architectural rejection of cloud-based CaBLE passkeys.
 - **Action Plan:**
-  - [x] Parse `JUANITA_LOG_OVERRIDE` environment variable containing `sys,lvl` pairs.
-  - [x] Match each system name (e.g. `gui`, `ad_intox`) to its overridden level, overriding the global `JUANITA_LOG` level.
+  - Test WebAuthn registration and authentication flows on standard services using a physical hardware key (e.g., YubiKey, Nitrokey).
+  - Ensure the browser successfully communicates with local daemon services (`pcscd`, `libfido2`) and that strict sandboxing/hardening layers do not inadvertently block hardware USB polling.
 
+### 12. Create a Unified Internal Stylesheet
+- **Files:** `templates/`, `src/browsing/internal/`, `src/browsing/tabs/tab.rs`, all inline HTML in Rust source
+- **Chore:** All internal pages (`juanita://home`, `juanita://config`, `juanita://downloads`, `juanita://unban`, `juanita://mail`, error pages, TLS warning page, ban page, unsubscribe wizard, etc.) currently have ad-hoc inline CSS with inconsistent colors, fonts, spacing, and border-radius values.
+- **Action Plan:**
+  - Define a single CSS design token file (`templates/juanita.css` or `assets/internal.css`) containing all shared variables: color palette, font families, font sizes, spacing scale, border-radius, button styles, card styles, section-title styles.
+  - Embed this stylesheet via `include_str!` so it is compiled into the binary and injected into every internal page's `<head>`.
+  - Migrate all internal HTML templates and inline Rust format strings to reference the shared CSS classes instead of their own ad-hoc rules.
+  - Retire redundant per-page style blocks once migrated.
 
+### 13. Deploy and Integrate Tox Contact Channel (Done)
+
+- **Files:** `templates/contact.html`
+- **Chore:** Establish a metadata-free, serverless Tox account for Consortium support queries.
+- **Action Plan:**
+  - Spin up a dedicated Tox node using a secure client (e.g. standard aTox or qTox instance).
+  - Extract the public Tox ID.
+  - Replace the "Inactive / Currently Disabled" placeholder in templates/contact.html with the active Tox ID.
+  - Document operational guidelines for incoming queries.
+
+### 14. Configure WebKit Proxy Timeout Patience
+- **Files:** `src/browsing/tabs/tab.rs`, `src/tor/webcontext.rs`
+- **Chore:** WebKit's internal network stack has highly aggressive connection and proxy handshake timeout thresholds. When Tor circuit building is slow, WebKit aborts prematurely and issues a load-failed event before the local SOCKS5 proxy gets a chance to establish the circuit.
+- **Action Plan:**
+  - Investigate WebKitGTK setting interfaces, environment variables (e.g., Soup settings or system variables), and system-level configuration parameters that govern request connection timeouts.
+  - Find a way to make WebKit more patient and wait longer for proxy handshakes to resolve before aborting.

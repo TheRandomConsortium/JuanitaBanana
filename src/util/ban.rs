@@ -120,7 +120,7 @@ pub fn unban_list_page(domains: &std::collections::HashSet<String>) -> String {
 }
 
 pub fn toxic_warning_script(config: &crate::util::config::AppConfig) -> String {
-    include_str!("../../scripts/toxic_warning.js").replace(
+    include_str!("../../scripts/js/toxic_warning.js").replace(
         "TOXIC_THRESHOLD_PLACEHOLDER",
         &config.toxic_threshold.to_string(),
     )

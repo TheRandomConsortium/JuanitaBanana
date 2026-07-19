@@ -1,0 +1,15 @@
+Juanita Banana v1.6.4 Changelog
+================================
+
+Changes:
+- Fixed startup freeze/delay by moving the SOCKS5 proxy port readiness check loop to
+  a background thread, allowing the main GTK application window and initial tab
+  to render immediately without waiting.
+- Configured hnsd to only wrap in torsocks when route_all_traffic_through_tor
+  (tor_route_all) is active, in addition to tor_enabled.
+- Fixed the socks5 connect: Connection refused error for torsocks:
+  - Generates a local/custom torsocks.conf pointing to arti's port 9150 inside
+    the base data directory.
+  - Spawns torsocks with TORSOCKS_CONF_FILE environment variable pointing to
+    the custom config, resolving port mismatch (9050 vs 9150) for both system
+    and locally compiled torsocks.
