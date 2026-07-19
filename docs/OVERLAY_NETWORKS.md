@@ -315,10 +315,19 @@ This phase **eliminates all interim workarounds** introduced in Phases 1–2:
   (three fewer hops, two fewer daemons, zero interim workarounds)
 
 ### Phase 5 — Self-Healing DHT-based Tor-HNS Mesh (🔭 Future)
+
 To build a completely decentralized, secure P2P validation network over Tor without relying on any centralized seeding/hosting infrastructure (since hosting is not in our DNA):
-- **Full Node Build/Mode:** Compile/run a hybrid build of Juanita that operates a Handshake full node rather than a light client.
-- **Onion Directory Advertising:** The full-node instance dynamically spins up its own Tor Onion Hidden Service and automatically advertises its `.onion` address over Juanita's decentralized search DHT network.
-- **Automated Peer Discovery:** SPV light client instances of Juanita query the DHT to discover active full-node `.onion` addresses and use them as their P2P seeds over Tor, creating a self-healing overlay mesh where peer discovery and header sync are fully private and automated.
+
+- **No `hns-bcoin` Port**: We will **not** be using the `hns-bcoin` codebase. While numerous professional companies have gotten rich using `bcoin` as the foundation for their operations, the codebase itself has been abandoned since forever. This is not a critique against Handshake, but a critique of the corporate world taking value without maintaining the open-source commons.
+- **Dual-Boot SPV / Full Node Rust Implementation**: Our native Rust HNS port will support a dual-boot configuration:
+  - **SPV Mode**: Verification using block headers only. Light client footprint.
+  - **Full Node Mode**: Downloads full blocks and relays network packets to SPV nodes over the overlay.
+  - *No Bloat*: Since we have no use for BID, OPEN, wallet, mining, or blockchain transaction drafting mechanics inside the browser context, we will not implement any of those features. The implementation will solely cover what is required to discover the network (preferably without touching the clearnet) and relay blocks/headers.
+- **"Use SPV Only" Configuration**: Users can opt out of running a full relay node via `juanita://config`. Enabling this option will display the following disclaimer:
+  > "I want to use spv only because I want to remain completely anonimous however I do understand if everyone runs spv only I will not be able to query via tor and will default to clearnet hurting the community and my own desires to remain anonimous"
+- **Onion Directory Advertising:** Full-node instances dynamically spin up their own Tor Onion Hidden Services and automatically advertise their `.onion` addresses over Juanita's decentralized search DHT network.
+- **Automated Peer Discovery:** SPV light client instances query the DHT to discover active full-node `.onion` addresses and use them as their peer seeds over Tor, creating a self-healing overlay mesh where peer discovery and header sync are fully private and automated.
+
 
 ---
 
