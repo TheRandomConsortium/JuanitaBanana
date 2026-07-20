@@ -74,7 +74,7 @@ This document maintains the tracking of known technical chores, API deprecations
   - Test WebAuthn registration and authentication flows on standard services using a physical hardware key (e.g., YubiKey, Nitrokey).
   - Ensure the browser successfully communicates with local daemon services (`pcscd`, `libfido2`) and that strict sandboxing/hardening layers do not inadvertently block hardware USB polling.
 
-### 12. Create a Unified Internal Stylesheet
+### 12. Create a Unified Internal Stylesheet(Done)
 - **Files:** `templates/`, `src/browsing/internal/`, `src/browsing/tabs/tab.rs`, all inline HTML in Rust source
 - **Chore:** All internal pages (`juanita://home`, `juanita://config`, `juanita://downloads`, `juanita://unban`, `juanita://mail`, error pages, TLS warning page, ban page, unsubscribe wizard, etc.) currently have ad-hoc inline CSS with inconsistent colors, fonts, spacing, and border-radius values.
 - **Action Plan:**
@@ -83,19 +83,19 @@ This document maintains the tracking of known technical chores, API deprecations
   - Migrate all internal HTML templates and inline Rust format strings to reference the shared CSS classes instead of their own ad-hoc rules.
   - Retire redundant per-page style blocks once migrated.
 
-### 13. Deploy and Integrate Tox Contact Channel (Done)
-
-- **Files:** `templates/contact.html`
-- **Chore:** Establish a metadata-free, serverless Tox account for Consortium support queries.
-- **Action Plan:**
-  - Spin up a dedicated Tox node using a secure client (e.g. standard aTox or qTox instance).
-  - Extract the public Tox ID.
-  - Replace the "Inactive / Currently Disabled" placeholder in templates/contact.html with the active Tox ID.
-  - Document operational guidelines for incoming queries.
-
 ### 14. Configure WebKit Proxy Timeout Patience
 - **Files:** `src/browsing/tabs/tab.rs`, `src/tor/webcontext.rs`
 - **Chore:** WebKit's internal network stack has highly aggressive connection and proxy handshake timeout thresholds. When Tor circuit building is slow, WebKit aborts prematurely and issues a load-failed event before the local SOCKS5 proxy gets a chance to establish the circuit.
 - **Action Plan:**
   - Investigate WebKitGTK setting interfaces, environment variables (e.g., Soup settings or system variables), and system-level configuration parameters that govern request connection timeouts.
   - Find a way to make WebKit more patient and wait longer for proxy handshakes to resolve before aborting.
+
+### 15. Handle Last Tab Manual Closure Behavior
+- **Files:** `src/browsing/tabs/cleanup.rs`
+- **Chore:** When the final tab is manually closed by the user, immediately open a new tab pointing to the home page or close/exit the browser, depending on the `last_tab_nuke_action` configuration setting (e.g., if set to `home`, open home; if set to `survive` (or when closing the final tab manually), exit the browser).
+- **Action Plan:**
+  - In `manual_close_tab`, check if the removed tab was the last active tab (i.e., `tabs` becomes empty).
+  - Load the application configuration via `crate::util::config::AppConfig::load()`.
+  - Evaluate `config.last_tab_nuke_action`:
+    - If it is `"home"`, create/open a new tab pointing to `juanita://home`.
+    - If it is `"survive"`, close the browser window (or trigger application quit).

@@ -23,6 +23,8 @@ fn viewer_page(uri: &str, source: &str) -> String {
         .replace('>', "&gt;")
         .replace('"', "&quot;");
 
+    let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
+
     format!(
         r#"<!DOCTYPE html>
 <html lang="en">
@@ -30,90 +32,20 @@ fn viewer_page(uri: &str, source: &str) -> String {
 <meta charset="utf-8">
 <title>HTML Viewer — {uri}</title>
 <style>
-  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{
-    background: #0d0d0d;
-    color: #e0e0e0;
-    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-  }}
-  #toolbar {{
-    background: #1a1a1a;
-    border-bottom: 1px solid #2a2a2a;
-    padding: 10px 16px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    flex-shrink: 0;
-  }}
-  #toolbar .warning {{
-    flex: 1;
-    font-size: 13px;
-    color: #facc15;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }}
-  #toolbar .warning .icon {{ font-size: 18px; }}
-  #toolbar .path {{ font-size: 11px; color: #666; margin-left: auto; word-break: break-all; max-width: 40%; text-align: right; }}
-  #render-btn {{
-    background: #16a34a;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 7px 18px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.15s;
-    flex-shrink: 0;
-  }}
-  #render-btn:hover {{ background: #15803d; }}
-  #save-btn {{
-    background: #1d4ed8;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 7px 18px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.15s;
-    flex-shrink: 0;
-  }}
-  #save-btn:hover {{ background: #1e40af; }}
-  #save-btn.saved {{ background: #15803d; }}
-  #editor {{
-    flex: 1;
-    width: 100%;
-    background: #111;
-    color: #d4d4d4;
-    font-family: inherit;
-    font-size: 13px;
-    line-height: 1.6;
-    border: none;
-    outline: none;
-    padding: 20px;
-    resize: none;
-    tab-size: 2;
-    overflow: auto;
-  }}
-  #editor:focus {{ background: #111; }}
+  {shared_css}
 </style>
 </head>
-<body>
-<div id="toolbar">
-  <div class="warning">
-    <span class="icon">⚠️</span>
+<body class="jb-page-full" style="flex-direction: column;">
+<div class="jb-viewer-toolbar">
+  <div class="jb-viewer-warning">
+    <span class="jb-viewer-warning-icon">⚠️</span>
     <span>Inspect this HTML file before rendering — it may contain scripts or unsafe content.</span>
   </div>
-  <button id="save-btn" onclick="saveFile()">💾 Save</button>
-  <button id="render-btn" onclick="renderFile()">▶ Render</button>
-  <div class="path">{uri}</div>
+  <button id="save-btn" class="jb-btn-save" onclick="saveFile()">💾 Save</button>
+  <button id="render-btn" class="jb-btn-render" onclick="renderFile()">▶ Render</button>
+  <div class="jb-viewer-path">{uri}</div>
 </div>
-<textarea id="editor" spellcheck="false">{escaped}</textarea>
+<textarea id="editor" class="jb-editor-area" spellcheck="false">{escaped}</textarea>
 <script>
   const FILE_URI = {uri_json};
 
@@ -139,7 +71,6 @@ fn viewer_page(uri: &str, source: &str) -> String {
     }}
   }}
 
-  // Tab key inserts spaces instead of losing focus
   document.getElementById('editor').addEventListener('keydown', e => {{
     if (e.key === 'Tab') {{
       e.preventDefault();
@@ -151,9 +82,31 @@ fn viewer_page(uri: &str, source: &str) -> String {
 </script>
 </body>
 </html>"#,
+        shared_css = shared_css,
         uri = uri,
         escaped = escaped,
         uri_json = serde_json::to_string(uri).unwrap_or_else(|_| "\"\"".to_string()),
+    )
+}
+
+fn error_page(uri: &str) -> String {
+    let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
+    format!(
+        r#"<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Cannot Read File — Juanita Banana</title>
+<style>
+  {shared_css}
+</style>
+</head>
+<body class="jb-page">
+<div class="jb-container">
+  <div class="jb-card-alert">
+    <div class="jb-card-title">Cannot Read File</div>
+    <div class="jb-card-text font-mono">{uri}</div>
+  </div>
+</div></body></html>"#,
+        shared_css = shared_css,
+        uri = uri
     )
 }
 
@@ -179,11 +132,7 @@ impl InternalPage for LocalHtmlPage {
                 }
                 None => {
                     gtk::glib::idle_add_local(move || {
-                        let err = format!(
-                            "<html><body style='font-family:monospace;background:#0d0d0d;color:#f87171;padding:2em'>\
-                            <h2>Cannot read file</h2><p>{}</p></body></html>",
-                            uri_clone
-                        );
+                        let err = error_page(&uri_clone);
                         webview_clone.load_html(&err, Some("juanita://error"));
                         gtk::glib::ControlFlow::Break
                     });
@@ -206,7 +155,7 @@ impl InternalPage for LocalHtmlPage {
         let default = ctx.config.local_html_default.as_str();
         log!(raw: Debug, LOCAL_HTML, "local_html_default mode = {}", default);
         if default == "render" {
-            return false; // Let WebKit render it normally
+            return false;
         }
         let uri_clone = uri.to_string();
         let webview_clone = ctx.webview.clone();
@@ -222,11 +171,7 @@ impl InternalPage for LocalHtmlPage {
             None => {
                 log!(raw:Debug, LOCAL_HTML, "failed to read file from URI: {}", uri);
                 gtk::glib::idle_add_local(move || {
-                    let err = format!(
-                        "<html><body style='font-family:monospace;background:#0d0d0d;color:#f87171;padding:2em'>\
-                        <h2>Cannot read file</h2><p>{}</p></body></html>",
-                        uri_clone
-                    );
+                    let err = error_page(&uri_clone);
                     webview_clone.load_html(&err, Some("juanita://error"));
                     gtk::glib::ControlFlow::Break
                 });

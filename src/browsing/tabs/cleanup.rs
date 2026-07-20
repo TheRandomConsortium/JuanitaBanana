@@ -186,12 +186,21 @@ pub fn check_tab_inactivity(tabs: &Rc<RefCell<Vec<Tab>>>) {
             *tab.is_killed.borrow_mut() = true;
             active_count -= 1;
 
-            tab.webview.load_html(
-                "<html><body style='background:#1e1e1e;color:#888;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:sans-serif;'>
-                 <div>tab closed due to inactivity in 0 frames</div>
-                 </body></html>",
-                Some("about:blank")
+            let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
+            let cleanup_html = format!(
+                r#"<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<style>
+  {shared_css}
+</style>
+</head>
+<body class="jb-page">
+<div class="jb-container">
+  <div class="jb-subtitle" style="font-size: 1.1em; color: var(--jb-text-secondary);">tab closed due to inactivity in 0 frames</div>
+</div></body></html>"#,
+                shared_css = shared_css
             );
+            tab.webview.load_html(&cleanup_html, Some("about:blank"));
         }
     }
 }

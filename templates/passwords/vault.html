@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Passwords — Juanita Banana</title>
+<style>
+{shared_css}
+</style>
+</head>
+<body class="jb-page jb-page-top">
+<div class="jb-container jb-container-wide">
+  <div class="jb-title-group jb-title-group-full">
+    <h1 class="jb-title">🔐 Password Vault</h1>
+  </div>
+  
+  {error_html}
+
+  <div class="jb-card">
+    <form method="get" action="juanita://passwords" class="jb-vault-form">
+      <h2 id="form-title" class="jb-card-item-title">➕ Add Credential</h2>
+      <input type="hidden" name="unlock_pass" value="{unlock_pass_esc}">
+      <input type="text" name="add_domain" placeholder="Domain (e.g. github.com)" class="jb-input" required>
+      <input type="text" name="add_username" placeholder="Username" class="jb-input" required>
+      <input type="text" name="add_email" placeholder="Email (optional)" class="jb-input">
+      <input type="password" name="add_password" placeholder="Password" class="jb-input" required>
+      <button type="submit" class="jb-btn jb-btn-primary">Add Credential</button>
+    </form>
+  </div>
+
+  <table class="jb-table">
+    <thead>
+      <tr><th>Domain</th><th>Username</th><th>Email</th><th>Password</th><th>Actions</th></tr>
+    </thead>
+    <tbody id="cred-body">{rows}</tbody>
+  </table>
+
+  <div class="jb-text-secondary jb-text-center" style="cursor: pointer; text-decoration: underline;" onclick="toggleDisclaimer()">ℹ️ Security & Privacy Philosophy</div>
+
+  <div id="disclaimer-modal" class="jb-modal">
+    <div class="jb-modal-content">
+      <span class="jb-modal-close" onclick="toggleDisclaimer()">&times;</span>
+      <h2 class="jb-card-item-title">Security Philosophy & Privacy Disclaimer</h2>
+      <p class="jb-card-text"><strong>No password generator or rotation prompts:</strong> We will never nag you to rotate passwords or suggest "secure" passwords. Both are security theater. Pseudo-complex rules (enforcing uppercase, lowercase, numbers, and symbols) target human memory bottlenecks rather than machine computation, forcing users to write them down or save them in central vaults that represent a single point of failure. A GPU cracking cluster does not care if your password looks clunky—it only cares about length and raw entropy (out-of-vocabulary combinations). Furthermore, automatic rotations assume your compromised account on a compromised server hasn't already been drained of value. Passwords are a legacy design flaw. Physical, cryptographically signed hardware keys (not Google's QR surveillance-bait), throwaway identities, refusing to save confidential data on other people's hardware, and reducing your attack surface are the only real defenses.</p>
+      <p class="jb-card-text"><strong>No third-party leak checks:</strong> We do not query "Have I Been Pwned" or any other leak checkers. They do not know everything, and querying them leaks metadata. Most importantly: <em>we do not see your data, we do not check your data, we do not share your data, and we do not care about your data.</em></p>
+    </div>
+  </div>
+
+  <nav class="jb-nav">
+    <a class="jb-nav-link" href="juanita://home">Home</a>
+    <a class="jb-nav-link" href="juanita://config">Settings</a>
+    <a class="jb-nav-link" href="juanita://about">About</a>
+  </nav>
+</div>
+
+<script>
+function toggleDisclaimer() {
+  var m = document.getElementById('disclaimer-modal');
+  m.classList.toggle('show');
+}
+
+function deleteRow(domain){
+  if(!confirm('Delete credentials for '+domain+'?'))return;
+  if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.juanita){
+    window.webkit.messageHandlers.juanita.postMessage(JSON.stringify({
+      type:'delete_credential',domain:domain
+    }));
+  }
+  var rows=document.querySelectorAll('#cred-body tr');
+  for(var i=0;i<rows.length;i++){
+    if(rows[i].cells[0]&&rows[i].cells[0].textContent===domain){
+      rows[i].remove();break;
+    }
+  }
+}
+
+function editRow(btn) {
+  var domain = btn.getAttribute('data-domain');
+  var username = btn.getAttribute('data-user');
+  var email = btn.getAttribute('data-email');
+  var password = btn.getAttribute('data-pass');
+
+  document.querySelector('input[name=add_domain]').value = domain;
+  document.querySelector('input[name=add_username]').value = username;
+  document.querySelector('input[name=add_email]').value = email;
+  document.querySelector('input[name=add_password]').value = password;
+
+  document.getElementById('form-title').textContent = "✏️ Edit Credential";
+  document.querySelector('.jb-vault-form button[type=submit]').textContent = "Update Credential";
+}
+
+function showLurkersWarning() {
+  var toast = document.getElementById('lurker-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'lurker-toast';
+    toast.className = 'jb-lurker-toast';
+    document.body.appendChild(toast);
+  }
+  toast.innerHTML = '⚠️ Beware the lurkers! Keep your screen private.';
+  toast.style.display = 'block';
+  setTimeout(function() {
+    toast.style.display = 'none';
+  }, 3000);
+}
+
+function togglePass(i) {
+  var f = document.getElementById('pass-field-' + i);
+  var btn = f.nextElementSibling;
+  if (f.type === 'password') {
+    showLurkersWarning();
+    f.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    f.type = 'password';
+    btn.textContent = '👁️';
+  }
+}
+
+var inactivityTimeout;
+function resetInactivityTimer() {
+  clearTimeout(inactivityTimeout);
+  inactivityTimeout = setTimeout(function() {
+    window.location.href = "juanita://passwords";
+  }, 15000);
+}
+['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'].forEach(function(evt) {
+  document.addEventListener(evt, resetInactivityTimer, true);
+});
+resetInactivityTimer();
+</script>
+</body>
+</html>

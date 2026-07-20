@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>HTTPS Not Supported — Juanita Banana</title>
+    <style>
+        {shared_css}
+    </style>
+</head>
+<body class="jb-page">
+<div class="jb-container">
+    <div class="jb-illustration-wrapper">
+        <img class="jb-illustration jb-illustration-lg" src="data:image/png;base64,{{CERTBOT_IMG}}" alt="Juanita defeating certbot" />
+    </div>
+    <div class="jb-title-group">
+        <h1 class="jb-title">HTTPS Does Not Fly Here Son</h1>
+    </div>
+
+    <div class="jb-card">
+        <details class="jb-details">
+            <summary class="jb-summary">Why does this happen?</summary>
+            <p class="jb-details-body">
+                Could be any of the following: a <em>random developer who forgot to set up their certificates</em>, or was too lazy to bother.
+                It could be <em>ICANN tyranny</em> — the centralised certificate authority cartel simply doesn't issue certs for domains outside their monopoly (hi, Handshake).
+                It could be a <em>malicious actor</em> trying to intercept your traffic.
+                Or — in <em>99.99% of cases</em> — it's just someone whose <em>certbot forgot to autorenew</em> and the cert expired at 3am on a Sunday.
+            </p>
+        </details>
+
+        <details class="jb-details">
+            <summary class="jb-summary">What does this actually mean?</summary>
+            <p class="jb-details-body">
+                TLS/SSL encrypts your connection in transit — it stops your ISP or a café router from reading the raw bytes going by.
+                What it <em>doesn't</em> do is tell you the server is trustworthy, or that the software running on it is safe,
+                or that the company behind it isn't selling your data anyway.
+                The certificate just means someone paid $0 to Let's Encrypt and ran one command.
+                The padlock icon was always theatre — it protects the wire, not the destination.
+                Connecting via HTTP exposes your traffic to passive interception on the network path,
+                which on Tor or a VPN is already largely mitigated. Decide accordingly.
+            </p>
+        </details>
+    </div>
+
+    <div class="jb-text-center">
+        <a class="jb-btn jb-btn-danger" href="{{HTTP_URI}}">Try HTTP Anyway</a>
+        <div class="jb-text-muted">might not be as secure doe</div>
+    </div>
+
+    <nav class="jb-nav">
+        <a class="jb-nav-link" href="juanita://home">Home</a>
+        <a class="jb-nav-link" href="juanita://config">Settings</a>
+        <a class="jb-nav-link" href="juanita://contact">Contact Consortium</a>
+    </nav>
+</div>
+</body>
+</html>

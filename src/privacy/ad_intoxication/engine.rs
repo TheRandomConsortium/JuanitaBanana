@@ -327,7 +327,7 @@ pub fn ad_intoxication_script(config: &AppConfig) -> String {
     let regex_json =
         serde_json::to_string(&config.ad_intox_regex).unwrap_or_else(|_| "\"\"".to_string());
     let max_depth = config.ad_intox_max_depth;
-    include_str!("../../scripts/js/ad_intoxication.js")
+    include_str!("../../../scripts/js/ad_intoxication.js")
         .replace("AD_DOMAINS_PLACEHOLDER", &domains_json)
         .replace("AD_REGEX_PLACEHOLDER", &regex_json)
         .replace("AD_MAX_DEPTH_PLACEHOLDER", &max_depth.to_string())

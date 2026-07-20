@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Connection Failed — Juanita Banana</title>
+    <style>
+        {shared_css}
+    </style>
+</head>
+<body class="jb-page">
+<div class="jb-container">
+    <div class="jb-illustration-wrapper">
+        <img class="jb-illustration jb-illustration-lg" src="data:image/png;base64,{{BROKEN_PIPE_IMG}}" alt="Juanita shrugging next to broken network pipe" />
+    </div>
+    <div class="jb-title-group">
+        <h1 class="jb-title">Connection Went Down The Drain</h1>
+    </div>
+
+    <div class="jb-card-alert">
+        <div class="jb-card-title">Network Error</div>
+        <div class="jb-card-text font-mono">
+            {{ERROR_MESSAGE}}
+        </div>
+    </div>
+
+    <div class="jb-card">
+        <details class="jb-details">
+            <summary class="jb-summary">Why does this happen?</summary>
+            <p class="jb-details-body">
+                It is usually one of the following: your local <em>SOCKS5 proxy helper (port 9151)</em> or the underlying <em>arti daemon (port 9150)</em> crashed or refused to start.
+                It could be that you are <em>completely offline</em> (or Tor is blocked by your ISP), or the target service itself is dead.
+                Or, because we route traffic through a complex multi-hop overlay transport, the <em>Tor circuit build failed</em> or timed out.
+                Alternatively, <em>WebKit might have been too impatient</em> and decided not to wait for the proxy handshake to finish before giving up.
+            </p>
+        </details>
+
+        <details class="jb-details">
+            <summary class="jb-summary">What does this actually mean?</summary>
+            <p class="jb-details-body">
+                Rather than connecting directly, Juanita routes requests through local daemons and onion relays to mask your network signature.
+                When any link in this chain breaks—whether it's our internal proxy helper, a local Tor node, or the destination server—the whole request drops dead.
+                You can try checking the Tor / Handshake status in <a href="juanita://config" class="jb-text-yellow">juanita://config</a>, or making sure you have an active network connection.
+            </p>
+        </details>
+    </div>
+
+    <div>
+        <a class="jb-btn jb-btn-danger" href="javascript:location.reload()">Try Reconnecting</a>
+    </div>
+
+    <nav class="jb-nav">
+        <a class="jb-nav-link" href="juanita://home">Home</a>
+        <a class="jb-nav-link" href="juanita://config">Settings</a>
+        <a class="jb-nav-link" href="juanita://contact">Contact Consortium</a>
+    </nav>
+</div>
+</body>
+</html>

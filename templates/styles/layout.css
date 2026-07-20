@@ -1,0 +1,133 @@
+/* Juanita Banana — Unified Page & Layout Styles */
+
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+body.jb-page {
+    background-color: var(--jb-bg-main);
+    background-image: radial-gradient(circle at top, var(--jb-bg-radial) 0%, var(--jb-bg-main) 70%);
+    color: var(--jb-text-primary);
+    font-family: var(--jb-font-family);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: var(--jb-space-3xl);
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+body.jb-page-top {
+    justify-content: flex-start;
+    padding-top: var(--jb-space-4xl);
+}
+
+body.jb-page-full {
+    background-color: var(--jb-bg-main);
+    color: var(--jb-text-primary);
+    font-family: var(--jb-font-family);
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    overflow: hidden;
+}
+
+/* Sidebar Navigation Layout */
+.jb-sidebar {
+    width: 260px;
+    background: var(--jb-surface-sidebar);
+    border-right: 1px solid var(--jb-surface-border);
+    display: flex;
+    flex-direction: column;
+    padding: var(--jb-space-xl) 0;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.jb-sidebar-brand {
+    padding: 0 var(--jb-space-xl) var(--jb-space-xl);
+    font-size: 1.2em;
+    font-weight: var(--jb-font-weight-extrabold);
+    color: var(--jb-accent-yellow);
+    border-bottom: 1px solid var(--jb-surface-border);
+    margin-bottom: var(--jb-space-md);
+}
+
+.jb-sidebar-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.jb-sidebar-item {
+    padding: var(--jb-space-lg) var(--jb-space-xl);
+    color: var(--jb-text-secondary);
+    font-size: var(--jb-font-size-base);
+    font-weight: var(--jb-font-weight-medium);
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: var(--jb-transition-base);
+}
+
+.jb-sidebar-item:hover {
+    background: var(--jb-surface-card-hover);
+    color: var(--jb-text-primary);
+}
+
+.jb-sidebar-item-active {
+    background: var(--jb-surface-card);
+    color: var(--jb-accent-yellow);
+    border-left-color: var(--jb-accent-yellow);
+    font-weight: var(--jb-font-weight-bold);
+}
+
+.jb-content-area {
+    flex: 1;
+    padding: var(--jb-space-4xl);
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.jb-section-title {
+    font-size: 1.5em;
+    font-weight: var(--jb-font-weight-bold);
+    color: var(--jb-text-primary);
+    border-bottom: 2px solid var(--jb-accent-yellow);
+    padding-bottom: var(--jb-space-sm);
+    margin-top: 0;
+    margin-bottom: var(--jb-space-2xl);
+}
+
+/* Containers */
+.jb-container {
+    max-width: 650px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    animation: jbFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.jb-container-wide { max-width: 900px; }
+.jb-container-narrow { max-width: 420px; }
+.jb-text-left { text-align: left; }
+.jb-text-center { text-align: center; }
+
+@keyframes jbFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Grid Layouts */
+.jb-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--jb-space-3xl);
+    width: 100%;
+    margin-top: var(--jb-space-3xl);
+}
