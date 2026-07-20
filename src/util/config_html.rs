@@ -202,7 +202,7 @@ pub fn config_page_html(
         );
     }
 
-    let shared_css = crate::browsing::internal::SHARED_CSS;
+    let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
     let html_template = include_str!("../../templates/pages/config.html");
     let js_content = include_str!("../../scripts/js/config.js");
 

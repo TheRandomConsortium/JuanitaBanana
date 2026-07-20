@@ -50,7 +50,7 @@ pub fn run(banlist: SharedBanList) {
                 if is_external {
                     let domain = crate::browsing::browser::extract_domain(&url);
                     if rx_banlist.borrow().is_banned(&domain) {
-                        let shared_css = crate::browsing::internal::SHARED_CSS;
+                        let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
                         let refuse_html = format!(
                             r#"<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><title>Refused — Juanita Banana</title>

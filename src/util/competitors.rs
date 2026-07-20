@@ -107,7 +107,7 @@ pub fn competitors_page_html() -> String {
         "#, c.desktop_file, img_src, c.name, c.name));
     }
 
-    let shared_css = crate::browsing::internal::SHARED_CSS;
+    let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
     format!(
         r#"<!DOCTYPE html>
 <html>

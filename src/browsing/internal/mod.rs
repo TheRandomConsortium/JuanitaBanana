@@ -5,21 +5,23 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use webkit2gtk::WebView;
 
-pub const SHARED_CSS: &str = concat!(
-    include_str!("../../../templates/styles/fonts.css"),
-    "\n",
-    include_str!("../../../templates/styles/tokens.css"),
-    "\n",
-    include_str!("../../../templates/styles/layout.css"),
-    "\n",
-    include_str!("../../../templates/styles/components.css"),
-    "\n",
-    include_str!("../../../templates/styles/competitors.css"),
-    "\n",
-    include_str!("../../../templates/styles/vault.css"),
-    "\n",
-    include_str!("../../../templates/styles/local_html.css")
-);
+lazy_static::lazy_static! {
+    pub static ref SHARED_CSS: String = {
+        let font_b64 = crate::util::font::get_outfit_font_b64();
+        let fonts_css = include_str!("../../../templates/styles/fonts.css")
+            .replace("{outfit_font_b64}", &font_b64);
+        format!(
+            "{}\n{}\n{}\n{}\n{}\n{}\n{}",
+            fonts_css,
+            include_str!("../../../templates/styles/tokens.css"),
+            include_str!("../../../templates/styles/layout.css"),
+            include_str!("../../../templates/styles/components.css"),
+            include_str!("../../../templates/styles/competitors.css"),
+            include_str!("../../../templates/styles/vault.css"),
+            include_str!("../../../templates/styles/local_html.css")
+        )
+    };
+}
 
 pub struct PageContext {
     pub webview: WebView,

@@ -317,7 +317,7 @@ pub fn create_tab(
         let domain = crate::browsing::browser::extract_domain(failing_uri);
         let host = crate::resolver::clean_host(&domain);
         if !host.is_empty() && !crate::resolver::is_system_resolvable(&host) {
-            let shared_css = crate::browsing::internal::SHARED_CSS;
+            let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
             let http_uri = failing_uri.replace("https://", "http://");
             let certbot_img = crate::util::image::get_juanita_certbot_b64();
             let error_html = include_str!("../../../templates/errors/tls.html")
@@ -337,7 +337,7 @@ pub fn create_tab(
                 return false;
             }
         }
-        let shared_css = crate::browsing::internal::SHARED_CSS;
+        let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
         let broken_pipe_img = crate::util::image::get_juanita_broken_pipe_b64();
         let error_message = error.message();
         let error_html = include_str!("../../../templates/errors/proxy.html")

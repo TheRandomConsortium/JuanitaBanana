@@ -186,7 +186,7 @@ pub fn check_tab_inactivity(tabs: &Rc<RefCell<Vec<Tab>>>) {
             *tab.is_killed.borrow_mut() = true;
             active_count -= 1;
 
-            let shared_css = crate::browsing::internal::SHARED_CSS;
+            let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
             let cleanup_html = format!(
                 r#"<!DOCTYPE html>
 <html><head><meta charset="UTF-8">

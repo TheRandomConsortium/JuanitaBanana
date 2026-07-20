@@ -23,7 +23,7 @@ fn viewer_page(uri: &str, source: &str) -> String {
         .replace('>', "&gt;")
         .replace('"', "&quot;");
 
-    let shared_css = crate::browsing::internal::SHARED_CSS;
+    let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
 
     format!(
         r#"<!DOCTYPE html>
@@ -90,7 +90,7 @@ fn viewer_page(uri: &str, source: &str) -> String {
 }
 
 fn error_page(uri: &str) -> String {
-    let shared_css = crate::browsing::internal::SHARED_CSS;
+    let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
     format!(
         r#"<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><title>Cannot Read File — Juanita Banana</title>

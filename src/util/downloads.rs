@@ -53,7 +53,7 @@ impl DownloadManager {
             rows = String::from("<tr><td colspan='3' style='text-align: center; padding: 20px;'>No isolated downloads yet.</td></tr>");
         }
 
-        let shared_css = crate::browsing::internal::SHARED_CSS;
+        let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
         format!(
             r#"<!DOCTYPE html>
 <html>

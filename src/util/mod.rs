@@ -5,4 +5,5 @@ pub mod config_html;
 pub mod credentials;
 pub mod debug;
 pub mod downloads;
+pub mod font;
 pub mod image;

@@ -135,7 +135,7 @@ pub fn handle_decide_policy(
                                 e
                             );
                             decision.ignore();
-                            let shared_css = crate::browsing::internal::SHARED_CSS;
+                            let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
                             let error_html = format!(
                                 r#"<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><title>Server Not Found — Juanita Banana</title>

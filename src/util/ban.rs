@@ -1,5 +1,5 @@
 pub fn banned_page(uri: &str) -> String {
-    let shared_css = crate::browsing::internal::SHARED_CSS;
+    let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
     format!(
         r#"<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><title>Banned — Juanita Banana</title>
@@ -52,7 +52,7 @@ impl EquationProvider for BasicIntegralEquationProvider {
 }
 
 pub fn unban_page(domain: &str, equation: &str) -> String {
-    let shared_css = crate::browsing::internal::SHARED_CSS;
+    let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
     format!(
         r#"<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><title>Unban Challenge</title>
@@ -87,7 +87,7 @@ pub fn unban_page(domain: &str, equation: &str) -> String {
 }
 
 pub fn unban_list_page(domains: &std::collections::HashSet<String>) -> String {
-    let shared_css = crate::browsing::internal::SHARED_CSS;
+    let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
     let mut list_html = String::new();
     if domains.is_empty() {
         list_html.push_str("<div class='jb-card' style='text-align:center;'><p class='jb-text-secondary'>You have not banned any domains yet.</p></div>");
