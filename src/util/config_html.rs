@@ -86,42 +86,42 @@ pub fn config_page_html(
         secure_db_html.push_str(&format!(
             r#"
             <p style="color: #4caf50; font-weight: bold;">🔓 Secure Database Unlocked successfully.</p>
-            <div style="background: #2d2d30; padding: 20px; border-radius: 5px;">
-                <h3>GDPR Complainant Profile</h3>
-                <label style="display: inline-block; width: 220px;">Full Name:</label>
-                <input type="text" id="secure-name" value="{name}" style="width: 250px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 10px;"><br>
+            <div class="jb-card">
+                <h3 class="jb-card-item-title">GDPR Complainant Profile</h3>
+                <label class="jb-label" style="display: inline-block; width: 220px;">Full Name:</label>
+                <input type="text" id="secure-name" value="{name}" class="jb-input" style="width: 250px; margin-bottom: 10px;"><br>
 
-                <label style="display: inline-block; width: 220px;">National ID / Passport:</label>
-                <input type="text" id="secure-id" value="{id}" style="width: 250px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 20px;"><br>
+                <label class="jb-label" style="display: inline-block; width: 220px;">National ID / Passport:</label>
+                <input type="text" id="secure-id" value="{id}" class="jb-input" style="width: 250px; margin-bottom: 20px;"><br>
 
-                <h3>SMTP Configuration (Outgoing)</h3>
-                <label style="display: inline-block; width: 220px;">SMTP Server:</label>
-                <input type="text" id="secure-smtp-server" value="{smtp_server}" style="width: 250px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 10px;"><br>
+                <h3 class="jb-card-item-title">SMTP Configuration (Outgoing)</h3>
+                <label class="jb-label" style="display: inline-block; width: 220px;">SMTP Server:</label>
+                <input type="text" id="secure-smtp-server" value="{smtp_server}" class="jb-input" style="width: 250px; margin-bottom: 10px;"><br>
 
-                <label style="display: inline-block; width: 220px;">SMTP Port:</label>
-                <input type="number" id="secure-smtp-port" value="{smtp_port}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 10px;"><br>
+                <label class="jb-label" style="display: inline-block; width: 220px;">SMTP Port:</label>
+                <input type="number" id="secure-smtp-port" value="{smtp_port}" class="jb-input" style="width: 80px; margin-bottom: 10px;"><br>
 
-                <label style="display: inline-block; width: 220px;">SMTP Username:</label>
-                <input type="text" id="secure-smtp-user" value="{smtp_user}" style="width: 250px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 10px;"><br>
+                <label class="jb-label" style="display: inline-block; width: 220px;">SMTP Username:</label>
+                <input type="text" id="secure-smtp-user" value="{smtp_user}" class="jb-input" style="width: 250px; margin-bottom: 10px;"><br>
 
-                <label style="display: inline-block; width: 220px;">SMTP Password:</label>
-                <input type="password" id="secure-smtp-pass" value="{smtp_pass}" style="width: 250px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 20px;"><br>
+                <label class="jb-label" style="display: inline-block; width: 220px;">SMTP Password:</label>
+                <input type="password" id="secure-smtp-pass" value="{smtp_pass}" class="jb-input" style="width: 250px; margin-bottom: 20px;"><br>
 
-                <h3>POP3 Configuration (Incoming)</h3>
-                <label style="display: inline-block; width: 220px;">POP3 Server:</label>
-                <input type="text" id="secure-pop-server" value="{pop_server}" style="width: 250px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 10px;"><br>
+                <h3 class="jb-card-item-title">POP3 Configuration (Incoming)</h3>
+                <label class="jb-label" style="display: inline-block; width: 220px;">POP3 Server:</label>
+                <input type="text" id="secure-pop-server" value="{pop_server}" class="jb-input" style="width: 250px; margin-bottom: 10px;"><br>
 
-                <label style="display: inline-block; width: 220px;">POP3 Port:</label>
-                <input type="number" id="secure-pop-port" value="{pop_port}" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 10px;"><br>
+                <label class="jb-label" style="display: inline-block; width: 220px;">POP3 Port:</label>
+                <input type="number" id="secure-pop-port" value="{pop_port}" class="jb-input" style="width: 80px; margin-bottom: 10px;"><br>
 
-                <label style="display: inline-block; width: 220px;">POP3 Username:</label>
-                <input type="text" id="secure-pop-user" value="{pop_user}" style="width: 250px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 10px;"><br>
+                <label class="jb-label" style="display: inline-block; width: 220px;">POP3 Username:</label>
+                <input type="text" id="secure-pop-user" value="{pop_user}" class="jb-input" style="width: 250px; margin-bottom: 10px;"><br>
 
-                <label style="display: inline-block; width: 220px;">POP3 Password:</label>
-                <input type="password" id="secure-pop-pass" value="{pop_pass}" style="width: 250px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 20px;"><br>
+                <label class="jb-label" style="display: inline-block; width: 220px;">POP3 Password:</label>
+                <input type="password" id="secure-pop-pass" value="{pop_pass}" class="jb-input" style="width: 250px; margin-bottom: 20px;"><br>
 
                 <input type="hidden" id="secure-pass" value="{master_pass}">
-                <button onclick="saveSecureConfig(false)">Save Secure Settings</button>
+                <button class="jb-btn jb-btn-primary" onclick="saveSecureConfig(false)">Save Secure Settings</button>
             </div>
             "#,
             name = sec.name,
@@ -144,12 +144,12 @@ pub fn config_page_html(
         };
         secure_db_html.push_str(&format!(
             r#"
-            <p>Your Secure Database is currently encrypted. Please enter your Master Password to unlock and edit these settings.</p>
+            <p class="jb-text-secondary">Your Secure Database is currently encrypted. Please enter your Master Password to unlock and edit these settings.</p>
             {err_msg}
-            <div style="background: #2d2d30; padding: 20px; border-radius: 5px; max-width: 450px;">
-                <label style="display: block; margin-bottom: 10px;">Master Password:</label>
-                <input type="password" id="secure-unlock-pass" style="width: 100%; padding: 8px; background: #1e1e1e; color: #fff; border: 1px solid #444; box-sizing: border-box; margin-bottom: 15px;">
-                <button onclick="unlockSecureDb()" style="margin-top: 0;">Unlock Settings</button>
+            <div class="jb-card" style="max-width: 450px;">
+                <label class="jb-label" style="display: block; margin-bottom: 10px;">Master Password:</label>
+                <input type="password" id="secure-unlock-pass" class="jb-input" style="width: 100%; box-sizing: border-box; margin-bottom: 15px;">
+                <button class="jb-btn jb-btn-primary" onclick="unlockSecureDb()">Unlock Settings</button>
             </div>
             "#,
             err_msg = err_msg
@@ -158,51 +158,52 @@ pub fn config_page_html(
         secure_db_html.push_str(
             r#"
             <p style="color: #ff9800; font-weight: bold;">⚠️ Secure Database is not enabled.</p>
-            <p>To store your personal details (necessary for GDPR erasure complaints) and email configurations encrypted locally, fill out the form below to initialize the Secure Database:</p>
-            <div style="background: #2d2d30; padding: 20px; border-radius: 5px;">
-                <h3>Initialize Secure Database</h3>
-                <label style="display: inline-block; width: 220px;">Create Master Password:</label>
-                <input type="password" id="secure-init-pass" placeholder="Enter password..." style="width: 250px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 10px;"><br>
+            <p class="jb-text-secondary">To store your personal details (necessary for GDPR erasure complaints) and email configurations encrypted locally, fill out the form below to initialize the Secure Database:</p>
+            <div class="jb-card">
+                <h3 class="jb-card-item-title">Initialize Secure Database</h3>
+                <label class="jb-label" style="display: inline-block; width: 220px;">Create Master Password:</label>
+                <input type="password" id="secure-init-pass" placeholder="Enter password..." class="jb-input" style="width: 250px; margin-bottom: 10px;"><br>
 
-                <label style="display: inline-block; width: 220px;">Full Name:</label>
-                <input type="text" id="secure-name" placeholder="Juan Perez" style="width: 250px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 10px;"><br>
+                <label class="jb-label" style="display: inline-block; width: 220px;">Full Name:</label>
+                <input type="text" id="secure-name" placeholder="Juan Perez" class="jb-input" style="width: 250px; margin-bottom: 10px;"><br>
 
-                <label style="display: inline-block; width: 220px;">National ID / Passport:</label>
-                <input type="text" id="secure-id" placeholder="12345678X" style="width: 250px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 20px;"><br>
+                <label class="jb-label" style="display: inline-block; width: 220px;">National ID / Passport:</label>
+                <input type="text" id="secure-id" placeholder="12345678X" class="jb-input" style="width: 250px; margin-bottom: 20px;"><br>
 
-                <h3>SMTP Configuration (Outgoing)</h3>
-                <label style="display: inline-block; width: 220px;">SMTP Server:</label>
-                <input type="text" id="secure-smtp-server" placeholder="smtp.gmail.com" style="width: 250px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 10px;"><br>
+                <h3 class="jb-card-item-title">SMTP Configuration (Outgoing)</h3>
+                <label class="jb-label" style="display: inline-block; width: 220px;">SMTP Server:</label>
+                <input type="text" id="secure-smtp-server" placeholder="smtp.gmail.com" class="jb-input" style="width: 250px; margin-bottom: 10px;"><br>
 
-                <label style="display: inline-block; width: 220px;">SMTP Port:</label>
-                <input type="number" id="secure-smtp-port" value="587" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 10px;"><br>
+                <label class="jb-label" style="display: inline-block; width: 220px;">SMTP Port:</label>
+                <input type="number" id="secure-smtp-port" value="587" class="jb-input" style="width: 80px; margin-bottom: 10px;"><br>
 
-                <label style="display: inline-block; width: 220px;">SMTP Username:</label>
-                <input type="text" id="secure-smtp-user" placeholder="user@gmail.com" style="width: 250px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 10px;"><br>
+                <label class="jb-label" style="display: inline-block; width: 220px;">SMTP Username:</label>
+                <input type="text" id="secure-smtp-user" placeholder="user@gmail.com" class="jb-input" style="width: 250px; margin-bottom: 10px;"><br>
 
-                <label style="display: inline-block; width: 220px;">SMTP Password:</label>
-                <input type="password" id="secure-smtp-pass" placeholder="App password..." style="width: 250px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 20px;"><br>
+                <label class="jb-label" style="display: inline-block; width: 220px;">SMTP Password:</label>
+                <input type="password" id="secure-smtp-pass" placeholder="Password..." class="jb-input" style="width: 250px; margin-bottom: 20px;"><br>
 
-                <h3>POP3 Configuration (Incoming)</h3>
-                <label style="display: inline-block; width: 220px;">POP3 Server:</label>
-                <input type="text" id="secure-pop-server" placeholder="pop.gmail.com" style="width: 250px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 10px;"><br>
+                <h3 class="jb-card-item-title">POP3 Configuration (Incoming)</h3>
+                <label class="jb-label" style="display: inline-block; width: 220px;">POP3 Server:</label>
+                <input type="text" id="secure-pop-server" placeholder="pop.gmail.com" class="jb-input" style="width: 250px; margin-bottom: 10px;"><br>
 
-                <label style="display: inline-block; width: 220px;">POP3 Port:</label>
-                <input type="number" id="secure-pop-port" value="995" style="width: 80px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 10px;"><br>
+                <label class="jb-label" style="display: inline-block; width: 220px;">POP3 Port:</label>
+                <input type="number" id="secure-pop-port" value="995" class="jb-input" style="width: 80px; margin-bottom: 10px;"><br>
 
-                <label style="display: inline-block; width: 220px;">POP3 Username:</label>
-                <input type="text" id="secure-pop-user" placeholder="user@gmail.com" style="width: 250px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 10px;"><br>
+                <label class="jb-label" style="display: inline-block; width: 220px;">POP3 Username:</label>
+                <input type="text" id="secure-pop-user" placeholder="user@gmail.com" class="jb-input" style="width: 250px; margin-bottom: 10px;"><br>
 
-                <label style="display: inline-block; width: 220px;">POP3 Password:</label>
-                <input type="password" id="secure-pop-pass" placeholder="App password..." style="width: 250px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #444; margin-bottom: 20px;"><br>
+                <label class="jb-label" style="display: inline-block; width: 220px;">POP3 Password:</label>
+                <input type="password" id="secure-pop-pass" placeholder="Password..." class="jb-input" style="width: 250px; margin-bottom: 20px;"><br>
 
-                <button onclick="saveSecureConfig(true)">Initialize & Save Settings</button>
+                <button class="jb-btn jb-btn-primary" onclick="saveSecureConfig(true)">Initialize Secure Database</button>
             </div>
             "#
         );
     }
 
-    let html_template = include_str!("../../templates/config.html");
+    let shared_css = crate::browsing::internal::SHARED_CSS;
+    let html_template = include_str!("../../templates/pages/config.html");
     let js_content = include_str!("../../scripts/js/config.js");
 
     let handshake_enabled_checked = if config.handshake_enabled {
@@ -234,6 +235,7 @@ pub fn config_page_html(
     };
 
     html_template
+        .replace("{shared_css}", shared_css)
         .replace("{config_js}", js_content)
         .replace("{default_btn}", default_btn)
         .replace("{max_concurrent}", &max_concurrent)

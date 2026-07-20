@@ -5,6 +5,22 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use webkit2gtk::WebView;
 
+pub const SHARED_CSS: &str = concat!(
+    include_str!("../../../templates/styles/fonts.css"),
+    "\n",
+    include_str!("../../../templates/styles/tokens.css"),
+    "\n",
+    include_str!("../../../templates/styles/layout.css"),
+    "\n",
+    include_str!("../../../templates/styles/components.css"),
+    "\n",
+    include_str!("../../../templates/styles/competitors.css"),
+    "\n",
+    include_str!("../../../templates/styles/vault.css"),
+    "\n",
+    include_str!("../../../templates/styles/local_html.css")
+);
+
 pub struct PageContext {
     pub webview: WebView,
     pub downloads: Rc<RefCell<DownloadManager>>,

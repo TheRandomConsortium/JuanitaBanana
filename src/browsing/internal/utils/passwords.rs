@@ -7,7 +7,8 @@ use webkit2gtk::WebViewExt;
 
 pub struct PasswordsPage;
 
-const LOCKED_HTML: &str = include_str!("../../../../templates/passwords_locked.html");
+const SHARED_CSS: &str = crate::browsing::internal::SHARED_CSS;
+const LOCKED_HTML_TEMPLATE: &str = include_str!("../../../../templates/passwords/locked.html");
 
 // ── In-memory session store ─────────────────────────────────────────────────
 // Maps opaque random token → master password.  The token travels in URLs;
@@ -42,13 +43,13 @@ pub fn clear_session() {
 
 // ── HTML helpers ────────────────────────────────────────────────────────────
 
-fn vault_html(
+fn render_vault(
     creds: &[(String, String, String, String)],
-    session_token: &str,
     error: Option<&str>,
+    session_token: &str,
 ) -> String {
     let rows: String = if creds.is_empty() {
-        "<tr><td colspan='5' style='text-align:center;color:#555;padding:24px'>No saved credentials yet.</td></tr>".to_string()
+        "<tr><td colspan='5' style='text-align:center;color:var(--jb-text-muted);padding:24px'>No saved credentials yet.</td></tr>".to_string()
     } else {
         creds
             .iter()
@@ -66,14 +67,14 @@ fn vault_html(
                   <td>\
                     <div style='display:flex; align-items:center; gap:8px;'>\
                       <input type='password' id='pass-field-{i}' value='{password_esc}' readonly \
-                             style='background:transparent; border:none; color:#e0e0e0; font-family:monospace; width:120px; outline:none;'>\
-                      <button class='eye-btn' onclick='togglePass({i})' style='background:transparent; border:none; cursor:pointer; color:#888; font-size:1.1rem; padding:0 4px;'>👁️</button>\
+                             style='background:transparent; border:none; color:var(--jb-text-primary); font-family:var(--jb-font-family-mono); width:120px; outline:none;'>\
+                      <button class='eye-btn' onclick='togglePass({i})' style='background:transparent; border:none; cursor:pointer; color:var(--jb-text-secondary); font-size:1.1rem; padding:0 4px;'>👁️</button>\
                     </div>\
                   </td>\
                   <td>\
                     <div style='display:flex; gap:6px;'>\
-                      <button class='edit-btn' data-domain='{domain_esc}' data-user='{user_esc}' data-email='{email_esc}' data-pass='{password_esc}' onclick='editRow(this)'>✏️</button>\
-                      <button class='del-btn' onclick='deleteRow(\"{domain_esc}\")'>✕</button>\
+                      <button class='edit-btn jb-btn-outline' style='padding:4px 10px; font-size:0.8rem;' data-domain='{domain_esc}' data-user='{user_esc}' data-email='{email_esc}' data-pass='{password_esc}' onclick='editRow(this)'>✏️</button>\
+                      <button class='del-btn jb-btn-danger' style='padding:4px 10px; font-size:0.8rem;' onclick='deleteRow(\"{domain_esc}\")'>✕</button>\
                     </div>\
                   </td>\
                 </tr>",
@@ -88,11 +89,12 @@ fn vault_html(
     };
 
     let error_html = match error {
-        Some(e) => format!("<div class='error'>⚠️ {}</div>", html_escape(e)),
+        Some(e) => format!("<div class='jb-card-alert' style='max-width:100%;'>⚠️ {}</div>", html_escape(e)),
         None => String::new(),
     };
 
-    include_str!("../../../../templates/passwords_vault.html")
+    include_str!("../../../../templates/passwords/vault.html")
+        .replace("{shared_css}", SHARED_CSS)
         .replace("{rows}", &rows)
         .replace("{error_html}", &error_html)
         .replace("{unlock_pass_esc}", session_token)
@@ -103,7 +105,6 @@ fn html_escape(s: &str) -> String {
         .replace('<', "&lt;")
         .replace('>', "&gt;")
         .replace('"', "&quot;")
-        .replace('\'', "&#x27;")
 }
 
 fn parse_query(uri: &str, key: &str) -> Option<String> {
@@ -120,15 +121,17 @@ fn parse_query(uri: &str, key: &str) -> Option<String> {
 
 impl InternalPage for PasswordsPage {
     fn matches_input(&self, input: &str) -> bool {
-        input.starts_with("juanita://passwords") && !input.starts_with("juanita://passwords-")
+        input.starts_with("juanita:passwords") || input.starts_with("juanita://passwords")
     }
 
     fn handle_input(&self, input: &str, ctx: &PageContext) {
-        self.handle_policy(input, ctx);
+        ctx.webview.load_uri(input);
     }
 
     fn matches_policy(&self, uri: &str) -> bool {
-        uri.starts_with("juanita://passwords") && !uri.starts_with("juanita://passwords-")
+        uri.starts_with("juanita://passwords")
+            && !uri.starts_with("juanita://passwords-page")
+            && !uri.starts_with("juanita://passwords-unlocking")
     }
 
     fn ignore_policy(&self, _uri: &str) -> bool {
@@ -148,18 +151,20 @@ impl InternalPage for PasswordsPage {
             (None, None) => {
                 clear_session();
                 let wv = webview_clone.clone();
+                let locked_html = LOCKED_HTML_TEMPLATE.replace("{shared_css}", SHARED_CSS);
                 gtk::glib::idle_add_local(move || {
-                    wv.load_html(LOCKED_HTML, Some("juanita://passwords-page"));
+                    wv.load_html(&locked_html, Some("juanita://passwords-page"));
                     gtk::glib::ControlFlow::Break
                 });
             }
 
             // ── Fresh unlock attempt: validate master password ────────────────
             (Some(raw_pass), _) => {
-                let unlocking_html = include_str!("../../../../templates/passwords_unlocking.html");
+                let unlocking_html = include_str!("../../../../templates/passwords/unlocking.html")
+                    .replace("{shared_css}", SHARED_CSS);
                 let wv_unlocking = webview_clone.clone();
                 gtk::glib::idle_add_local(move || {
-                    wv_unlocking.load_html(unlocking_html, Some("juanita://passwords-unlocking"));
+                    wv_unlocking.load_html(&unlocking_html, Some("juanita://passwords-unlocking"));
                     gtk::glib::ControlFlow::Break
                 });
 
@@ -215,15 +220,16 @@ impl InternalPage for PasswordsPage {
                                 let _ = tx.send_blocking(PasswordResult::Redirect(redirect));
                             }
                             Err(e) => {
-                                let html = vault_html(&[], "", Some(&format!("DB error: {}", e)));
+                                let html = render_vault(&[], Some(&format!("DB error: {}", e)), "");
                                 let _ = tx.send_blocking(PasswordResult::Html(html));
                             }
                         },
                         Err(_) => {
                             // Wrong master password
+                            let locked_base = LOCKED_HTML_TEMPLATE.replace("{shared_css}", SHARED_CSS);
                             let locked = format!(
                                 "{}<script>document.querySelector('p').textContent='Wrong master password. Try again.';</script>",
-                                LOCKED_HTML
+                                locked_base
                             );
                             let _ = tx.send_blocking(PasswordResult::Html(locked));
                         }
@@ -237,18 +243,20 @@ impl InternalPage for PasswordsPage {
                     None => {
                         // Session expired / invalid – back to lock screen
                         let wv = webview_clone.clone();
+                        let locked = LOCKED_HTML_TEMPLATE.replace("{shared_css}", SHARED_CSS);
                         gtk::glib::idle_add_local(move || {
-                            wv.load_html(LOCKED_HTML, Some("juanita://passwords-page"));
+                            wv.load_html(&locked, Some("juanita://passwords-page"));
                             gtk::glib::ControlFlow::Break
                         });
                     }
                     Some(master_pass) => {
                         let unlocking_html =
-                            include_str!("../../../../templates/passwords_unlocking.html");
+                            include_str!("../../../../templates/passwords/unlocking.html")
+                                .replace("{shared_css}", SHARED_CSS);
                         let wv_unlocking = webview_clone.clone();
                         gtk::glib::idle_add_local(move || {
                             wv_unlocking
-                                .load_html(unlocking_html, Some("juanita://passwords-unlocking"));
+                                .load_html(&unlocking_html, Some("juanita://passwords-unlocking"));
                             gtk::glib::ControlFlow::Break
                         });
 
@@ -312,21 +320,22 @@ impl InternalPage for PasswordsPage {
                                         let creds =
                                             crate::unsubscribe::db::list_all_credentials(&conn);
                                         let _ = mgr.save_and_close(conn);
-                                        vault_html(&creds, &token_clone, None)
+                                        render_vault(&creds, None, &token_clone)
                                     }
-                                    Err(e) => vault_html(
+                                    Err(e) => render_vault(
                                         &[],
-                                        &token_clone,
                                         Some(&format!("DB error: {}", e)),
+                                        &token_clone,
                                     ),
                                 },
                                 Err(_) => {
                                     // Session token exists but password no longer works –
                                     // wipe session and go back to lock screen
                                     clear_session();
+                                    let locked_base = LOCKED_HTML_TEMPLATE.replace("{shared_css}", SHARED_CSS);
                                     format!(
                                         "{}<script>document.querySelector('p').textContent='Session expired. Please unlock again.';</script>",
-                                        LOCKED_HTML
+                                        locked_base
                                     )
                                 }
                             };

@@ -50,14 +50,25 @@ pub fn run(banlist: SharedBanList) {
                 if is_external {
                     let domain = crate::browsing::browser::extract_domain(&url);
                     if rx_banlist.borrow().is_banned(&domain) {
-                        let refuse_html = "<html><head><style>
-                            body { background: #000; color: #ff3333; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: monospace; font-size: 2rem; text-align: center; }
-                            </style></head><body>
-                            <div style=\"font-size: 8rem; margin-bottom: 20px;\">🛑</div>
-                            <div>We politely refuse on your behalf to open this shithole.</div>
-                            <div style=\"margin-top: 20px; font-size: 1.5rem; color: #888;\">Closing window in 5 seconds...</div>
-                            </body></html>";
-                        wv.load_html(refuse_html, Some("juanita://refuse/"));
+                        let shared_css = crate::browsing::internal::SHARED_CSS;
+                        let refuse_html = format!(
+                            r#"<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Refused — Juanita Banana</title>
+<style>
+  {shared_css}
+</style>
+</head>
+<body class="jb-page">
+<div class="jb-container">
+  <div style="font-size: 8rem; margin-bottom: var(--jb-space-xl);">🛑</div>
+  <div class="jb-title-group">
+      <h1 class="jb-title">We politely refuse on your behalf to open this shithole.</h1>
+      <div class="jb-subtitle" style="margin-top: var(--jb-space-lg);">Closing window in 5 seconds...</div>
+  </div>
+</div></body></html>"#,
+                            shared_css = shared_css
+                        );
+                        wv.load_html(&refuse_html, Some("juanita://refuse/"));
 
                         let app_clone = app_rx.clone();
                         gtk::glib::timeout_add_seconds_local(5, move || {

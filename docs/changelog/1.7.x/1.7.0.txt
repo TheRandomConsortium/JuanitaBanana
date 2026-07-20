@@ -1,0 +1,10 @@
+Juanita Banana v1.7.0 Changelog
+===============================
+
+Changes:
+- Implemented Chore 12: Unified Internal Stylesheet across all internal HTML views and Rust HTML string generators.
+- Created a modular design token system in templates/styles/ (tokens.css, layout.css, components.css, competitors.css, vault.css, local_html.css, fonts.css) with shared CSS custom properties.
+- Refactored all internal HTML templates (home, about, contact, contribute, history, config, passwords_locked, passwords_unlocking, passwords_vault, proxy_error, tls_error) and Rust HTML formatters (downloads, ban/unban, competitors, local_html, dns_error, refuse, cleanup).
+- Organized templates directory into dedicated subdirectories (pages/, passwords/, errors/, styles/, fonts/) ensuring no directory exceeds 9 items.
+- Embedded local static Outfit font (Outfit.ttf & Base64 font face), eliminating all external Google Fonts network calls and privacy leaks.
+- Enforced strict project design rules: 0 inline CSS styles/attributes, 0 external font network calls, and all files strictly under 500 lines.

@@ -135,21 +135,34 @@ pub fn handle_decide_policy(
                                 e
                             );
                             decision.ignore();
+                            let shared_css = crate::browsing::internal::SHARED_CSS;
                             let error_html = format!(
-                                "<html><head><style>
-                                body {{ background: #121214; color: #e1e1e6; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: monospace; text-align: center; }}
-                                .card {{ background: #1a1a1e; border: 1px solid #29292e; padding: 40px; border-radius: 12px; max-width: 600px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }}
-                                h1 {{ color: #ff5555; font-size: 2.5rem; margin: 0 0 20px 0; }}
-                                p {{ color: #a9a9b3; font-size: 1.1rem; line-height: 1.6; margin: 0 0 20px 0; }}
-                                .error-box {{ background: #282a36; border-left: 4px solid #ff79c6; padding: 15px; text-align: left; font-family: monospace; font-size: 0.95rem; color: #f8f8f2; white-space: pre-wrap; }}
-                                </style></head><body>
-                                <div class=\"card\">
-                                    <h1>Server Not Found</h1>
-                                    <p>Juanita Banana's priority resolver chain failed to resolve the host <strong>{}</strong>.</p>
-                                    <div class=\"error-box\">{}</div>
-                                </div>
-                                </body></html>",
-                                host, e
+                                r#"<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Server Not Found — Juanita Banana</title>
+<style>
+  {shared_css}
+</style>
+</head>
+<body class="jb-page">
+<div class="jb-container">
+  <div class="jb-title-group">
+      <h1 class="jb-title" style="background: linear-gradient(to right, #ffffff, var(--jb-accent-red-title)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Server Not Found</h1>
+      <div class="jb-subtitle">Juanita Banana's priority resolver chain failed to resolve the host <strong>{host}</strong>.</div>
+  </div>
+
+  <div class="jb-card-alert" style="margin-bottom: var(--jb-space-2xl);">
+      <div class="jb-card-title">Resolver Error Details</div>
+      <div class="jb-card-text" style="font-family: var(--jb-font-family-mono); word-break: break-all;">{e}</div>
+  </div>
+
+  <nav class="jb-nav">
+      <a class="jb-nav-link" href="juanita://home">Home</a>
+      <a class="jb-nav-link" href="juanita://config">Settings</a>
+  </nav>
+</div></body></html>"#,
+                                shared_css = shared_css,
+                                host = host,
+                                e = e
                             );
                             webview_nav.load_html(&error_html, Some("juanita://dns-error"));
                         }

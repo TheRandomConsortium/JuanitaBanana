@@ -23,8 +23,8 @@ impl InternalPage for AboutPage {
     fn handle_policy(&self, _uri: &str, ctx: &PageContext) -> bool {
         let b64_icon = crate::util::image::get_icon_b64();
         let b64_noise = crate::util::image::generate_random_noise_bmp_b64();
-        let html_template = include_str!("../../../../templates/about.html");
-        let html = html_template
+        let html = include_str!("../../../../templates/pages/about.html")
+            .replace("{shared_css}", crate::browsing::internal::SHARED_CSS)
             .replace("{b64_icon}", &b64_icon)
             .replace("{b64_noise}", &b64_noise);
         ctx.webview.load_html(&html, Some("juanita://about-page/"));
