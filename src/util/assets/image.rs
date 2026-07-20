@@ -2,27 +2,27 @@ use base64::Engine;
 use rand::Rng;
 
 pub fn get_monero_qr_b64() -> String {
-    let bytes = include_bytes!("../../assets/monerowallet.png");
+    let bytes = include_bytes!("../../../assets/monerowallet.png");
     base64::engine::general_purpose::STANDARD.encode(bytes)
 }
 
 pub fn get_icon_b64() -> String {
-    let bytes = include_bytes!("../../assets/icon.png");
+    let bytes = include_bytes!("../../../assets/icon.png");
     base64::engine::general_purpose::STANDARD.encode(bytes)
 }
 
 pub fn get_juanita_throwing_papers_b64() -> String {
-    let bytes = include_bytes!("../../assets/juanita_throwing_papers.png");
+    let bytes = include_bytes!("../../../assets/juanita_throwing_papers.png");
     base64::engine::general_purpose::STANDARD.encode(bytes)
 }
 
 pub fn get_juanita_certbot_b64() -> String {
-    let bytes = include_bytes!("../../assets/juanita_certbot.png");
+    let bytes = include_bytes!("../../../assets/juanita_certbot.png");
     base64::engine::general_purpose::STANDARD.encode(bytes)
 }
 
 pub fn get_juanita_broken_pipe_b64() -> String {
-    let bytes = include_bytes!("../../assets/juanita_broken_pipe.png");
+    let bytes = include_bytes!("../../../assets/juanita_broken_pipe.png");
     base64::engine::general_purpose::STANDARD.encode(bytes)
 }
 
@@ -59,26 +59,26 @@ pub fn generate_random_noise_bmp_b64() -> String {
 }
 
 pub fn get_ceiling_cat_b64() -> String {
-    let bytes = include_bytes!("../../assets/ceiling_cat.jpg");
+    let bytes = include_bytes!("../../../assets/ceiling_cat.jpg");
     base64::engine::general_purpose::STANDARD.encode(bytes)
 }
 
 pub fn get_trump_b64() -> String {
-    let bytes = include_bytes!("../../assets/trump.png");
+    let bytes = include_bytes!("../../../assets/trump.png");
     base64::engine::general_purpose::STANDARD.encode(bytes)
 }
 
 pub fn get_fry_b64() -> String {
-    let bytes = include_bytes!("../../assets/fry.jpg");
+    let bytes = include_bytes!("../../../assets/fry.jpg");
     base64::engine::general_purpose::STANDARD.encode(bytes)
 }
 
 pub fn get_wojak_b64() -> String {
-    let bytes = include_bytes!("../../assets/wojak.jpg");
+    let bytes = include_bytes!("../../../assets/wojak.jpg");
     base64::engine::general_purpose::STANDARD.encode(bytes)
 }
 
 pub fn get_banana_b64() -> String {
-    let bytes = include_bytes!("../../assets/banana.png");
+    let bytes = include_bytes!("../../../assets/banana.png");
     base64::engine::general_purpose::STANDARD.encode(bytes)
 }
