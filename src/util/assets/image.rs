@@ -59,22 +59,22 @@ pub fn generate_random_noise_bmp_b64() -> String {
 }
 
 pub fn get_ceiling_cat_b64() -> String {
-    let bytes = include_bytes!("../../../assets/ceiling_cat.jpg");
+    let bytes = include_bytes!("../../../assets/memes/ceiling_cat.jpg");
     base64::engine::general_purpose::STANDARD.encode(bytes)
 }
 
 pub fn get_trump_b64() -> String {
-    let bytes = include_bytes!("../../../assets/trump.png");
+    let bytes = include_bytes!("../../../assets/memes/trump.png");
     base64::engine::general_purpose::STANDARD.encode(bytes)
 }
 
 pub fn get_fry_b64() -> String {
-    let bytes = include_bytes!("../../../assets/fry.jpg");
+    let bytes = include_bytes!("../../../assets/memes/fry.jpg");
     base64::engine::general_purpose::STANDARD.encode(bytes)
 }
 
 pub fn get_wojak_b64() -> String {
-    let bytes = include_bytes!("../../../assets/wojak.jpg");
+    let bytes = include_bytes!("../../../assets/memes/wojak.jpg");
     base64::engine::general_purpose::STANDARD.encode(bytes)
 }
 

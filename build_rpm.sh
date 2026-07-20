@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+./scripts/sh/check_cleanliness.sh
+
 BUMP_TYPE=${1:-patch}
 
 CURRENT_VERSION=$(grep -E '^version = ' Cargo.toml | head -n 1 | awk -F '"' '{print $2}')

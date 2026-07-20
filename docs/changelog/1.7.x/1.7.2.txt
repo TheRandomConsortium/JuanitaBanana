@@ -1,0 +1,11 @@
+Juanita Banana v1.7.2 Changelog
+===============================
+
+Changes:
+- Implemented automated build-time project tidiness and anti-clutter check script (scripts/sh/check_cleanliness.sh).
+- Integrated cleanliness validation directly into build.rs and build_rpm.sh to enforce zero build tolerance for cluttered codebases.
+- Enforced strict project limits across all project modules and directories: no text file exceeds 500 lines, and no directory exceeds 9 items. Automatically halts builds with offending file/directory listings if clutter is introduced.
+- Refactored project source structure: moved privacy engines (ad_intoxication, fingerprint, search) into dedicated src/privacy/ sub-module.
+- Refactored asset organization: moved meme image assets into assets/memes/ subfolder.
+- Refactored documentation: organized specifications into docs/spec/, historical changelogs into docs/changelog/1.6.x/early/ and late/, and wiki markdown files into wiki/pages/.
+- Verified 100% test suite pass rate (27/27 unit tests) and zero Clippy compiler warnings (-D warnings).
