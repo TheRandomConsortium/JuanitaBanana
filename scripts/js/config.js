@@ -1,5 +1,33 @@
-if (window.location.hash === '#unban') {
-    showTab('unban');
+function showTab(tabId) {
+    if (tabId !== 'unban' && window.location.hash === '#unban') return; // Enforce lock
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    const tabEl = document.getElementById(tabId);
+    if (tabEl) tabEl.classList.add('active');
+    
+    document.querySelectorAll('#sidebar li').forEach(el => el.classList.remove('jb-sidebar-item-active', 'active'));
+    const activeLi = document.getElementById('li-' + tabId);
+    if (activeLi) activeLi.classList.add('jb-sidebar-item-active');
+}
+
+function initTabs() {
+    const bodyTab = document.body ? document.body.getAttribute('data-active-tab') : null;
+    const href = window.location.href;
+    const hash = window.location.hash;
+    if (hash === '#unban') {
+        showTab('unban');
+    } else if (hash === '#secure-db' || (bodyTab && bodyTab === 'secure-db') || href.includes('unlock_pass=') || href.includes('unlock_error=') || href.includes('saved_secure=') || href.includes('secure_init=')) {
+        showTab('secure-db');
+    } else if (bodyTab && bodyTab.length > 0) {
+        showTab(bodyTab);
+    } else {
+        showTab('general');
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTabs);
+} else {
+    initTabs();
 }
 
 if (window.location.href.includes('saved=true')) {
@@ -10,10 +38,6 @@ if (window.location.href.includes('saved=true')) {
     }
 }
 
-if (window.location.href.includes('unlock_pass=') || window.location.href.includes('unlock_error=') || window.location.href.includes('saved_secure=') || window.location.href.includes('secure_init=')) {
-    showTab('secure-db');
-}
-
 // Update guilt trip opacity label in real-time
 const opacitySlider = document.getElementById('guilt-trip-opacity');
 if (opacitySlider) {
@@ -21,16 +45,6 @@ if (opacitySlider) {
         const valSpan = document.getElementById('opacity-val');
         if (valSpan) valSpan.textContent = e.target.value;
     });
-}
-
-function showTab(tabId) {
-    if (tabId !== 'unban' && window.location.hash === '#unban') return; // Enforce lock
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
-    
-    document.querySelectorAll('#sidebar li').forEach(el => el.classList.remove('active'));
-    const activeLi = document.getElementById('li-' + tabId);
-    if (activeLi) activeLi.classList.add('active');
 }
 
 function checkUnban() {
@@ -200,9 +214,16 @@ function addAdDomain() {
 }
 
 function unlockSecureDb() {
-    const pass = document.getElementById('secure-unlock-pass').value;
+    const passInput = document.getElementById('secure-unlock-pass');
+    const pass = passInput ? passInput.value : '';
     if (!pass) return;
-    window.location.href = "juanita://config?unlock_pass=" + encodeURIComponent(pass);
+
+    const btn = document.querySelector('button[onclick="unlockSecureDb()"]');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="jb-spinner"></span> Decrypting...';
+    }
+    window.location.href = "juanita://config?unlock_pass=" + encodeURIComponent(pass) + "#secure-db";
 }
 
 function saveSecureConfig(isInit) {
@@ -227,6 +248,12 @@ function saveSecureConfig(isInit) {
     const pop_user = document.getElementById('secure-pop-user').value;
     const pop_pass = document.getElementById('secure-pop-pass').value;
 
+    const btn = document.querySelector('button[onclick*="saveSecureConfig"]');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="jb-spinner"></span> Saving...';
+    }
+
     const query = "?pass=" + encodeURIComponent(pass) +
                   "&name=" + encodeURIComponent(name) +
                   "&id=" + encodeURIComponent(id) +
@@ -239,7 +266,7 @@ function saveSecureConfig(isInit) {
                   "&pop_user=" + encodeURIComponent(pop_user) +
                   "&pop_pass=" + encodeURIComponent(pop_pass);
 
-    window.location.href = "juanita://save-secure-config" + query;
+    window.location.href = "juanita://save-secure-config" + query + "#secure-db";
 }
 
 function moveResolverUp(button) {

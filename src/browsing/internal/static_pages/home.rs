@@ -22,8 +22,12 @@ impl InternalPage for HomePage {
 
     fn handle_policy(&self, _uri: &str, ctx: &PageContext) -> bool {
         let b64_image = crate::util::image::get_juanita_throwing_papers_b64();
-        let html_template = include_str!("../../../../templates/home.html");
-        let html = html_template.replace("{b64_image}", &b64_image);
+        let html = include_str!("../../../../templates/pages/home.html")
+            .replace(
+                "{shared_css}",
+                crate::browsing::internal::SHARED_CSS.as_str(),
+            )
+            .replace("{b64_image}", &b64_image);
         let webview_clone = ctx.webview.clone();
         gtk::glib::idle_add_local(move || {
             webview_clone.load_html(&html, Some("juanita://home-page/"));

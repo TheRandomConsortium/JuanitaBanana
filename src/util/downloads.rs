@@ -53,36 +53,47 @@ impl DownloadManager {
             rows = String::from("<tr><td colspan='3' style='text-align: center; padding: 20px;'>No isolated downloads yet.</td></tr>");
         }
 
+        let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
         format!(
-            r#"<html>
+            r#"<!DOCTYPE html>
+<html>
 <head>
+    <meta charset="utf-8">
+    <title>Downloads — Juanita Banana</title>
     <style>
-        body {{ background: #121212; color: #eee; font-family: sans-serif; padding: 2rem; }}
-        table {{ width: 100%; border-collapse: collapse; margin-top: 2rem; background: #1e1e1e; border-radius: 8px; overflow: hidden; }}
-        th, td {{ border-bottom: 1px solid #333; text-align: left; padding: 12px; }}
-        th {{ background: #2a2a2a; color: #fff; }}
-        button {{ padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: #fff; }}
-        button:hover {{ opacity: 0.9; }}
+        {shared_css}
     </style>
 </head>
-<body>
-    <h1>📦 Sandboxed Downloads</h1>
-    <p>All downloads are isolated in a temporary RAM disk. They cannot read your personal files or access the internet when opened.</p>
-    <table>
-        <thead>
-            <tr>
-                <th>Filename</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {}
-        </tbody>
-    </table>
+<body class="jb-page" style="justify-content: flex-start; padding-top: var(--jb-space-4xl);">
+    <div class="jb-container jb-container-wide">
+        <div class="jb-title-group" style="width: 100%; text-align: left;">
+            <h1 class="jb-title">📦 Sandboxed Downloads</h1>
+            <div class="jb-subtitle">All downloads are isolated in a temporary RAM disk. They cannot read your personal files or access the internet when opened.</div>
+        </div>
+        <div class="jb-card">
+            <table class="jb-table">
+                <thead>
+                    <tr>
+                        <th>Filename</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows}
+                </tbody>
+            </table>
+        </div>
+        <nav class="jb-nav">
+            <a class="jb-nav-link" href="juanita://home">Home</a>
+            <a class="jb-nav-link" href="juanita://config">Settings</a>
+            <a class="jb-nav-link" href="juanita://about">About</a>
+        </nav>
+    </div>
 </body>
 </html>"#,
-            rows
+            shared_css = shared_css,
+            rows = rows
         )
     }
 

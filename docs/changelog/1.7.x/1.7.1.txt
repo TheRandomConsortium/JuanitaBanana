@@ -1,0 +1,9 @@
+Juanita Banana v1.7.1 Changelog
+===============================
+
+Changes:
+- Created dedicated Base64 font utility module (src/util/assets/font.rs) separating font assets from image utilities (src/util/assets/image.rs) within a new src/util/assets/ sub-module.
+- Maintained strict project structure rules: organized src/util/ into sub-modules ensuring no directory exceeds the 9-item limit.
+- Refactored SHARED_CSS static initialization to dynamically inject local Outfit font Base64 into templates/styles/fonts.css.
+- Standardized SHARED_CSS static string reference access (.as_str()) across all internal page handlers, policy handlers, tab error views, and HTML formatters (downloads, ban/unban, competitors, config_html, local_html, passwords, policy, gui, tab, cleanup).
+- Maintained strict design system guidelines: 0 inline CSS styles in HTML templates, 0 external font network calls, and all source modules under 500 lines.

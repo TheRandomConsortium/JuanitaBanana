@@ -1,0 +1,88 @@
+/* Juanita Banana — Local HTML Viewer Styles */
+
+.jb-viewer-toolbar {
+    background: var(--jb-surface-sidebar);
+    border-bottom: 1px solid var(--jb-surface-border-strong);
+    padding: var(--jb-space-md) var(--jb-space-xl);
+    display: flex;
+    align-items: center;
+    gap: var(--jb-space-lg);
+    flex-shrink: 0;
+}
+
+.jb-viewer-warning {
+    flex: 1;
+    font-size: var(--jb-font-size-sm);
+    color: var(--jb-accent-yellow);
+    display: flex;
+    align-items: center;
+    gap: var(--jb-space-sm);
+}
+
+.jb-viewer-warning-icon {
+    font-size: 18px;
+}
+
+.jb-viewer-path {
+    font-size: var(--jb-font-size-xs);
+    color: var(--jb-text-secondary);
+    margin-left: auto;
+    word-break: break-all;
+    max-width: 40%;
+    text-align: right;
+}
+
+.jb-btn-render {
+    background: var(--jb-color-success);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--jb-radius-md);
+    padding: 7px 18px;
+    font-size: var(--jb-font-size-sm);
+    font-weight: var(--jb-font-weight-bold);
+    cursor: pointer;
+    transition: var(--jb-transition-fast);
+    flex-shrink: 0;
+}
+
+.jb-btn-render:hover {
+    background: var(--jb-color-success-hover);
+}
+
+.jb-btn-save {
+    background: var(--jb-color-info);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--jb-radius-md);
+    padding: 7px 18px;
+    font-size: var(--jb-font-size-sm);
+    font-weight: var(--jb-font-weight-bold);
+    cursor: pointer;
+    transition: var(--jb-transition-fast);
+    flex-shrink: 0;
+}
+
+.jb-btn-save:hover {
+    background: var(--jb-color-info-hover);
+}
+
+.jb-btn-save.saved {
+    background: var(--jb-color-success);
+}
+
+.jb-editor-area {
+    flex: 1;
+    width: 100%;
+    background: var(--jb-editor-bg);
+    color: var(--jb-text-primary);
+    font-family: var(--jb-font-family-mono);
+    font-size: var(--jb-font-size-sm);
+    line-height: 1.6;
+    border: none;
+    outline: none;
+    padding: var(--jb-space-xl);
+    resize: none;
+    tab-size: 2;
+    overflow: auto;
+    box-sizing: border-box;
+}

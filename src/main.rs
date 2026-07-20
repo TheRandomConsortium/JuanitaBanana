@@ -16,15 +16,15 @@
 // NOTE: Build is fast — dynamically links to system GTK/WebKit.
 // ============================================================
 
-mod ad_intoxication;
 mod browsing;
-mod fingerprint;
 mod plugins;
+mod privacy;
 mod resolver;
-mod search;
 mod tor;
 mod unsubscribe;
 mod util;
+
+pub use privacy::{ad_intoxication, fingerprint, search};
 
 struct CleanupGuard;
 

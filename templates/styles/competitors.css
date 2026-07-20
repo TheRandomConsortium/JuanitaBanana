@@ -1,0 +1,41 @@
+/* Juanita Banana — Competitors Page Styles */
+
+.jb-competitor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(var(--jb-competitor-card-width), 1fr));
+    gap: var(--jb-space-2xl);
+    max-width: 800px;
+    justify-items: center;
+    width: 100%;
+}
+
+.jb-competitor-card {
+    background: var(--jb-surface-card);
+    border: 1px solid var(--jb-surface-border-strong);
+    border-radius: var(--jb-radius-card);
+    padding: var(--jb-space-2xl);
+    cursor: pointer;
+    text-align: center;
+    transition: var(--jb-transition-bounce);
+    width: var(--jb-competitor-card-width);
+    box-sizing: border-box;
+}
+
+.jb-competitor-card:hover {
+    background: var(--jb-surface-card-hover);
+    transform: scale(1.05);
+    border-color: var(--jb-accent-yellow);
+}
+
+.jb-competitor-icon {
+    width: var(--jb-competitor-icon-size);
+    height: var(--jb-competitor-icon-size);
+    margin-bottom: var(--jb-space-lg);
+    object-fit: contain;
+}
+
+.jb-competitor-name {
+    font-size: var(--jb-font-size-lg);
+    font-weight: var(--jb-font-weight-bold);
+    color: var(--jb-text-primary);
+}

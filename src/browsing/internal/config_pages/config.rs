@@ -3,7 +3,8 @@ use crate::util::config::AppConfig;
 use webkit2gtk::{UserContentManagerExt, WebViewExt};
 
 fn get_query_param(uri: &str, key: &str) -> Option<String> {
-    let parts: Vec<&str> = uri.split('?').collect();
+    let uri_no_hash = uri.split('#').next().unwrap_or(uri);
+    let parts: Vec<&str> = uri_no_hash.split('?').collect();
     if parts.len() < 2 {
         return None;
     }
@@ -31,8 +32,8 @@ impl InternalPage for ConfigPage {
     }
 
     fn matches_policy(&self, uri: &str) -> bool {
-        // Match all except the config-page target to prevent loop
-        (uri.starts_with("juanita://config") && !uri.starts_with("juanita://config-page"))
+        // Match all navigation requests except base HTML target URIs starting with juanita://config-
+        (uri.starts_with("juanita://config") && !uri.starts_with("juanita://config-"))
             || uri.starts_with("juanita://save-config")
             || uri.starts_with("juanita://save-secure-config")
             || uri.starts_with("juanita://make-default")
@@ -49,45 +50,13 @@ impl InternalPage for ConfigPage {
 
         if uri_clone.starts_with("juanita://config") {
             if let Some(pass) = get_query_param(&uri_clone, "unlock_pass") {
-                let unlocking_html = r#"<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>Unlocking Configuration...</title>
-<style>
-  body {
-    background: #0d0d0d;
-    color: #e0e0e0;
-    font-family: system-ui, sans-serif;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    margin: 0;
-  }
-  .container { text-align: center; }
-  .spinner {
-    border: 4px solid rgba(255,255,255,0.1);
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border-left-color: #3b82f6;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 16px;
-  }
-  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-</style>
-</head>
-<body>
-  <div class="container">
-    <div class="spinner"></div>
-    <div>Decrypting secure settings. Please wait...</div>
-  </div>
-</body>
-</html>"#;
+                let unlocking_html = crate::util::config_html::loading_page_html(
+                    "Unlocking Configuration...",
+                    "Decrypting secure settings. Please wait...",
+                );
                 let wv_unlocking = webview_clone.clone();
                 gtk::glib::idle_add_local(move || {
-                    wv_unlocking.load_html(unlocking_html, Some("juanita://config-unlocking"));
+                    wv_unlocking.load_html(&unlocking_html, Some("juanita://config-unlocking"));
                     gtk::glib::ControlFlow::Break
                 });
 
@@ -168,6 +137,7 @@ impl InternalPage for ConfigPage {
                         is_default,
                         decrypted.as_ref(),
                         unlock_error,
+                        Some("secure-db"),
                     );
                     let base_uri = uri_clone.replace("juanita://config", "juanita://config-page");
                     let _ = tx.send_blocking(ConfigResult::Html(config_html, base_uri));
@@ -175,11 +145,21 @@ impl InternalPage for ConfigPage {
             } else {
                 let is_default = crate::util::config::is_default_browser();
                 let unlock_error = get_query_param(&uri_clone, "unlock_error").is_some();
+                let requested_tab = if unlock_error
+                    || uri_clone.contains("saved_secure")
+                    || uri_clone.contains("secure")
+                    || uri_clone.contains("pass")
+                {
+                    Some("secure-db")
+                } else {
+                    None
+                };
                 let config_html = crate::util::config_html::config_page_html(
                     &config_clone,
                     is_default,
                     None,
                     unlock_error,
+                    requested_tab,
                 );
                 let wv = webview_clone.clone();
                 let base_uri = uri_clone.replace("juanita://config", "juanita://config-page");
@@ -210,45 +190,13 @@ impl InternalPage for ConfigPage {
             let pop_user = get_query_param(&uri_clone, "pop_user").unwrap_or_default();
             let pop_pass = get_query_param(&uri_clone, "pop_pass").unwrap_or_default();
 
-            let saving_html = r#"<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>Saving Settings...</title>
-<style>
-  body {
-    background: #0d0d0d;
-    color: #e0e0e0;
-    font-family: system-ui, sans-serif;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    margin: 0;
-  }
-  .container { text-align: center; }
-  .spinner {
-    border: 4px solid rgba(255,255,255,0.1);
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border-left-color: #3b82f6;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 16px;
-  }
-  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-</style>
-</head>
-<body>
-  <div class="container">
-    <div class="spinner"></div>
-    <div>Saving secure configuration. Please wait...</div>
-  </div>
-</body>
-</html>"#;
+            let saving_html = crate::util::config_html::loading_page_html(
+                "Saving Settings...",
+                "Saving secure configuration. Please wait...",
+            );
             let wv_saving = webview_clone.clone();
             gtk::glib::idle_add_local(move || {
-                wv_saving.load_html(saving_html, Some("juanita://config-saving"));
+                wv_saving.load_html(&saving_html, Some("juanita://config-saving"));
                 gtk::glib::ControlFlow::Break
             });
 
@@ -291,11 +239,11 @@ impl InternalPage for ConfigPage {
 
                 let redirect_uri = if success {
                     format!(
-                        "juanita://config?saved_secure=true&unlock_pass={}",
+                        "juanita://config?saved_secure=true&unlock_pass={}#secure-db",
                         urlencoding::encode(&pass)
                     )
                 } else {
-                    "juanita://config?unlock_error=true".to_string()
+                    "juanita://config?unlock_error=true#secure-db".to_string()
                 };
                 let _ = tx.send_blocking(redirect_uri);
             });

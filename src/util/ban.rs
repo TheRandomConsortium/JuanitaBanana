@@ -1,25 +1,32 @@
 pub fn banned_page(uri: &str) -> String {
+    let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
     format!(
         r#"<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><title>Banned — Juanita Banana</title>
 <style>
-  *{{margin:0;padding:0;box-sizing:border-box}}
-  body{{background:#111;color:#eee;font-family:monospace;
-       display:flex;align-items:center;justify-content:center;
-       height:100vh;text-align:center;}}
-  .b{{font-size:5rem;margin-bottom:1rem}}
-  h1{{color:#f5c518;font-size:1.8rem;margin-bottom:1rem}}
-  p{{color:#aaa;line-height:1.6}}
-  code{{color:#ff6b6b;background:#1a1a1a;padding:.2rem .6rem;border-radius:3px}}
-  small{{display:block;margin-top:2rem;color:#444;font-size:.8rem}}
-</style></head>
-<body><div>
-  <div class="b">🍌</div>
-  <h1>You blocked this website before.</h1>
-  <p><code>{uri}</code></p>
-  <p style="margin-top:1rem">Go look for greener pastures elsewhere.</p>
-  <small>Changed your mind? Enter the unban config page and solve the equation.</small>
-</div></body></html>"#
+  {shared_css}
+</style>
+</head>
+<body class="jb-page">
+<div class="jb-container">
+  <div style="font-size: 5rem; margin-bottom: var(--jb-space-md);">🍌</div>
+  <div class="jb-title-group">
+      <h1 class="jb-title">You blocked this website before.</h1>
+      <div class="jb-subtitle">Go look for greener pastures elsewhere.</div>
+  </div>
+  <div class="jb-value-box" style="margin-bottom: var(--jb-space-2xl);">
+      <code>{uri}</code>
+  </div>
+  <div class="jb-card-alert" style="text-align: center;">
+      <div class="jb-card-text">Changed your mind? Open <a href="juanita://unban" class="jb-text-yellow">juanita://unban</a> and solve the equation.</div>
+  </div>
+  <nav class="jb-nav">
+      <a class="jb-nav-link" href="juanita://home">Home</a>
+      <a class="jb-nav-link" href="juanita://config">Settings</a>
+  </nav>
+</div></body></html>"#,
+        shared_css = shared_css,
+        uri = uri
     )
 }
 
@@ -45,77 +52,80 @@ impl EquationProvider for BasicIntegralEquationProvider {
 }
 
 pub fn unban_page(domain: &str, equation: &str) -> String {
+    let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
     format!(
         r#"<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><title>Unban Challenge</title>
 <style>
-  *{{margin:0;padding:0;box-sizing:border-box}}
-  body{{background:#111;color:#eee;font-family:monospace;
-       display:flex;align-items:center;justify-content:center;
-       height:100vh;text-align:center;}}
-  .b{{font-size:5rem;margin-bottom:1rem}}
-  h1{{color:#f5c518;font-size:1.8rem;margin-bottom:1rem}}
-  p{{color:#aaa;line-height:1.6; font-size:1.2rem}}
-  .math{{font-size: 2rem; color: #fff; background:#1a1a1a; padding: 1rem; border-radius: 5px; margin: 1.5rem 0;}}
-  input{{background:#222; color:#fff; border: 1px solid #444; padding: 10px; font-size:1.2rem; width: 150px; text-align: center;}}
-  button{{background:#007acc; color:#fff; border:none; padding:10px 20px; font-size:1.2rem; cursor:pointer;}}
-  button:hover{{background:#0098ff;}}
-</style></head>
-<body><div>
-  <div class="b">🍌</div>
-  <h1>Mathematical Redemption</h1>
-  <p>To unban <code>{domain}</code>, prove you are worthy.</p>
-  <div class="math">
-      {equation}
+  {shared_css}
+</style>
+</head>
+<body class="jb-page">
+<div class="jb-container">
+  <div style="font-size: 5rem; margin-bottom: var(--jb-space-md);">🍌</div>
+  <div class="jb-title-group">
+      <h1 class="jb-title">Mathematical Redemption</h1>
+      <div class="jb-subtitle">To unban <code>{domain}</code>, prove you are worthy.</div>
   </div>
-  <p><small>(Answer is an integer. No fractions.)</small></p>
-  <form action="juanita://submit-unban">
-      <input type="hidden" name="domain" value="{domain}">
-      <input type="number" name="answer" placeholder="Answer..." required autofocus>
-      <button type="submit">Submit</button>
-  </form>
-</div></body></html>"#
+  
+  <div class="jb-card" style="text-align: center;">
+      <div class="jb-value-box" style="font-size: 1.5rem; margin-bottom: var(--jb-space-lg);">
+          {equation}
+      </div>
+      <div class="jb-text-secondary" style="font-size: 0.85em; margin-bottom: var(--jb-space-xl);">(Answer is an integer. No fractions.)</div>
+      <form action="juanita://submit-unban" style="display: flex; gap: 10px; justify-content: center;">
+          <input type="hidden" name="domain" value="{domain}">
+          <input type="number" name="answer" placeholder="Answer..." class="jb-input" style="width: 150px; text-align: center;" required autofocus>
+          <button type="submit" class="jb-btn jb-btn-primary">Submit</button>
+      </form>
+  </div>
+</div></body></html>"#,
+        shared_css = shared_css,
+        domain = domain,
+        equation = equation
     )
 }
 
 pub fn unban_list_page(domains: &std::collections::HashSet<String>) -> String {
+    let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
     let mut list_html = String::new();
     if domains.is_empty() {
-        list_html.push_str("<p>You have not banned any domains yet.</p>");
+        list_html.push_str("<div class='jb-card' style='text-align:center;'><p class='jb-text-secondary'>You have not banned any domains yet.</p></div>");
     } else {
         let mut sorted_domains: Vec<&String> = domains.iter().collect();
         sorted_domains.sort();
-        list_html.push_str("<ul style=\"list-style:none; padding:0; margin-top:20px;\">");
+        list_html.push_str("<div class='jb-card'>");
         for domain in sorted_domains {
             list_html.push_str(&format!(
-                r#"<li style="background:#1a1a1a; margin-bottom:10px; padding:15px; display:flex; justify-content:space-between; align-items:center; border-radius:5px;">
-                    <span style="font-size:1.2rem; color:#eee;">{}</span>
-                    <a href="juanita://unban?domain={}" style="background:#007acc; color:#fff; padding:8px 15px; text-decoration:none; border-radius:3px;">Unban</a>
-                   </li>"#,
-                domain, domain
+                r#"<div class="jb-card-item" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+                    <span style="font-size:1.1rem; color:var(--jb-text-primary);">{domain}</span>
+                    <a href="juanita://unban?domain={domain}" class="jb-btn jb-btn-primary" style="padding: 6px 16px; font-size: 0.85em;">Unban</a>
+                   </div>"#,
+                domain = domain
             ));
         }
-        list_html.push_str("</ul>");
+        list_html.push_str("</div>");
     }
 
     format!(
         r#"<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><title>Banned Domains List</title>
 <style>
-  *{{margin:0;padding:0;box-sizing:border-box}}
-  body{{background:#111;color:#eee;font-family:monospace; padding: 40px;}}
-  .b{{font-size:3rem; margin-bottom:1rem; text-align:center;}}
-  h1{{color:#f5c518;font-size:1.8rem;margin-bottom:1rem; text-align:center;}}
-  .container{{max-width: 800px; margin: 0 auto;}}
-</style></head>
-<body>
-  <div class="container">
-      <div class="b">🍌</div>
-      <h1>Banned Domains</h1>
-      <p style="text-align:center; color:#aaa; margin-bottom: 2rem;">Choose a domain to redeem.</p>
+  {shared_css}
+</style>
+</head>
+<body class="jb-page">
+  <div class="jb-container">
+      <div style="font-size: 3.5rem; margin-bottom: var(--jb-space-md);">🍌</div>
+      <div class="jb-title-group">
+          <h1 class="jb-title">Banned Domains</h1>
+          <div class="jb-subtitle">Choose a domain to redeem.</div>
+      </div>
       {list_html}
   </div>
-</body></html>"#
+</body></html>"#,
+        shared_css = shared_css,
+        list_html = list_html
     )
 }
 

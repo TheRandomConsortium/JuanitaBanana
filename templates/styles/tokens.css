@@ -1,0 +1,99 @@
+/* Juanita Banana — Design System Tokens */
+
+:root {
+    /* Color Palette — Backgrounds & Surfaces */
+    --jb-bg-main: #0d0d11;
+    --jb-bg-radial: #1a1a24;
+    --jb-surface-card: rgba(255, 255, 255, 0.03);
+    --jb-surface-card-hover: rgba(255, 255, 255, 0.06);
+    --jb-surface-border: rgba(255, 255, 255, 0.08);
+    --jb-surface-border-strong: rgba(255, 255, 255, 0.15);
+    --jb-surface-sidebar: #141419;
+    --jb-surface-input: #1e1e24;
+    --jb-editor-bg: #111111;
+
+    /* Text Colors */
+    --jb-text-primary: #f3f4f6;
+    --jb-text-secondary: #9ca3af;
+    --jb-text-muted: rgba(255, 255, 255, 0.3);
+
+    /* State & Action Colors */
+    --jb-color-success: #16a34a;
+    --jb-color-success-hover: #15803d;
+    --jb-color-info: #1d4ed8;
+    --jb-color-info-hover: #1e40af;
+
+    /* Accent — Yellow / Primary Interactive */
+    --jb-accent-yellow: #facc15;
+    --jb-accent-yellow-hover: #fde047;
+    --jb-accent-yellow-dark: #000000;
+    --jb-accent-yellow-border-focus: rgba(250, 204, 21, 0.4);
+    --jb-accent-yellow-glow-focus: rgba(250, 204, 21, 0.15);
+    --jb-accent-yellow-ring-focus: rgba(250, 204, 21, 0.1);
+
+    /* Accent — Red / Alert / Defensive Callouts */
+    --jb-accent-red: #ef4444;
+    --jb-accent-red-hover: #f87171;
+    --jb-accent-red-bg: rgba(239, 68, 68, 0.05);
+    --jb-accent-red-border: rgba(239, 68, 68, 0.15);
+    --jb-accent-red-title: #f87171;
+    --jb-accent-red-text: #d1d5db;
+    --jb-accent-red-dark: #7f1d1d;
+
+    /* Accent — Blue & Orange */
+    --jb-accent-blue: #38bdf8;
+    --jb-accent-blue-hover: #60a5fa;
+    --jb-accent-orange: #f97316;
+
+    /* Typography (100% Embedded Static Outfit Font) */
+    --jb-font-family: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --jb-font-family-mono: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace;
+    
+    --jb-font-size-xs: 0.85em;
+    --jb-font-size-sm: 0.88em;
+    --jb-font-size-base: 0.95em;
+    --jb-font-size-lg: 1.1em;
+    --jb-font-size-xl: 2.2em;
+
+    --jb-font-weight-regular: 400;
+    --jb-font-weight-medium: 500;
+    --jb-font-weight-bold: 700;
+    --jb-font-weight-extrabold: 800;
+
+    --jb-letter-spacing-tight: -0.5px;
+    --jb-letter-spacing-wide: 1.5px;
+
+    /* Spacing Scale */
+    --jb-space-xs: 4px;
+    --jb-space-sm: 6px;
+    --jb-space-md: 10px;
+    --jb-space-lg: 15px;
+    --jb-space-xl: 20px;
+    --jb-space-2xl: 25px;
+    --jb-space-3xl: 30px;
+    --jb-space-4xl: 40px;
+    --jb-space-5xl: 50px;
+
+    /* Border Radius Scale */
+    --jb-radius-sm: 4px;
+    --jb-radius-md: 8px;
+    --jb-radius-card: 16px;
+    --jb-radius-pill: 99px;
+
+    /* Specific Dimensions */
+    --jb-competitor-card-width: 150px;
+    --jb-competitor-icon-size: 64px;
+
+    /* Elevation & Shadows */
+    --jb-shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+    --jb-shadow-inset: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+    --jb-shadow-illustration: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.5));
+    --jb-shadow-alert: 0 4px 20px rgba(0, 0, 0, 0.2);
+    --jb-shadow-modal: 0 20px 50px rgba(0, 0, 0, 0.85);
+
+    /* Transitions */
+    --jb-transition-fast: transform 0.1s ease, background 0.2s ease, border-color 0.2s ease;
+    --jb-transition-base: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    --jb-transition-smooth: border-color 0.25s ease, box-shadow 0.25s ease;
+    --jb-transition-bounce: transform 0.3s ease;
+}
