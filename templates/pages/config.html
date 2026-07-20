@@ -21,11 +21,11 @@
     </style>
 </head>
 
-<body class="jb-page-full">
+<body class="jb-page-full" data-active-tab="{active_tab}">
     <div id="sidebar" class="jb-sidebar">
         <div class="jb-sidebar-brand">🍌 Juanita Config</div>
         <ul class="jb-sidebar-nav">
-            <li id="li-general" class="jb-sidebar-item jb-sidebar-item-active" onclick="showTab('general')">General</li>
+            <li id="li-general" class="jb-sidebar-item" onclick="showTab('general')">General</li>
             <li id="li-intoxication" class="jb-sidebar-item" onclick="showTab('intoxication')">Search Intoxication</li>
             <li id="li-ad-intox" class="jb-sidebar-item" onclick="showTab('ad-intox')">Ad Intoxication</li>
             <li id="li-rss" class="jb-sidebar-item" onclick="showTab('rss')">RSS Sources</li>
@@ -34,7 +34,7 @@
         </ul>
     </div>
     <div id="content" class="jb-content-area">
-        <div id="general" class="tab-content active">
+        <div id="general" class="tab-content">
             <h2 class="jb-section-title">General Settings</h2>
             <div class="jb-card">
                 <p class="jb-text-secondary">Make Juanita Banana your default browser to open links from other apps automatically.</p>
@@ -63,7 +63,7 @@
             </div>
             <div class="jb-card">
                 <h3 class="jb-card-item-title">Guilt Trip Overlay Settings (Opt-in)</h3>
-                <label class="jb-label">
+                <label class="jb-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
                     <input type="checkbox" id="guilt-trip-enabled" {guilt_trip_enabled_checked}>
                     Enable Subliminal Guilt Trip Overlay
                 </label>
@@ -76,8 +76,21 @@
                     <input type="range" id="guilt-trip-opacity" min="0.002" max="0.1" step="0.001" value="{guilt_trip_opacity}">
                     <span id="opacity-val" class="jb-value-box">{guilt_trip_opacity}</span>
                 </div>
-                <div>
-                    <button class="jb-btn jb-btn-primary" onclick="saveGeneralConfig()">Save General Settings</button>
+                <div class="jb-form-group">
+                    <label class="jb-label">NSFW Rules (comma-separated):</label>
+                    <input type="text" id="guilt-trip-nsfw-rules" value="{guilt_trip_nsfw_rules}" class="jb-input">
+                </div>
+                <div class="jb-form-group">
+                    <label class="jb-label">News Rules (comma-separated):</label>
+                    <input type="text" id="guilt-trip-news-rules" value="{guilt_trip_news_rules}" class="jb-input">
+                </div>
+                <div class="jb-form-group">
+                    <label class="jb-label">Shopping Rules (comma-separated):</label>
+                    <input type="text" id="guilt-trip-shopping-rules" value="{guilt_trip_shopping_rules}" class="jb-input">
+                </div>
+                <div class="jb-form-group">
+                    <label class="jb-label">Social Rules (comma-separated):</label>
+                    <input type="text" id="guilt-trip-social-rules" value="{guilt_trip_social_rules}" class="jb-input">
                 </div>
             </div>
         </div>
@@ -103,18 +116,29 @@
                 </div>
                 <div class="jb-form-group">
                     <label class="jb-label">Result Click Probability (0.0 - 1.0):</label>
-                    <input type="number" step="0.1" min="0" max="1" id="click-prob" value="{click_prob}" class="jb-input">
+                    <input type="number" step="0.01" min="0" max="1" id="click-prob" value="{click_prob}" class="jb-input">
                 </div>
-                <div class="jb-form-group">
-                    <label class="jb-label">Jitter Min (ms):</label>
-                    <input type="number" id="jitter-min" value="{jitter_min}" class="jb-input">
-                </div>
-                <div class="jb-form-group">
-                    <label class="jb-label">Jitter Max (ms):</label>
-                    <input type="number" id="jitter-max" value="{jitter_max}" class="jb-input">
-                </div>
-                <div>
-                    <button class="jb-btn jb-btn-primary" onclick="saveIntoxicationConfig()">Save Intoxication Settings</button>
+            </div>
+            <div class="jb-card">
+                <h3 class="jb-card-item-title">Search Engine Providers</h3>
+                <table class="jb-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Domain Regex</th>
+                            <th>Query Params</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="engines-tbody">
+                        {engines_html}
+                    </tbody>
+                </table>
+                <div style="margin-top: 15px; display: flex; gap: 8px;">
+                    <input type="text" id="new-engine-name" placeholder="Name" class="jb-input" style="width: 120px;">
+                    <input type="text" id="new-engine-regex" placeholder="Regex" class="jb-input" style="width: 180px;">
+                    <input type="text" id="new-engine-params" placeholder="Params (e.g. q,oq)" class="jb-input" style="width: 180px;">
+                    <button class="jb-btn jb-btn-primary" onclick="addEngine()">Add Engine</button>
                 </div>
             </div>
         </div>
@@ -122,22 +146,48 @@
         <div id="ad-intox" class="tab-content">
             <h2 class="jb-section-title">Ad Intoxication Engine</h2>
             <div class="jb-card">
-                <label class="jb-label">
-                    <input type="checkbox" id="ad-intox-enabled" {ad_intox_enabled_checked}>
-                    Enable Ad Intoxication Engine
-                </label>
-
                 <div class="jb-form-group">
-                    <label class="jb-label">Ad Intoxication Depth (0-5):</label>
-                    <input type="range" id="ad-intox-depth" min="0" max="5" value="{ad_intox_depth}">
-                    <span id="ad-intox-depth-val" class="jb-value-box">{ad_intox_depth}</span>
-                    <div class="jb-text-secondary">
-                        0 = Disabled, 1 = Low (Light Noise), 5 = Maximum (Aggressive Background Navigations)
-                    </div>
+                    <label class="jb-label">Ad Click Probability (0.0 - 1.0):</label>
+                    <input type="number" step="0.01" min="0" max="1" id="ad-click-prob" value="{click_prob}" class="jb-input">
                 </div>
-
-                <div>
-                    <button class="jb-btn jb-btn-primary" onclick="saveAdIntoxConfig()">Save Ad Intoxication Settings</button>
+                <div class="jb-form-group">
+                    <label class="jb-label">Min Jitter Delay (seconds):</label>
+                    <input type="number" id="ad-jitter-min" value="{jitter_min}" class="jb-input">
+                </div>
+                <div class="jb-form-group">
+                    <label class="jb-label">Max Jitter Delay (seconds):</label>
+                    <input type="number" id="ad-jitter-max" value="{jitter_max}" class="jb-input">
+                </div>
+                <div class="jb-form-group">
+                    <label class="jb-label">Max Surgery Depth:</label>
+                    <input type="number" id="ad-intox-max-depth" value="{intox_max_depth}" class="jb-input">
+                </div>
+                <div class="jb-form-group">
+                    <label class="jb-label">Ad Surgery Regex Pattern:</label>
+                    <input type="text" id="ad-intox-regex" value="{intox_regex}" class="jb-input" style="width: 100%; max-width: 400px;">
+                </div>
+                <div class="jb-form-group">
+                    <label class="jb-label">Toxic Warning Threshold:</label>
+                    <input type="number" id="toxic-threshold" value="{toxic_threshold}" class="jb-input">
+                </div>
+            </div>
+            <div class="jb-card">
+                <h3 class="jb-card-item-title">Learned Ad Domains</h3>
+                <p class="jb-text-secondary">Domains checked against resources and link hrefs to detect ad intents.</p>
+                <table class="jb-table">
+                    <thead>
+                        <tr>
+                            <th>Domain</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ad-domains-tbody">
+                        {ad_domains_html}
+                    </tbody>
+                </table>
+                <div style="margin-top: 15px; display: flex; gap: 8px;">
+                    <input type="text" id="new-ad-domain" placeholder="Domain (e.g. tracking.com)" class="jb-input" style="width: 300px;">
+                    <button class="jb-btn jb-btn-primary" onclick="addAdDomain()">Add Domain</button>
                 </div>
             </div>
         </div>
@@ -145,24 +195,24 @@
         <div id="rss" class="tab-content">
             <h2 class="jb-section-title">RSS Sources & Corpus Management</h2>
             <div class="jb-card">
-                <div class="jb-form-group">
-                    <label class="jb-label">Add New RSS Feed URL:</label>
-                    <input type="text" id="new-rss-url" placeholder="https://example.com/rss.xml" class="jb-input">
-                    <button class="jb-btn jb-btn-primary" onclick="addRssSource()">Add Feed</button>
-                </div>
-
-                <h3 class="jb-card-item-title">Active RSS Sources ({rss_count})</h3>
+                <p class="jb-text-secondary">RSS feeds used to pull real, trending search queries for noise generation.</p>
                 <table class="jb-table">
                     <thead>
                         <tr>
+                            <th>Name</th>
                             <th>URL</th>
-                            <th>Actions</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {rss_rows}
+                    <tbody id="rss-tbody">
+                        {rss_html}
                     </tbody>
                 </table>
+                <div style="margin-top: 15px; display: flex; gap: 8px;">
+                    <input type="text" id="new-rss-name" placeholder="Feed Name (e.g. El Pais)" class="jb-input" style="width: 160px;">
+                    <input type="text" id="new-rss-url" placeholder="RSS URL" class="jb-input" style="width: 300px;">
+                    <button class="jb-btn jb-btn-primary" onclick="addRss()">Add Feed</button>
+                </div>
             </div>
         </div>
 
@@ -173,65 +223,60 @@
 
         <div id="resolver" class="tab-content">
             <h2 class="jb-section-title">Resolver & Routing Stack Settings</h2>
-
             <div class="jb-card">
                 <h3 class="jb-card-item-title">🤝 Handshake (HNS) Protocol Support</h3>
-                <label class="jb-label">
+                <label class="jb-label" style="display: flex; align-items: center; gap: 8px;">
                     <input type="checkbox" id="handshake-enabled" {handshake_enabled_checked}>
                     Enable Handshake (HNS) Resolver (hnsd daemon)
                 </label>
                 <p class="jb-text-secondary">
-                    When enabled, `.hns` TLDs and registered Handshake root names will be securely resolved via your local `hnsd` daemon instance over 127.0.0.1:5301.
+                    When enabled, `.hns` TLDs and registered Handshake root names will be resolved via local `hnsd` daemon over 127.0.0.1:5301.
                 </p>
             </div>
 
             <div class="jb-card">
                 <h3 class="jb-card-item-title">🧅 Tor (.onion) Network Support</h3>
-                <label class="jb-label">
-                    <input type="checkbox" id="tor-enabled" {tor_enabled_checked}>
-                    Enable Tor SOCKS5 Proxy Service (127.0.0.1:9050 / 9053)
+                <label class="jb-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <input type="checkbox" id="tor-enabled" {tor_enabled_checked} onchange="document.getElementById('tor-route-all').disabled = !this.checked;">
+                    Enable Tor Transport Daemon (arti)
                 </label>
-
-                <div>
-                    <label class="jb-label">
-                        <input type="checkbox" id="tor-route-all" {tor_route_all_checked} {tor_enabled_checked_disabled}>
-                        Route All HTTP/HTTPS Traffic Through Tor (Global Tor Proxy)
-                    </label>
-                </div>
-
-                <p class="jb-text-secondary">
-                    When Tor is enabled, `.onion` addresses automatically route through the local SOCKS5 Tor proxy. Enabling "Route All Traffic" routes 100% of WebKit navigation requests through Tor circuits.
+                <label class="jb-label" style="display: flex; align-items: center; gap: 8px; margin-left: 20px;">
+                    <input type="checkbox" id="tor-route-all" {tor_route_all_checked} {tor_enabled_checked_disabled}>
+                    Route All Traffic Through Tor Exit Nodes
+                </label>
+                <p class="jb-text-secondary" style="margin-top: 8px;">
+                    SOCKS5 proxy: 127.0.0.1:9150 · .onion resolver registered when enabled.
                 </p>
             </div>
 
-            <div>
-                <button class="jb-btn jb-btn-primary" onclick="saveResolverConfig()">Save Resolver Settings</button>
+            <div class="jb-card">
+                <h3 class="jb-card-item-title">Priority Order</h3>
+                <p class="jb-text-secondary">Configure the priority-ordered resolver chain. First resolver is queried first, falling back sequentially.</p>
+                <ul id="resolver-list" style="list-style: none; padding: 0; margin: 0;">
+                    {resolver_list_html}
+                </ul>
             </div>
+        </div>
+
+        <div id="unban" class="tab-content">
+            <h2 class="jb-section-title">Improbable Redemption</h2>
+            <div class="jb-card">
+                <p class="jb-text-secondary">Solve the following equation to unban a site: ∫ e^x dx from 0 to ln(3).</p>
+                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                    <input type="text" id="math-answer" placeholder="Answer..." class="jb-input" style="width: 150px;">
+                    <button class="jb-btn jb-btn-primary" onclick="checkUnban()">Submit</button>
+                </div>
+                <div id="unban-result" style="margin-top: 12px;"></div>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; margin-bottom: 30px;">
+            <button class="jb-btn jb-btn-primary" onclick="saveConfig()">Save Configuration</button>
         </div>
     </div>
 
     <script>
         {config_js}
-
-        function showTab(tabId) {
-            var tabs = document.getElementsByClassName('tab-content');
-            for (var i = 0; i < tabs.length; i++) {
-                tabs[i].classList.remove('active');
-            }
-            var activeTab = document.getElementById(tabId);
-            if (activeTab) {
-                activeTab.classList.add('active');
-            }
-
-            var lis = document.querySelectorAll('#sidebar li');
-            for (var i = 0; i < lis.length; i++) {
-                lis[i].classList.remove('jb-sidebar-item-active');
-            }
-            var activeLi = document.getElementById('li-' + tabId);
-            if (activeLi) {
-                activeLi.classList.add('jb-sidebar-item-active');
-            }
-        }
     </script>
 </body>
 

@@ -405,7 +405,11 @@ details[open] summary.jb-summary::after { transform: rotate(90deg); }
     font-weight: var(--jb-font-weight-medium);
 }
 
-.jb-input, select.jb-select, input.jb-input {
+.jb-input, input.jb-input, .jb-btn-full, input.jb-btn-full, button.jb-btn-full {
+    box-sizing: border-box;
+}
+
+.jb-input, input.jb-input {
     background: var(--jb-surface-input);
     color: var(--jb-text-primary);
     border: 1px solid var(--jb-surface-border-strong);
@@ -415,17 +419,39 @@ details[open] summary.jb-summary::after { transform: rotate(90deg); }
     font-size: var(--jb-font-size-base);
     outline: none;
     transition: var(--jb-transition-base);
+    box-sizing: border-box;
+}
+
+.jb-select, select.jb-select, select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-color: var(--jb-surface-input) !important;
+    color: var(--jb-text-primary) !important;
+    border: 1px solid var(--jb-surface-border-strong) !important;
+    border-radius: var(--jb-radius-md) !important;
+    padding: var(--jb-space-md) var(--jb-space-4xl) var(--jb-space-md) var(--jb-space-lg) !important;
+    font-family: inherit;
+    font-size: var(--jb-font-size-base) !important;
+    font-weight: var(--jb-font-weight-medium) !important;
+    outline: none;
+    background-image: url('data:image/svg+xml;utf8,<svg fill="%23f3f4f6" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') !important;
+    background-repeat: no-repeat !important;
+    background-position: right 10px center !important;
+    background-size: 18px !important;
     cursor: pointer;
+    box-sizing: border-box;
 }
 
-select.jb-select option {
-    background: #1e1e24;
-    color: #f3f4f6;
+.jb-select option, select.jb-select option, select option {
+    background-color: var(--jb-surface-input) !important;
+    color: var(--jb-text-primary) !important;
+    padding: var(--jb-space-sm) var(--jb-space-md) !important;
 }
 
-.jb-input:focus, select.jb-select:focus {
-    border-color: var(--jb-accent-yellow);
-    box-shadow: 0 0 0 2px var(--jb-accent-yellow-ring-focus);
+.jb-input:focus, .jb-select:focus, select.jb-select:focus {
+    border-color: var(--jb-accent-yellow) !important;
+    box-shadow: 0 0 0 2px var(--jb-accent-yellow-ring-focus) !important;
 }
 
 /* Navigation Links Group Component */
@@ -446,8 +472,22 @@ select.jb-select option {
 }
 
 .jb-nav-link:hover { color: var(--jb-accent-yellow); }
+.jb-nav-link-active { color: var(--jb-accent-yellow); font-weight: var(--jb-font-weight-bold); }
 
-.jb-nav-link-active {
-    color: var(--jb-accent-yellow);
-    font-weight: var(--jb-font-weight-bold);
+.jb-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-top-color: var(--jb-accent-yellow);
+    border-radius: var(--jb-radius-full);
+    animation: spin 0.8s linear infinite;
+    margin-right: var(--jb-space-xs);
+    vertical-align: text-bottom;
 }
+.jb-btn-primary .jb-spinner, button.jb-btn-primary .jb-spinner {
+    border: 2px solid rgba(15, 15, 17, 0.25);
+    border-top-color: #0f0f11;
+}
+
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }

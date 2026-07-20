@@ -14,11 +14,54 @@ pub struct DecryptedSecureData {
     pub pop_pass: String,
 }
 
+pub fn loading_page_html(title: &str, message: &str) -> String {
+    let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
+    format!(
+        r#"<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>{title}</title>
+<style>
+{shared_css}
+html, body {{
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}}
+.jb-loading-container {{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+    text-align: center;
+    box-sizing: border-box;
+}}
+</style>
+</head>
+<body class="jb-page-full">
+  <div class="jb-loading-container">
+    <div class="jb-spinner" style="width: 42px; height: 42px; border-width: 4px; margin-bottom: 20px;"></div>
+    <div class="jb-text-primary" style="font-size: var(--jb-font-size-xl); font-weight: var(--jb-font-weight-medium);">{message}</div>
+  </div>
+</body>
+</html>"#,
+        shared_css = shared_css,
+        title = title,
+        message = message
+    )
+}
+
 pub fn config_page_html(
     config: &AppConfig,
     is_default: bool,
     decrypted_data: Option<&DecryptedSecureData>,
     unlock_error: bool,
+    requested_tab: Option<&str>,
 ) -> String {
     let mut engines_html = String::new();
     for engine in &config.search_engines {
@@ -234,8 +277,15 @@ pub fn config_page_html(
         ""
     };
 
+    let active_tab = requested_tab.unwrap_or(if decrypted_data.is_some() || unlock_error {
+        "secure-db"
+    } else {
+        "general"
+    });
+
     html_template
         .replace("{shared_css}", shared_css)
+        .replace("{active_tab}", active_tab)
         .replace("{config_js}", js_content)
         .replace("{default_btn}", default_btn)
         .replace("{max_concurrent}", &max_concurrent)
@@ -321,7 +371,7 @@ mod tests {
             ..AppConfig::default()
         };
 
-        let html = config_page_html(&config, false, None, false);
+        let html = config_page_html(&config, false, None, false, None);
         assert!(html.contains("777"));
         assert!(html.contains("999"));
         assert!(html.contains("Hacker News"));

@@ -1,0 +1,18 @@
+Juanita Banana v1.7.3 Changelog
+===============================
+
+Changes:
+- Dead-centered interim loading screen (loading_page_html) horizontally and vertically across the full 100vw/100vh viewport using SHARED_CSS and flex layout.
+- Enforced box-sizing: border-box on password vault inputs (templates/passwords/locked.html) and .jb-input / .jb-btn-full to eliminate bounding box overflow.
+- Fixed navigation policy matching in src/browsing/internal/config_pages/config.rs: excluded all `juanita://config-` target base URIs from policy interception to prevent interim unlock/save screens from redirecting to the general main tab.
+- Replaced ad-hoc CSS in config interim screens with reusable loading_page_html helper function utilizing SHARED_CSS and design system components.
+- Fixed URL parameter query parsing in config.rs: stripped hash fragments (#hash) before extracting parameters to prevent master passwords from acquiring trailing hash strings.
+- Fixed tab activation state in templates/pages/config.html and scripts/js/config.js: preserved active tab state (#secure-db) across unlock and save operations.
+- Styled spinner component (.jb-spinner) and button loading state following the passwords vault gold standard with high-contrast accent yellow tokens and Outfit typography.
+- Enhanced select dropdown element styling in components.css: applied appearance:none, custom SVG chevron arrow, and CSS design tokens (var(--jb-surface-input), var(--jb-text-primary)) for high contrast and crystal-clear readability.
+- Restored missing configuration sections, forms, search engine tables, ad domain tables, RSS feed tables, and resolver priority ordering stack.
+- Implemented automated build-time project tidiness and anti-clutter check script (scripts/sh/check_cleanliness.sh) integrated into build.rs and build_rpm.sh.
+- Refactored project source structure: moved privacy engines (ad_intoxication, fingerprint, search) into dedicated src/privacy/ sub-module.
+- Refactored asset organization: moved meme image assets into assets/memes/ subfolder.
+- Refactored documentation: organized specifications into docs/spec/, historical changelogs into docs/changelog/1.6.x/early/ and late/, and wiki markdown files into wiki/pages/.
+- Verified 100% test suite pass rate (27/27 unit tests) and zero Clippy compiler warnings (-D warnings).
