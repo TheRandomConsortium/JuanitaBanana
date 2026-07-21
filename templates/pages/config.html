@@ -31,6 +31,7 @@
             <li id="li-rss" class="jb-sidebar-item" onclick="showTab('rss')">RSS Sources</li>
             <li id="li-secure-db" class="jb-sidebar-item" onclick="showTab('secure-db')">Secure DB & Email</li>
             <li id="li-resolver" class="jb-sidebar-item" onclick="showTab('resolver')">Resolver Stack</li>
+            <li id="li-ai-slop" class="jb-sidebar-item" onclick="showTab('ai-slop')">AI Slop Detection</li>
         </ul>
     </div>
     <div id="content" class="jb-content-area">
@@ -255,6 +256,37 @@
                 <ul id="resolver-list" style="list-style: none; padding: 0; margin: 0;">
                     {resolver_list_html}
                 </ul>
+        </div>
+
+        <div id="ai-slop" class="tab-content">
+            <h2 class="jb-section-title">AI Slop Neutralization Engine</h2>
+            <div class="jb-card">
+                <label class="jb-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <input type="checkbox" id="ai-slop-enabled" {ai_slop_enabled_checked}>
+                    Enable AI Slop Detection & Neutralization
+                </label>
+                <p class="jb-text-secondary">
+                    Scans web pages for LLM disclaimers and disclosure strings. Neutralizes slop articles and contributes to your toxicity score.
+                </p>
+            </div>
+            <div class="jb-card">
+                <h3 class="jb-card-item-title">Detected AI Phrases</h3>
+                <p class="jb-text-secondary">Phrases used to identify AI-generated slop articles across web pages.</p>
+                <table class="jb-table">
+                    <thead>
+                        <tr>
+                            <th>Phrase</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ai-phrases-tbody">
+                        {ai_phrases_html}
+                    </tbody>
+                </table>
+                <div style="margin-top: 15px; display: flex; gap: 8px;">
+                    <input type="text" id="new-ai-phrase" placeholder="New phrase (e.g. written using chatgpt)" class="jb-input" style="width: 320px;">
+                    <button class="jb-btn jb-btn-primary" onclick="addAiPhrase()">Add Phrase</button>
+                </div>
             </div>
         </div>
 

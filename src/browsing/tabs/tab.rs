@@ -89,6 +89,17 @@ pub fn create_tab(
         ucm.add_script(&guilt_script);
     }
 
+    if config.ai_slop_detection_enabled {
+        let ai_slop_script = UserScript::new(
+            &crate::privacy::ai_slop::ai_slop_detector_script(&config),
+            UserContentInjectedFrames::TopFrame,
+            UserScriptInjectionTime::End,
+            &[],
+            &["juanita://*"],
+        );
+        ucm.add_script(&ai_slop_script);
+    }
+
     let form_mon_script = UserScript::new(
         crate::browsing::credentials_ui::form_monitor_script(),
         UserContentInjectedFrames::TopFrame,

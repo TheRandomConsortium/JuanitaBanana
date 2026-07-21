@@ -87,6 +87,14 @@ pub fn config_page_html(
         ));
     }
 
+    let mut ai_phrases_html = String::new();
+    for phrase in &config.ai_slop_phrases {
+        ai_phrases_html.push_str(&format!(
+            "<tr><td>{}</td><td><button onclick=\"this.parentElement.parentElement.remove()\" style=\"margin:0; padding: 5px;\">X</button></td></tr>",
+            phrase
+        ));
+    }
+
     let json_data = serde_json::to_string(&config).unwrap_or_default();
 
     let mut resolver_list_html = String::new();
@@ -337,6 +345,15 @@ pub fn config_page_html(
             "{guilt_trip_social_rules}",
             &config.guilt_trip_social_rules.join(", "),
         )
+        .replace(
+            "{ai_slop_enabled_checked}",
+            if config.ai_slop_detection_enabled {
+                "checked"
+            } else {
+                ""
+            },
+        )
+        .replace("{ai_phrases_html}", &ai_phrases_html)
         .replace(
             "{tab_inactivity_ttl}",
             &config.tab_inactivity_ttl.to_string(),
