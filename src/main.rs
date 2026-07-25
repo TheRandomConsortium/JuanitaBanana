@@ -24,7 +24,7 @@ mod tor;
 mod unsubscribe;
 mod util;
 
-pub use privacy::{ad_intoxication, fingerprint, search};
+pub use privacy::{ad_intoxication, ai_slop, fingerprint, search};
 
 struct CleanupGuard;
 

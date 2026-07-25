@@ -84,13 +84,17 @@
 
 ---
 
-## 🤖 AI Slop Detection
+## 🤖 AI Slop Detection & Neutralization Engine
 
 | Feature | Status | Notes |
 |---|---|---|
-| **Detect "Written with AI" footer** | 📋 Planned | DOM scan for known AI disclosure strings. |
-| **Replace article title** | 📋 Planned | Inject "This newspaper uses AI Slop. Ban?" into the DOM. |
-| **confer.to Recommendation** | 📋 Planned | Officially recommend `confer.to` when AI slop is detected, with a message like: "You might as well create this yourself and do it privately in the meantime." |
+| **Detect AI Disclosure Phrases** | ✅ Done | DOM scan for configurable AI disclosure phrases (`ai_slop_phrases`) with toggle configuration. |
+| **Neutralize Article Banner & Title** | ✅ Done | Injects a neutralization warning banner with link to `juanita://ai-alternatives`. |
+| **Privacy AI Recommendations** | ✅ Done | Curated alternatives (Confer, Lumo, Venice, Self-Hosted Ollama/local models) with pros, cons, pricing, timestamp disclaimer, and demystification of Meta AI, DDG, and Brave. |
+| **Toxicity System Integration** | ✅ Done | AI slop detections report to the toxicity channel, feeding into marquee warnings and guilt-trip overlays. |
+| **Stylistic & Heuristic AI Slop Detection** | 🔭 Future | Advanced pattern recognition beyond disclaimers, analyzing repetitive LLM phrasing, stylistic n-grams, and structural signatures. |
+| **Domain Reputation & EMA Redemption** | 🔭 Future | "Once an offender, always an offender" domain tracking with flag `1`; substitutes all domain articles until clean Exponential Moving Average (EMA) score redeems the domain. |
+| **Opt-in P2P DHT Config Sharing** | 🔭 Future | Decentralized P2P DHT sharing of ad domains, DOM selectors, guilt-trip rules, and AI slop phrases across Juanita instances ("once one Juanita hardens, all opt-in Juanitas harden"). |
 
 ---
 
