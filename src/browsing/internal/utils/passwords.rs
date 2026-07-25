@@ -10,7 +10,7 @@ pub struct PasswordsPage;
 fn get_shared_css() -> &'static str {
     crate::browsing::internal::SHARED_CSS.as_str()
 }
-const LOCKED_HTML_TEMPLATE: &str = include_str!("../../../../templates/passwords/locked.html");
+const LOCKED_HTML_TEMPLATE: &str = include_root_str!(@templates, "locked.html");
 
 // ── In-memory session store ─────────────────────────────────────────────────
 // Maps opaque random token → master password.  The token travels in URLs;
@@ -98,7 +98,7 @@ fn render_vault(
         None => String::new(),
     };
 
-    include_str!("../../../../templates/passwords/vault.html")
+    include_root_str!(@templates, "vault.html")
         .replace("{shared_css}", get_shared_css())
         .replace("{rows}", &rows)
         .replace("{error_html}", &error_html)
@@ -165,7 +165,7 @@ impl InternalPage for PasswordsPage {
 
             // ── Fresh unlock attempt: validate master password ────────────────
             (Some(raw_pass), _) => {
-                let unlocking_html = include_str!("../../../../templates/passwords/unlocking.html")
+                let unlocking_html = include_root_str!(@templates, "unlocking.html")
                     .replace("{shared_css}", get_shared_css());
                 let wv_unlocking = webview_clone.clone();
                 gtk::glib::idle_add_local(move || {
@@ -256,9 +256,8 @@ impl InternalPage for PasswordsPage {
                         });
                     }
                     Some(master_pass) => {
-                        let unlocking_html =
-                            include_str!("../../../../templates/passwords/unlocking.html")
-                                .replace("{shared_css}", get_shared_css());
+                        let unlocking_html = include_root_str!(@templates, "unlocking.html")
+                            .replace("{shared_css}", get_shared_css());
                         let wv_unlocking = webview_clone.clone();
                         gtk::glib::idle_add_local(move || {
                             wv_unlocking

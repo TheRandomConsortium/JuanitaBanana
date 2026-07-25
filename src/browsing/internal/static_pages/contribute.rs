@@ -22,7 +22,7 @@ impl InternalPage for ContributePage {
 
     fn handle_policy(&self, _uri: &str, ctx: &PageContext) -> bool {
         let b64_image = crate::util::image::get_monero_qr_b64();
-        let html = include_str!("../../../../templates/pages/contribute.html")
+        let html = include_root_str!(@templates, "contribute.html")
             .replace(
                 "{shared_css}",
                 crate::browsing::internal::SHARED_CSS.as_str(),

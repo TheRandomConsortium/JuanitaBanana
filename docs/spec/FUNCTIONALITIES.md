@@ -118,6 +118,7 @@
 | **DPA Online Form Auto-Submission** | 📋 Planned | Auto-submit the signed `.p7m` complaint directly to the national DPA's online portal by parsing their HTML submission forms and auto-filling pre-populated fields from the generated report. Target authorities: AEPD, Garante, CNIL, BfDI, ICO, DPC, APD/GBA, EDPB. |
 | **Future Auto-reporting Option** | 📋 Planned | Auto-reporting of reincident domains to Supervisory Authorities by parsing inbox confirmation emails via POP/IMAP and auto-submitting complaints. |
 | **POP3 Mail Client & Secure Sandbox (`juanita://mail`)** | 📋 Planned | Fetch incoming email via POP3, display it natively in Juanita with contextual *Add Ban* / *Unsubscribe* banners, and open attachments in an isolated Bubblewrap (`bwrap`) secure sandbox. |
+| **DHT Software Certificate Sharing (Juanita Companion Age-Gate Bypass)** | ⚠️ Deprecated | Shared identity pool over a Distributed Hash Table (DHT) via JuanitaCompanion to bypass EU digital majority / age-verification restrictions (under-15 bans) by keeping private keys (FNMT, etc.) on a root mobile device and remotely signing CAdES/XAdES challenges. **Marked as Deprecated before implementation:** State regulators are already moving to mandate hardware-bound KYC (1 certificate = 1 device enforced via Secure Elements), rendering software cert sharing vectors obsolete. |
 
 ---
 
