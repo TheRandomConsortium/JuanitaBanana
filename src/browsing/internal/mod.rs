@@ -47,6 +47,7 @@ pub use config_pages::competitors::CompetitorsPage;
 pub use config_pages::config::ConfigPage;
 pub use config_pages::unban::UnbanPage;
 pub use static_pages::about::AboutPage;
+pub use static_pages::ai_alternatives::AiAlternativesPage;
 pub use static_pages::contact::ContactPage;
 pub use static_pages::contribute::ContributePage;
 pub use static_pages::history::HistoryPage;
@@ -64,6 +65,7 @@ pub fn get_internal_pages() -> Vec<Box<dyn InternalPage>> {
         Box::new(ConfigPage),
         Box::new(ContributePage),
         Box::new(AboutPage),
+        Box::new(AiAlternativesPage),
         Box::new(ContactPage),
         Box::new(CompetitorsPage),
         Box::new(DownloadsPage),

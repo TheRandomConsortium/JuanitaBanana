@@ -74,15 +74,6 @@ This document maintains the tracking of known technical chores, API deprecations
   - Test WebAuthn registration and authentication flows on standard services using a physical hardware key (e.g., YubiKey, Nitrokey).
   - Ensure the browser successfully communicates with local daemon services (`pcscd`, `libfido2`) and that strict sandboxing/hardening layers do not inadvertently block hardware USB polling.
 
-### 12. Create a Unified Internal Stylesheet(Done)
-- **Files:** `templates/`, `src/browsing/internal/`, `src/browsing/tabs/tab.rs`, all inline HTML in Rust source
-- **Chore:** All internal pages (`juanita://home`, `juanita://config`, `juanita://downloads`, `juanita://unban`, `juanita://mail`, error pages, TLS warning page, ban page, unsubscribe wizard, etc.) currently have ad-hoc inline CSS with inconsistent colors, fonts, spacing, and border-radius values.
-- **Action Plan:**
-  - Define a single CSS design token file (`templates/juanita.css` or `assets/internal.css`) containing all shared variables: color palette, font families, font sizes, spacing scale, border-radius, button styles, card styles, section-title styles.
-  - Embed this stylesheet via `include_str!` so it is compiled into the binary and injected into every internal page's `<head>`.
-  - Migrate all internal HTML templates and inline Rust format strings to reference the shared CSS classes instead of their own ad-hoc rules.
-  - Retire redundant per-page style blocks once migrated.
-
 ### 14. Configure WebKit Proxy Timeout Patience
 - **Files:** `src/browsing/tabs/tab.rs`, `src/tor/webcontext.rs`
 - **Chore:** WebKit's internal network stack has highly aggressive connection and proxy handshake timeout thresholds. When Tor circuit building is slow, WebKit aborts prematurely and issues a load-failed event before the local SOCKS5 proxy gets a chance to establish the circuit.
@@ -99,3 +90,16 @@ This document maintains the tracking of known technical chores, API deprecations
   - Evaluate `config.last_tab_nuke_action`:
     - If it is `"home"`, create/open a new tab pointing to `juanita://home`.
     - If it is `"survive"`, close the browser window (or trigger application quit).
+
+### 16. Intelligent Root-Folder Path Resolution Macro & Marker Config
+- **Files:** `build.rs`, `src/util/macros.rs`, scannable directory markers (`.scannable` or config file), internal handlers, engines.
+- **Chore:** Eliminate puke-inducing nested relative path traversals (`../../../`, `../../../../`) across `include_str!` and `include_bytes!` calls by introducing a compile-time path resolution macro that deduces file locations using `@rootfolder, file_name` syntax (e.g., `@templates, "config.html"` or `@assets, "wojak.jpg"`).
+- **Specification & Action Plan:**
+  - **Scannable Directory Markers & Config:**
+    - Support marking root folders (`templates/`, `assets/`, `scripts/`, `docs/`, `src/`) as scannable via a `.scannable` dotfile or a central configuration manifest.
+    - Dotfile / Config metadata settings:
+      - `inclusion_type`: `string`, `bytes`, or `both`
+      - `search_mode`: `recursive` or `folderonly`
+  - **Build-Time / Macro Recursive Directory Map:**
+    - Scan marked folders recursively at build time / macro evaluation time to map simple filenames (e.g. `config.html`) to their exact nested relative paths (e.g. `templates/pages/config.html`).
+    - Expose macros (`include_root_str!`, `include_root_bytes!`) feeding from this recursive map so callers use clean `@rootfolder, file_name` syntax anywhere in the codebase.

@@ -55,6 +55,14 @@ pub fn handle_script_message(
                         Err(e) => log!(Error, HTML_VIEWER, "Save error: {}", e),
                     }
                 }
+            } else if msg_val["type"] == "ai_slop_detected" {
+                let matched = msg_val["matched"].as_str().unwrap_or("unknown");
+                log!(
+                    Warn,
+                    SLOP_DETECTOR,
+                    "AI Slop detected on page: matched phrase '{}'",
+                    matched
+                );
             } else if msg_val["type"] == "form_interact" {
                 if let Some(ref win) = *window.borrow() {
                     crate::browsing::credentials_ui::handle_form_interact(webview, win);

@@ -127,6 +127,15 @@ function saveConfig() {
     configData.tor_route_all = document.getElementById('tor-route-all').checked;
     configData.tab_inactivity_ttl = parseInt(document.getElementById('tab-inactivity-ttl').value, 10);
     configData.last_tab_nuke_action = document.getElementById('last-tab-nuke-action').value;
+    configData.ai_slop_detection_enabled = document.getElementById('ai-slop-enabled').checked;
+
+    const aiPhraseRows = document.querySelectorAll('#ai-phrases-tbody tr');
+    const newAiPhrases = [];
+    aiPhraseRows.forEach(row => {
+        const phrase = row.cells[0].textContent.trim();
+        if (phrase) newAiPhrases.push(phrase);
+    });
+    configData.ai_slop_phrases = newAiPhrases;
 
     window.location.href = "juanita://save-config?data=" + encodeURIComponent(JSON.stringify(configData));
 }
@@ -211,6 +220,27 @@ function addAdDomain() {
     row.appendChild(tdBtn);
     tbody.appendChild(row);
     document.getElementById('new-ad-domain').value = '';
+}
+
+function addAiPhrase() {
+    const phrase = document.getElementById('new-ai-phrase').value.trim();
+    if (!phrase) return;
+    const tbody = document.getElementById('ai-phrases-tbody');
+    const row = document.createElement('tr');
+
+    const tdPhrase = document.createElement('td');
+    tdPhrase.textContent = phrase;
+    const tdBtn = document.createElement('td');
+    const btn = document.createElement('button');
+    btn.textContent = 'X';
+    btn.style.cssText = 'margin:0; padding: 5px;';
+    btn.addEventListener('click', () => row.remove());
+    tdBtn.appendChild(btn);
+
+    row.appendChild(tdPhrase);
+    row.appendChild(tdBtn);
+    tbody.appendChild(row);
+    document.getElementById('new-ai-phrase').value = '';
 }
 
 function unlockSecureDb() {

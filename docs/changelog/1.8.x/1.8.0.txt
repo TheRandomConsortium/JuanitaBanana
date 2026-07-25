@@ -1,0 +1,17 @@
+Juanita Banana v1.8.0 Changelog
+===============================
+
+Features & Enhancements:
+- Implemented AI Slop Detection & Neutralization Engine with configurable toggle (ai_slop_detection_enabled) and phrase list management (ai_slop_phrases) in juanita://config.
+- DOM AI Slop Neutralization: Injected client-side script scanning page content against disclaimers. Automatically appends design tokens (tokens.css) onto 3rd party web pages inside a self-contained style element, ensuring 100% legibility and token compliance.
+- Injected Neutralization Banner: Renders slop warning with direct link to juanita://ai-alternatives and explicit prompt encouraging users to use the top red BAN button.
+- Integrated Toxicity System: AI slop detections report directly to the script message handler, escalating page toxicity scores to trigger marquee warnings and contextual guilt-trip overlays.
+- Created juanita://ai-alternatives: Comprehensive privacy-first AI alternative guide covering:
+  * Confer (confer.to): Zero-retention TEE compute aggregator (Cons: Expensive).
+  * Proton AI (proton.me): Ecosystem assistant (Pros: Cheapest; Cons: No TEE, web searches not private).
+  * Venice (venice.ai): Permissionless private AI (Pros: Uncensored freedom; Cons: Open models can suck ass, sometimes edgy).
+  * Self-Hosting (Ollama/llama.cpp): 100% private offline FOSS (Cons: Requires dedicated GPU/RAM).
+  * Demystification Section: Explains Meta AI's ad profiling engine vs. Google/OpenAI TEE tech moves, and why DDG/Brave middleman proxies still process data on remote servers.
+  * Timestamp Disclaimer: "Written on 2026-07-21, contact us if yours is not listed."
+- Updated Documentation: Marked AI Slop Detection as Done in docs/spec/FUNCTIONALITIES.md and added 3 planned future features (Heuristic Slop Detection, Domain Reputation & EMA Redemption, Opt-in P2P DHT Config Sharing).
+- Verified 100% test suite pass rate (28/28 unit tests) and cleanliness compliance.

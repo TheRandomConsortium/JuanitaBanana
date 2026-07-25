@@ -440,7 +440,6 @@ pub fn save_credentials_for_domain(
     Ok(())
 }
 
-/// Save a full browser credential (username + password + email) captured from a login form.
 pub fn save_full_credentials(
     conn: &Connection,
     domain: &str,
@@ -468,7 +467,6 @@ pub fn save_full_credentials(
     Ok(())
 }
 
-/// Return all saved credentials as (domain, username, password, email)
 pub fn list_all_credentials(conn: &Connection) -> Vec<(String, String, String, String)> {
     let mut stmt = match conn
         .prepare("SELECT domain, username, password, email FROM passwords ORDER BY domain")
@@ -490,7 +488,6 @@ pub fn list_all_credentials(conn: &Connection) -> Vec<(String, String, String, S
     rows
 }
 
-/// Delete all stored credentials for a domain.
 pub fn delete_credentials_for_domain(conn: &Connection, domain: &str) -> Result<(), String> {
     conn.execute("DELETE FROM passwords WHERE domain = ?1", [domain])
         .map_err(|e| format!("Failed to delete credentials: {}", e))?;
