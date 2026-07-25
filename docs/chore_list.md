@@ -91,7 +91,7 @@ This document maintains the tracking of known technical chores, API deprecations
     - If it is `"home"`, create/open a new tab pointing to `juanita://home`.
     - If it is `"survive"`, close the browser window (or trigger application quit).
 
-### 16. Intelligent Root-Folder Path Resolution Macro & Marker Config
+### 16. Intelligent Root-Folder Path Resolution Macro & Marker Config (Done)
 - **Files:** `build.rs`, `src/util/macros.rs`, scannable directory markers (`.scannable` or config file), internal handlers, engines.
 - **Chore:** Eliminate puke-inducing nested relative path traversals (`../../../`, `../../../../`) across `include_str!` and `include_bytes!` calls by introducing a compile-time path resolution macro that deduces file locations using `@rootfolder, file_name` syntax (e.g., `@templates, "config.html"` or `@assets, "wojak.jpg"`).
 - **Specification & Action Plan:**
