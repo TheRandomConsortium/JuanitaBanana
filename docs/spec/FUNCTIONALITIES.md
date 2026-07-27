@@ -147,6 +147,14 @@
 | **Non-blocking resolver fallback retry** | 🔭 Future | Once a resolver in the chain fails its first attempt, allow subsequent resolvers to start trying immediately (liberating the chain) while the initial resolver continues retrying in the background. If it eventually succeeds, it loads; if another resolver completes first or the user navigates away, background retries are stopped. |
 | **Navbar resolver override dropdown** | 🔭 Future | Provide a dropdown selector on the navbar showing the available resolvers + search, enabling the user to perform a quick one-off override for the current navigation. |
 
+### Decentralised Web-of-Trust & Handshake SSL (`randbotd` Integration)
+
+| Feature | Status | Notes |
+|---|---|---|
+| **Handshake SSL Resolution (`randbotd`)** | 📋 Planned | Native TLS/SSL transport resolution for `.hns`, `.onion`, and clearnet domains using the `randbotd` peer-to-peer Web-of-Trust daemon instead of ICANN Certificate Authorities. |
+| **4-Tier Client Trust Policy** | 📋 Planned | Client-side security verification based on `randbotd` Trustworthy (TW) scores: <br>• **Unrecognized CAs:** Reuses security warning overlay with tailored warning (*"Unverified CA authority detected..."*); entering tracks the CA locally to evaluate trust over time. <br>• **Recognized & Untrustworthy (UTW):** Triggers security warning overlay with tailored alert; user override permitted. <br>• **Recognized & Neutral (TW 50–80):** Direct access allowed with a **Wary Warning Icon** in the URL bar and increased micro-questionnaire probability. <br>• **Recognized & High Trust (TW > 80):** Direct access with clean green SSL shield. |
+| **Opt-in Random Micro-Questionnaires** | 📋 Planned | Contextual random browser prompt: *"Help us determine if this CA is trustworthy — vote this domain/CA"*, feeding user trust attestations back to `randbotd` P2P nodes. |
+
 ### Phase 4 — Native Rust HNS + in-process `arti-client` (🔭 Future)
 
 **Goal: eliminate all interim workarounds from the current architecture.**

@@ -4,3 +4,6 @@
 [submodule "juanita-companion"]
 	path = juanita-companion
 	url = https://github.com/TheRandomConsortium/JuanitaBananaCompanion.git
+[submodule "randbotd"]
+	path = randbotd
+	url = https://github.com/TheRandomConsortium/randbotd.git
