@@ -347,6 +347,10 @@ pub fn config_page_html(
         )
         .replace("{protocol_stacking_checked}", protocol_stacking_checked)
         .replace(
+            "{stacking_venn_b64}",
+            &crate::util::image::get_stacking_venn_diagram_b64(),
+        )
+        .replace(
             "{overlay_default_tor_selected}",
             overlay_default_tor_selected,
         )
