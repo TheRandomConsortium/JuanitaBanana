@@ -1,0 +1,12 @@
+Juanita Banana v2.0.0 Major Release Changelog
+=============================================
+
+Overlay Network Milestone: Feature Complete!
+- I2P Garlic Routing (.i2p Eepsites): Full integration of I2P transport daemon support (i2p-rs / Java I2P router) and I2pResolver returning sentinel IP 127.0.0.3.
+- Self-Contained Router Fallback: Added `scripts/sh/build_i2p.sh` performing automated headless IzPack installation of I2P v2.13.0 (or copying system router binaries into `bin/`) so Juanita Banana operates completely self-contained.
+- SOCKS5 Proxy Helper Expansion: Updated local SOCKS5 proxy helper (127.0.0.1:9151) to handle dynamic multi-overlay routing for Handshake (.hns), Tor (.onion), I2P (.i2p), and clearnet traffic.
+- Dual Route-All Transport Selection: Support for concurrent tor_route_all and i2p_route_all configurations. When protocol stacking is OFF, users can select their preferred default transport (Tor vs. I2P) for clearnet and Handshake traffic.
+- Overlay Protocol Stacking: Configurable I2P-over-Tor transport stacking, routing garlic payloads through onion circuits.
+- Resolver Priority & Migration: Automatically migrates legacy config resolver chains to insert "I2P" into resolver_order (Handshake -> Onion -> I2P -> System).
+- Updated Specifications: Marked I2P as Done in docs/spec/FUNCTIONALITIES.md and docs/spec/OVERLAY_NETWORKS.md. Documented Phase 6 commitment to upstream i2p-rs contributions if needed for in-process garlic routing.
+- Quality Assurance: 100% test suite pass rate (31/31 unit tests), zero Clippy compiler warnings (-D warnings), and strict cleanliness compliance (<= 9 items per folder, <= 500 lines per file).

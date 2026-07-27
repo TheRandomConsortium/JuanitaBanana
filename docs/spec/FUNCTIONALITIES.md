@@ -131,8 +131,8 @@
 | Feature | Status | Notes |
 |---|---|---|
 | **Tor (onion routing)** | ✅ Done | Integrated via subprocess `arti` — Tor Project's official Rust binary. No C dependency. Activating it: starts arti SOCKS5 proxy on `127.0.0.1:9150`; registers the `.onion` resolver; configures WebKit via local SOCKS5 helper (port `9151`); optionally routes all clearnet through Tor exit nodes. |
-| **Local SOCKS5 Proxy Helper** (interim) | ⚠️ Deprecated | Introduced in v1.6.8 to fix WebKit's IP-as-hostname SOCKS5 delegation failures with `arti`. Sits between WebKit and `arti`, resolves HNS domains locally, converts IP strings to native addresses. **Will be removed in Phase 4** when `arti-client` is embedded in-process — see `docs/OVERLAY_NETWORKS.md`. |
-| **I2P (garlic routing)** | 🔭 Future | Integrated via `i2p-rs` (Rust) when stable; subprocess fallback to Java I2P router initially. Garlic routing bundles multiple messages per payload — harder to traffic-analyse than Tor. Activating it: registers the `.i2p` resolver; optionally routes clearnet via I2P outproxies. |
+| **Local SOCKS5 Proxy Helper** (interim) | ⚠️ Deprecated | Introduced in v1.6.8 to fix WebKit's IP-as-hostname SOCKS5 delegation failures with `arti`. Sits between WebKit, `arti`, and I2P SOCKS, resolves HNS domains locally, converts IP strings to native addresses. **Will be removed in Phase 4/6** when `arti-client` / `i2p-rs` are embedded in-process — see `docs/OVERLAY_NETWORKS.md`. |
+| **I2P (garlic routing)** | ✅ Done | Integrated via `I2pResolver` (port `4447` SOCKS proxy) and local proxy helper (`9151`). Supports `.i2p` eepsites, optional clearnet/HNS outproxying, protocol stacking (`I2P over Tor`), and dual Route-All transport defaults. |
 
 ### Resolver Stack
 
@@ -141,7 +141,7 @@
 | **BIOS-style resolver chain** | ✅ Done | Priority-ordered chain: first resolver with an authoritative answer wins, rest skipped. Default order: Handshake → System DNS. Fully user-reorderable in `juanita://config`. |
 | **Handshake (HNS) resolver** | ✅ Done | Permissionless blockchain root DNS, parallel to ICANN. Integrated via local `hnsd` daemon managed automatically by the browser. |
 | **Onion resolver** | ✅ Done | Resolves `.onion` v3 addresses when Tor transport is active. Returns sentinel `127.0.0.2` so `policy.rs` routes via the arti SOCKS5 proxy (no DNS lookup — `.onion` addresses are self-authenticating). |
-| **I2P resolver** | 🔭 Future | Resolves `.i2p` eepsite addresses when I2P transport is active. |
+| **I2P resolver** | ✅ Done | Resolves `.i2p` eepsite addresses when I2P transport is active. Returns sentinel `127.0.0.3` so `policy.rs` routes via I2P SOCKS proxy. |
 | **Namespace collision handling** | ✅ Done | HNS and ICANN can both define same names. Resolver priority chain is the user's tiebreak — whoever is first in your chain is authoritative for you. |
 | **Per-domain pinning rules** | 🔭 Future | User rules in config: `example.bit → always Handshake`, `*.onion → always Tor`. Pinned domains bypass the chain entirely. |
 | **Non-blocking resolver fallback retry** | 🔭 Future | Once a resolver in the chain fails its first attempt, allow subsequent resolvers to start trying immediately (liberating the chain) while the initial resolver continues retrying in the background. If it eventually succeeds, it loads; if another resolver completes first or the user navigates away, background retries are stopped. |
@@ -159,18 +159,21 @@
 
 **Goal: eliminate all interim workarounds from the current architecture.**
 
-| Component removed | Replacement |
-|---|---|
-| `src/tor/proxy.rs` — local SOCKS5 helper (port 9151) | `arti-client` intercepts WebKit connections natively |
-| `arti` subprocess + SOCKS5 daemon (port 9150) | `arti-client` crate, on-demand circuit management |
-| `hnsd` C subprocess | Native Rust SPV implementation (in-process) |
+1. **Port `hnsd` to native Rust**: Replace the C daemon with an in-process SPV client. Header sync and resolution happen inside the browser process. Zero subprocess management, zero C dependencies.
+2. **Embed `arti-client`**: Replace the `arti` subprocess with the `arti-client` crate. Open Tor circuits directly via Rust streams.
+3. **Delete `proxy.rs` and local helper**: WebKit connects natively through `arti-client`. No local proxy ports, no IP-as-hostname workarounds.
+4. **HNS-over-Tor**: Header sync and recursive nameserver queries are routed natively through `arti-client` circuits.
 
-Current hop chain:
-`WebKit → helper :9151 → arti :9150 → Tor exit → destination`
-After Phase 4:
-`WebKit → arti-client (in-process) → Tor exit → destination`
+### Phase 6 — Native Rust I2P Integration (`i2p-rs` / `i2pd`) (🔭 Future)
 
-HNS subdomain nameserver queries also move through Tor circuits for the first time, achieving **full HNS-over-Tor privacy** (currently they still go over clearnet because `hnsd` is a C subprocess with no Tor circuit awareness).
+**Goal: achieve zero-external-subprocess garlic routing natively in Rust without Java dependencies.**
+
+1. **Native C++/Rust Architecture (`i2pd` reference)**: Leverages `i2pd` (PurpleI2P's lightweight C++ I2P daemon) as the core protocol reference for eliminating Java dependencies.
+2. **Embed `i2p-rs`**: Integrate native Rust garlic routing in-process within Juanita Banana.
+3. **Upstream Contribution Commitment**: If `i2p-rs` is not fully mature when we reach Phase 6, we will **contribute upstream to `i2p-rs` and mature it ourselves** (drawing from `i2pd` C++ design) to guarantee zero-subprocess garlic routing.
+4. **HNS-over-I2P**: Route Handshake SPV header sync and nameserver queries through native I2P client tunnels.
+
+---
 
 ### Niche Protocols (Under Evaluation)
 

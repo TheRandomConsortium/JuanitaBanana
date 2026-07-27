@@ -251,6 +251,34 @@
             </div>
 
             <div class="jb-card">
+                <h3 class="jb-card-item-title">🧄 I2P (.i2p) Garlic Routing & Overlay Transport</h3>
+                <label class="jb-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <input type="checkbox" id="i2p-enabled" {i2p_enabled_checked} onchange="document.getElementById('i2p-route-all').disabled = !this.checked;">
+                    Enable I2P Transport Daemon (i2p-rs / Java I2P router)
+                </label>
+                <label class="jb-label" style="display: flex; align-items: center; gap: 8px; margin-left: 20px;">
+                    <input type="checkbox" id="i2p-route-all" {i2p_route_all_checked} {i2p_enabled_checked_disabled}>
+                    Route All Traffic Through I2P Outproxies
+                </label>
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--jb-border-subtle, #27272a);">
+                    <label class="jb-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <input type="checkbox" id="protocol-stacking" {protocol_stacking_checked}>
+                        Enable Overlay Protocol Stacking (I2P over Tor)
+                    </label>
+                    <div class="jb-form-group" style="margin-top: 10px;">
+                        <label class="jb-label">Default Clearnet/HNS Overlay Transport (when stacking is OFF & both Route-All active):</label>
+                        <select id="overlay-default-transport" class="jb-input" style="max-width: 200px;">
+                            <option value="tor" {overlay_default_tor_selected}>Tor (Onion Routing)</option>
+                            <option value="i2p" {overlay_default_i2p_selected}>I2P (Garlic Routing)</option>
+                        </select>
+                    </div>
+                </div>
+                <p class="jb-text-secondary" style="margin-top: 8px;">
+                    I2P SOCKS proxy: 127.0.0.1:4447 · .i2p resolver registered when enabled.
+                </p>
+            </div>
+
+            <div class="jb-card">
                 <h3 class="jb-card-item-title">Priority Order</h3>
                 <p class="jb-text-secondary">Configure the priority-ordered resolver chain. First resolver is queried first, falling back sequentially.</p>
                 <ul id="resolver-list" style="list-style: none; padding: 0; margin: 0;">

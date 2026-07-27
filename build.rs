@@ -52,6 +52,29 @@ fn main() {
             }
         }
     }
+
+    // ── I2P (Garlic transport) ──────────────────────────────────────────────
+    let build_i2p = std::env::var("CARGO_FEATURE_I2P").is_ok();
+    if build_i2p {
+        println!("cargo:rerun-if-changed=scripts/sh/build_i2p.sh");
+        let has_bin = std::path::Path::new("bin/i2prouter").exists()
+            || std::path::Path::new("bin/i2p.jar").exists()
+            || std::path::Path::new("bin/i2p-rs").exists();
+        if !has_bin {
+            let status = Command::new("bash")
+                .arg("./scripts/sh/build_i2p.sh")
+                .status()
+                .expect("Failed to execute scripts/sh/build_i2p.sh");
+
+            if !status.success() {
+                eprintln!(
+                    "WARNING: build_i2p.sh failed (exit {:?}). \
+                     I2P transport will not function until `i2prouter` or `i2p.jar` is available in bin/ or PATH.",
+                    status.code()
+                );
+            }
+        }
+    }
 }
 
 fn generate_root_path_macros() {

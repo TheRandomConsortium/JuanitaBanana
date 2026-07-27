@@ -39,6 +39,10 @@ pub struct AppConfig {
     pub handshake_enabled: bool,
     pub tor_enabled: bool,
     pub tor_route_all: bool,
+    pub i2p_enabled: bool,
+    pub i2p_route_all: bool,
+    pub protocol_stacking: bool,
+    pub overlay_default_transport: String,
     pub guilt_trip_enabled: bool,
     pub guilt_trip_opacity: f64,
     pub guilt_trip_threshold: usize,
@@ -126,11 +130,16 @@ impl Default for AppConfig {
             resolver_order: vec![
                 "Handshake".to_string(),
                 "Onion".to_string(),
+                "I2P".to_string(),
                 "System".to_string(),
             ],
             handshake_enabled: true,
             tor_enabled: false,
             tor_route_all: false,
+            i2p_enabled: false,
+            i2p_route_all: false,
+            protocol_stacking: false,
+            overlay_default_transport: "tor".to_string(),
             guilt_trip_enabled: false,
             guilt_trip_opacity: 0.015,
             guilt_trip_threshold: 10,
@@ -219,6 +228,18 @@ impl AppConfig {
                 cfg.resolver_order.insert(pos, "Onion".to_string());
             } else {
                 cfg.resolver_order.push("Onion".to_string());
+            }
+            cfg.save();
+        }
+        if !cfg.resolver_order.iter().any(|r| r == "I2P") {
+            if let Some(pos) = cfg.resolver_order.iter().position(|r| r == "Onion") {
+                cfg.resolver_order.insert(pos + 1, "I2P".to_string());
+            } else if let Some(pos) = cfg.resolver_order.iter().position(|r| r == "Handshake") {
+                cfg.resolver_order.insert(pos + 1, "I2P".to_string());
+            } else if let Some(pos) = cfg.resolver_order.iter().position(|r| r == "System") {
+                cfg.resolver_order.insert(pos, "I2P".to_string());
+            } else {
+                cfg.resolver_order.push("I2P".to_string());
             }
             cfg.save();
         }

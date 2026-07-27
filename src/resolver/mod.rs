@@ -3,6 +3,7 @@ use std::net::IpAddr;
 
 pub mod helpers;
 pub mod hns;
+pub mod i2p;
 pub mod onion;
 pub mod system;
 
@@ -10,6 +11,7 @@ pub mod system;
 pub use helpers::{clean_host, restore_original_domain_in_uri};
 pub use hns::daemon::{init_resolver, shutdown_resolver};
 pub use hns::HandshakeResolver;
+pub use i2p::I2pResolver;
 pub use onion::OnionResolver;
 pub use system::SystemResolver;
 
@@ -28,7 +30,12 @@ pub fn resolve_domain_with_chain(domain: &str) -> Result<(IpAddr, String), Strin
 
     let config = AppConfig::load();
     let order = if config.resolver_order.is_empty() {
-        vec!["Handshake".to_string(), "System".to_string()]
+        vec![
+            "Handshake".to_string(),
+            "Onion".to_string(),
+            "I2P".to_string(),
+            "System".to_string(),
+        ]
     } else {
         config.resolver_order.clone()
     };
@@ -41,6 +48,9 @@ pub fn resolve_domain_with_chain(domain: &str) -> Result<(IpAddr, String), Strin
             }
             "Onion" => {
                 resolvers.push(Box::new(OnionResolver));
+            }
+            "I2P" => {
+                resolvers.push(Box::new(I2pResolver));
             }
             "System" => {
                 resolvers.push(Box::new(SystemResolver));

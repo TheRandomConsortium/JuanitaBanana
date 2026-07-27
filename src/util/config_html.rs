@@ -265,8 +265,27 @@ pub fn config_page_html(
 
     let tor_enabled_checked = if config.tor_enabled { "checked" } else { "" };
     let tor_route_all_checked = if config.tor_route_all { "checked" } else { "" };
-    // The route-all checkbox should be disabled when Tor itself is not enabled
     let tor_enabled_checked_disabled = if config.tor_enabled { "" } else { "disabled" };
+
+    let i2p_enabled_checked = if config.i2p_enabled { "checked" } else { "" };
+    let i2p_route_all_checked = if config.i2p_route_all { "checked" } else { "" };
+    let i2p_enabled_checked_disabled = if config.i2p_enabled { "" } else { "disabled" };
+    let protocol_stacking_checked = if config.protocol_stacking {
+        "checked"
+    } else {
+        ""
+    };
+
+    let overlay_default_tor_selected = if config.overlay_default_transport == "tor" {
+        "selected"
+    } else {
+        ""
+    };
+    let overlay_default_i2p_selected = if config.overlay_default_transport == "i2p" {
+        "selected"
+    } else {
+        ""
+    };
 
     let guilt_trip_enabled_checked = if config.guilt_trip_enabled {
         "checked"
@@ -319,6 +338,21 @@ pub fn config_page_html(
         .replace(
             "{tor_enabled_checked_disabled}",
             tor_enabled_checked_disabled,
+        )
+        .replace("{i2p_enabled_checked}", i2p_enabled_checked)
+        .replace("{i2p_route_all_checked}", i2p_route_all_checked)
+        .replace(
+            "{i2p_enabled_checked_disabled}",
+            i2p_enabled_checked_disabled,
+        )
+        .replace("{protocol_stacking_checked}", protocol_stacking_checked)
+        .replace(
+            "{overlay_default_tor_selected}",
+            overlay_default_tor_selected,
+        )
+        .replace(
+            "{overlay_default_i2p_selected}",
+            overlay_default_i2p_selected,
         )
         .replace("{guilt_trip_enabled_checked}", guilt_trip_enabled_checked)
         .replace(
