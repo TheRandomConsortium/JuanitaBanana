@@ -362,6 +362,7 @@ ratio needs evaluation before committing to support.
 | **Yggdrasil** | IPv6 mesh | Encrypted mesh overlay, no special TLD; interesting for LAN mesh routing |
 | **GNUnet** | `.gnu` | GNU's fully decentralised network; very niche, academic |
 | **ZeroNet** | N/A | BitTorrent + Bitcoin blockchain; browser-based, less relevant for native |
+| **Gemini / Gopher** | `gemini://`, `gopher://` | Non-HTTP application protocols. Clearnet Gemini (port 1965) is typically rejected by default Tor exit relay policies (`ExitPolicy` restricted to 80/443). However, Gemini running **inside `.onion` hidden services or `.i2p` eepsites** functions 100% end-to-end without exit nodes or port restrictions. |
 
 If you know of another protocol that belongs here, open an issue.
 
