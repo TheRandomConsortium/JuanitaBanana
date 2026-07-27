@@ -91,15 +91,10 @@ This document maintains the tracking of known technical chores, API deprecations
     - If it is `"home"`, create/open a new tab pointing to `juanita://home`.
     - If it is `"survive"`, close the browser window (or trigger application quit).
 
-### 16. Intelligent Root-Folder Path Resolution Macro & Marker Config (Done)
-- **Files:** `build.rs`, `src/util/macros.rs`, scannable directory markers (`.scannable` or config file), internal handlers, engines.
-- **Chore:** Eliminate puke-inducing nested relative path traversals (`../../../`, `../../../../`) across `include_str!` and `include_bytes!` calls by introducing a compile-time path resolution macro that deduces file locations using `@rootfolder, file_name` syntax (e.g., `@templates, "config.html"` or `@assets, "wojak.jpg"`).
-- **Specification & Action Plan:**
-  - **Scannable Directory Markers & Config:**
-    - Support marking root folders (`templates/`, `assets/`, `scripts/`, `docs/`, `src/`) as scannable via a `.scannable` dotfile or a central configuration manifest.
-    - Dotfile / Config metadata settings:
-      - `inclusion_type`: `string`, `bytes`, or `both`
-      - `search_mode`: `recursive` or `folderonly`
-  - **Build-Time / Macro Recursive Directory Map:**
-    - Scan marked folders recursively at build time / macro evaluation time to map simple filenames (e.g. `config.html`) to their exact nested relative paths (e.g. `templates/pages/config.html`).
-    - Expose macros (`include_root_str!`, `include_root_bytes!`) feeding from this recursive map so callers use clean `@rootfolder, file_name` syntax anywhere in the codebase.
+### 17. Suppress Connection Error Screen on Downloads Navigating in New Tabs
+- **Files:** `src/browsing/policy.rs`, `src/browsing/tabs/tab.rs`, `src/util/downloads.rs`
+- **Chore:** When a user clicks a download link or navigation that opens a new tab (`target="_blank"`), WebKit initiates page navigation before classifying the response as a binary file download. When WebKit transfers the policy decision to the `DownloadManager` and cancels the tab's page navigation, WebKit emits a navigation error / load failure signal, causing the newly opened tab to display a confusing "Connection Error / Server Not Found" error screen even though the download itself successfully started in the background.
+- **Action Plan:**
+  - Intercept download policy decisions in `policy.rs` and `tab.rs`.
+  - When a navigation is cancelled because it was converted into an active download, suppress loading the error template (`proxy.html` / `tls.html`).
+  - Either close the newly spawned tab automatically if it was opened solely for the download, or load `juanita://downloads` to present the active download progress cleanly instead of a confusing error screen.
