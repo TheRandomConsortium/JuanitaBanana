@@ -1,3 +1,5 @@
+include!(concat!(env!("OUT_DIR"), "/generated_root_macros.rs"));
+
 pub mod assets;
 pub use assets::font;
 pub use assets::image;

@@ -254,8 +254,8 @@ pub fn config_page_html(
     }
 
     let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
-    let html_template = include_str!("../../templates/pages/config.html");
-    let js_content = include_str!("../../scripts/js/config.js");
+    let html_template = include_root_str!(@templates, "config.html");
+    let js_content = include_root_str!(@scripts, "config.js");
 
     let handshake_enabled_checked = if config.handshake_enabled {
         "checked"

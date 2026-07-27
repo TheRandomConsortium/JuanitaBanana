@@ -23,7 +23,7 @@ impl InternalPage for AiAlternativesPage {
     }
 
     fn handle_policy(&self, _uri: &str, ctx: &PageContext) -> bool {
-        let html = include_str!("../../../../templates/pages/ai_alternatives.html").replace(
+        let html = include_root_str!(@templates, "ai_alternatives.html").replace(
             "{shared_css}",
             crate::browsing::internal::SHARED_CSS.as_str(),
         );

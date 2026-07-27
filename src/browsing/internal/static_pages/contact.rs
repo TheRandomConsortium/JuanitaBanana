@@ -22,7 +22,7 @@ impl InternalPage for ContactPage {
 
     fn handle_policy(&self, _uri: &str, ctx: &PageContext) -> bool {
         let b64_icon = crate::util::image::get_icon_b64();
-        let html = include_str!("../../../../templates/pages/contact.html")
+        let html = include_root_str!(@templates, "contact.html")
             .replace(
                 "{shared_css}",
                 crate::browsing::internal::SHARED_CSS.as_str(),

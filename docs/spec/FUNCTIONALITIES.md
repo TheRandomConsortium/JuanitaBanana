@@ -118,6 +118,7 @@
 | **DPA Online Form Auto-Submission** | 📋 Planned | Auto-submit the signed `.p7m` complaint directly to the national DPA's online portal by parsing their HTML submission forms and auto-filling pre-populated fields from the generated report. Target authorities: AEPD, Garante, CNIL, BfDI, ICO, DPC, APD/GBA, EDPB. |
 | **Future Auto-reporting Option** | 📋 Planned | Auto-reporting of reincident domains to Supervisory Authorities by parsing inbox confirmation emails via POP/IMAP and auto-submitting complaints. |
 | **POP3 Mail Client & Secure Sandbox (`juanita://mail`)** | 📋 Planned | Fetch incoming email via POP3, display it natively in Juanita with contextual *Add Ban* / *Unsubscribe* banners, and open attachments in an isolated Bubblewrap (`bwrap`) secure sandbox. |
+| **DHT Software Certificate Sharing (Juanita Companion Age-Gate Bypass)** | ⚠️ Deprecated | Shared identity pool over a Distributed Hash Table (DHT) via JuanitaCompanion to bypass EU digital majority / age-verification restrictions (under-15 bans) by keeping private keys (FNMT, etc.) on a root mobile device and remotely signing CAdES/XAdES challenges. **Marked as Deprecated before implementation:** State regulators are already moving to mandate hardware-bound KYC (1 certificate = 1 device enforced via Secure Elements), rendering software cert sharing vectors obsolete. |
 
 ---
 
@@ -145,6 +146,14 @@
 | **Per-domain pinning rules** | 🔭 Future | User rules in config: `example.bit → always Handshake`, `*.onion → always Tor`. Pinned domains bypass the chain entirely. |
 | **Non-blocking resolver fallback retry** | 🔭 Future | Once a resolver in the chain fails its first attempt, allow subsequent resolvers to start trying immediately (liberating the chain) while the initial resolver continues retrying in the background. If it eventually succeeds, it loads; if another resolver completes first or the user navigates away, background retries are stopped. |
 | **Navbar resolver override dropdown** | 🔭 Future | Provide a dropdown selector on the navbar showing the available resolvers + search, enabling the user to perform a quick one-off override for the current navigation. |
+
+### Decentralised Web-of-Trust & Handshake SSL (`randbotd` Integration)
+
+| Feature | Status | Notes |
+|---|---|---|
+| **Handshake SSL Resolution (`randbotd`)** | 📋 Planned | Native TLS/SSL transport resolution for `.hns`, `.onion`, and clearnet domains using the `randbotd` peer-to-peer Web-of-Trust daemon instead of ICANN Certificate Authorities. |
+| **4-Tier Client Trust Policy** | 📋 Planned | Client-side security verification based on `randbotd` Trustworthy (TW) scores: <br>• **Unrecognized CAs:** Reuses security warning overlay with tailored warning (*"Unverified CA authority detected..."*); entering tracks the CA locally to evaluate trust over time. <br>• **Recognized & Untrustworthy (UTW):** Triggers security warning overlay with tailored alert; user override permitted. <br>• **Recognized & Neutral (TW 50–80):** Direct access allowed with a **Wary Warning Icon** in the URL bar and increased micro-questionnaire probability. <br>• **Recognized & High Trust (TW > 80):** Direct access with clean green SSL shield. |
+| **Opt-in Random Micro-Questionnaires** | 📋 Planned | Contextual random browser prompt: *"Help us determine if this CA is trustworthy — vote this domain/CA"*, feeding user trust attestations back to `randbotd` P2P nodes. |
 
 ### Phase 4 — Native Rust HNS + in-process `arti-client` (🔭 Future)
 

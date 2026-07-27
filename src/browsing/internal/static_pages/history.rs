@@ -9,7 +9,7 @@ impl InternalPage for HistoryPage {
     }
 
     fn handle_input(&self, _input: &str, ctx: &PageContext) {
-        let html = include_str!("../../../../templates/pages/history.html").replace(
+        let html = include_root_str!(@templates, "history.html").replace(
             "{shared_css}",
             crate::browsing::internal::SHARED_CSS.as_str(),
         );
@@ -26,7 +26,7 @@ impl InternalPage for HistoryPage {
     }
 
     fn handle_policy(&self, _uri: &str, ctx: &PageContext) -> bool {
-        let html = include_str!("../../../../templates/pages/history.html").replace(
+        let html = include_root_str!(@templates, "history.html").replace(
             "{shared_css}",
             crate::browsing::internal::SHARED_CSS.as_str(),
         );
