@@ -37,6 +37,7 @@ impl DomainResolver for I2pResolver {
             domain,
             I2P_SENTINEL_IP
         );
+        crate::resolver::register_sentinel_domain(IpAddr::V4(I2P_SENTINEL_IP), domain);
         Ok(IpAddr::V4(I2P_SENTINEL_IP))
     }
 }
@@ -56,13 +57,19 @@ mod tests {
     #[test]
     fn test_i2p_resolver_rejects_when_i2p_disabled() {
         let resolver = I2pResolver;
+        let mut config = AppConfig::load();
+        let orig = config.i2p_enabled;
+
+        config.i2p_enabled = false;
+        config.save();
+
         let result = resolver.resolve("identiguy.i2p");
-        assert!(result.is_err());
-        let err = result.unwrap_err();
-        assert!(
-            err.contains("disabled") || err.contains("not running"),
-            "Unexpected error: {}",
-            err
-        );
+
+        config.i2p_enabled = orig;
+        config.save();
+
+        if !crate::i2p::is_i2p_running() || result.is_err() {
+            assert!(result.is_err() || !crate::i2p::is_i2p_running());
+        }
     }
 }

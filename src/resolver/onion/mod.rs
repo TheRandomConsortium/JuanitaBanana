@@ -52,6 +52,7 @@ impl DomainResolver for OnionResolver {
             domain,
             ONION_SENTINEL_IP
         );
+        crate::resolver::register_sentinel_domain(IpAddr::V4(ONION_SENTINEL_IP), domain);
         Ok(IpAddr::V4(ONION_SENTINEL_IP))
     }
 }

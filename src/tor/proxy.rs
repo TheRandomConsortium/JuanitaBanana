@@ -18,6 +18,7 @@
 //! into `arti-client` circuits without any proxy intermediary.
 
 use crate::log;
+use crate::tor::i2p_helper::{handle_i2p_connection, tunnel_streams, DestHost};
 use crate::util::config::AppConfig;
 use std::io::{Read, Write};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
@@ -55,7 +56,7 @@ pub fn start_local_proxy() {
                 Ok(stream) => {
                     thread::spawn(move || {
                         if let Err(e) = handle_connection(stream) {
-                            log!(Debug, TOR, "Local proxy connection error: {}", e);
+                            log!(Error, TOR, "Local SOCKS5 proxy error: {}", e);
                         }
                     });
                 }
@@ -133,7 +134,12 @@ fn handle_connection(mut client: TcpStream) -> Result<(), String> {
                 .map_err(|e| format!("Failed to read port: {}", e))?;
             let port = u16::from_be_bytes(port_bytes);
             let ip = IpAddr::V4(Ipv4Addr::new(ipv4[0], ipv4[1], ipv4[2], ipv4[3]));
-            (DestHost::Ip(ip), port)
+            let host = if let Some(domain) = crate::resolver::get_sentinel_domain(&ip) {
+                DestHost::Domain(domain)
+            } else {
+                DestHost::Ip(ip)
+            };
+            (host, port)
         }
         0x03 => {
             // Domain Name / Hostname string
@@ -156,7 +162,12 @@ fn handle_connection(mut client: TcpStream) -> Result<(), String> {
 
             // Try to parse string as an IP address
             if let Ok(ip) = domain.parse::<IpAddr>() {
-                (DestHost::Ip(ip), port)
+                let host = if let Some(domain) = crate::resolver::get_sentinel_domain(&ip) {
+                    DestHost::Domain(domain)
+                } else {
+                    DestHost::Ip(ip)
+                };
+                (host, port)
             } else {
                 (DestHost::Domain(domain), port)
             }
@@ -173,7 +184,12 @@ fn handle_connection(mut client: TcpStream) -> Result<(), String> {
                 .map_err(|e| format!("Failed to read port: {}", e))?;
             let port = u16::from_be_bytes(port_bytes);
             let ip = IpAddr::V6(Ipv6Addr::from(ipv6));
-            (DestHost::Ip(ip), port)
+            let host = if let Some(domain) = crate::resolver::get_sentinel_domain(&ip) {
+                DestHost::Domain(domain)
+            } else {
+                DestHost::Ip(ip)
+            };
+            (host, port)
         }
         _ => {
             // Address type not supported
@@ -188,8 +204,8 @@ fn handle_connection(mut client: TcpStream) -> Result<(), String> {
     let target_ip = match dest_host {
         DestHost::Ip(ip) => Some(ip),
         DestHost::Domain(ref domain) => {
-            if domain.ends_with(".onion") {
-                // Do not resolve .onion domains locally; let Tor handle them
+            if domain.ends_with(".onion") || domain.ends_with(".i2p") {
+                // Do not resolve .onion or .i2p domains locally; let Tor/I2P handle them
                 None
             } else {
                 log!(Debug, TOR, "Local SOCKS5 proxy resolving '{}'...", domain);
@@ -202,7 +218,13 @@ fn handle_connection(mut client: TcpStream) -> Result<(), String> {
                             domain,
                             resolved_ip
                         );
-                        Some(resolved_ip)
+                        if resolved_ip == crate::resolver::onion::ONION_SENTINEL_IP
+                            || resolved_ip == crate::resolver::i2p::I2P_SENTINEL_IP
+                        {
+                            None
+                        } else {
+                            Some(resolved_ip)
+                        }
                     }
                     Err(e) => {
                         log!(
@@ -268,10 +290,13 @@ fn handle_connection(mut client: TcpStream) -> Result<(), String> {
         }
     };
 
+    if matches!(transport_choice, OverlayTransport::I2p) {
+        return handle_i2p_connection(&mut client, &dest_host, target_ip, dest_port);
+    }
+
     let target_socks_port = match transport_choice {
         OverlayTransport::Tor => Some(crate::tor::ARTI_SOCKS_PORT),
-        OverlayTransport::I2p => Some(crate::i2p::I2P_SOCKS_PORT),
-        OverlayTransport::Direct => None,
+        OverlayTransport::I2p | OverlayTransport::Direct => None,
     };
 
     let mut outbound = if let Some(proxy_port) = target_socks_port {
@@ -420,44 +445,5 @@ fn handle_connection(mut client: TcpStream) -> Result<(), String> {
         .map_err(|e| format!("Failed to send success response: {}", e))?;
 
     // 6. Bidirectional Copy Tunneling
-    let mut client_clone = client
-        .try_clone()
-        .map_err(|e| format!("Failed to clone client socket: {}", e))?;
-    let mut outbound_clone = outbound
-        .try_clone()
-        .map_err(|e| format!("Failed to clone outbound socket: {}", e))?;
-
-    let t = thread::spawn(move || {
-        let mut buf = [0u8; 8192];
-        while let Ok(n) = client_clone.read(&mut buf) {
-            if n == 0 {
-                break;
-            }
-            if outbound_clone.write_all(&buf[..n]).is_err() {
-                break;
-            }
-        }
-        let _ = outbound_clone.shutdown(std::net::Shutdown::Both);
-        let _ = client_clone.shutdown(std::net::Shutdown::Both);
-    });
-
-    let mut buf = [0u8; 8192];
-    while let Ok(n) = outbound.read(&mut buf) {
-        if n == 0 {
-            break;
-        }
-        if client.write_all(&buf[..n]).is_err() {
-            break;
-        }
-    }
-    let _ = client.shutdown(std::net::Shutdown::Both);
-    let _ = outbound.shutdown(std::net::Shutdown::Both);
-    let _ = t.join();
-
-    Ok(())
-}
-
-enum DestHost {
-    Ip(IpAddr),
-    Domain(String),
+    tunnel_streams(&mut client, &mut outbound)
 }

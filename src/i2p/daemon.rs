@@ -69,6 +69,7 @@ pub fn init_i2p() {
     let config = AppConfig::load();
     if !config.i2p_enabled {
         log!(Info, I2P, "I2P transport is disabled in configuration");
+        shutdown_i2p();
         return;
     }
 

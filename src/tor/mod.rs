@@ -16,6 +16,8 @@
 #[allow(deprecated)]
 pub mod daemon;
 #[allow(deprecated)]
+pub mod i2p_helper;
+#[allow(deprecated)]
 pub mod proxy;
 #[allow(deprecated)]
 pub mod webcontext;

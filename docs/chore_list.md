@@ -98,3 +98,11 @@ This document maintains the tracking of known technical chores, API deprecations
   - Intercept download policy decisions in `policy.rs` and `tab.rs`.
   - When a navigation is cancelled because it was converted into an active download, suppress loading the error template (`proxy.html` / `tls.html`).
   - Either close the newly spawned tab automatically if it was opened solely for the download, or load `juanita://downloads` to present the active download progress cleanly instead of a confusing error screen.
+
+### 18. Custom Error Screen for Overlay Network 502 / 503 / 504 Gateway & Eepsite Errors
+- **Files:** `src/tor/i2p_helper.rs`, `src/browsing/tabs/tab.rs`, `templates/errors/eepsite_503.html`
+- **Chore:** When attempting to access an I2P eepsite (`.i2p`), Tor hidden service (`.onion`), or Handshake site that is offline, unreachable, or building tunnels, the upstream I2P router or proxy returns HTTP status 502 (Domain Not Found), 503 (Service Unavailable), or 504 (Gateway Timeout). Currently, raw proxy error strings or generic connection error pages are shown to the user.
+- **Action Plan:**
+  - Create a dedicated custom error template (e.g. `templates/errors/eepsite_503.html` or `gateway_error.html`) explaining that the target overlay site is currently unreachable, offline, or building tunnels in the network.
+  - Intercept HTTP 502 / 503 / 504 responses in `src/tor/i2p_helper.rs` and `tab.rs`.
+  - Render the custom overlay error page with helpful guidance and a "Retry Connection" action.
