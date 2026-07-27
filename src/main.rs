@@ -16,13 +16,15 @@
 // NOTE: Build is fast — dynamically links to system GTK/WebKit.
 // ============================================================
 
+#[macro_use]
+mod util;
+
 mod browsing;
 mod plugins;
 mod privacy;
 mod resolver;
 mod tor;
 mod unsubscribe;
-mod util;
 
 pub use privacy::{ad_intoxication, ai_slop, fingerprint, search};
 

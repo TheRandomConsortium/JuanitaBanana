@@ -140,6 +140,7 @@ The result: your fake searches are the real searches of other users — maximum 
   - **Tor** (`arti` Rust crate) — onion routing. Activating it registers the `.onion` resolver and optionally routes all clearnet through Tor.
   - **I2P** (garlic routing) — `.i2p` address space. More resistant to traffic analysis than Tor for internal darknet services.
   - **Handshake (HNS)** — permissionless blockchain root DNS. Parallel to ICANN; anyone can own any TLD. Integrated via `hnsd` (C) initially, long-term Rust port.
+  - **Decentralized CA Stack (`randbotd`)** — Peer-to-peer Web-of-Trust and SSL Certificate Authority daemon. Eliminates reliance on ICANN CA monopolies by providing Proof-of-Work (PoW) ponderated trust voting, ACME `GetCert` endpoints, and random CA pool allocation for Handshake (`.hns`), Tor (`.onion`), and clearnet web infrastructure.
   - **Resolver chain (BIOS order):** HNS → I2P → Onion → System DNS. First authoritative answer wins. Fully reorderable. This directly resolves the Handshake/ICANN namespace collision — whoever is first in *your* chain is authoritative *for you*.
   - **Per-domain pinning rules:** `example.bit → always Handshake`, `*.onion → always Tor`. Explicit overrides bypass the chain entirely.
   - **Resolver ≠ Transport:** You can resolve `.onion` names without routing clearnet through Tor. Transports (Tor, I2P) are independently togglable from resolvers.

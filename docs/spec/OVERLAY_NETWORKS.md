@@ -258,6 +258,24 @@ activating the `.onion` resolver (though that would be unusual).
 >    ```
 >    Since Tor handles hidden service routing internally, connections to `.onion` targets never leave the Tor network. Exit node port policies are completely bypassed, providing secure and private P2P block header synchronization.
 
+---
+
+## 🛡️ Decentralised Web-of-Trust & Multi-Network SSL (`randbotd`)
+
+To bring TLS/SSL transport security to Handshake (`.hns`), Tor (`.onion`), and clearnet web infrastructure without relying on legacy ICANN Certificate Authority monopolies, Juanita Banana integrates with **`randbotd`** — the Decentralized Trust & SSL Authority Daemon.
+
+### Architectural Blueprint
+`randbotd` operates as an independent peer-to-peer Web-of-Trust daemon. Rather than trusting a centralized root authority (Let's Encrypt, DigiCert, Sectigo), SSL trust is established via **Proof-of-Work (PoW) Ponderated Voting**:
+
+1. **Multi-Network Transport:** `randbotd` manages SSL certificates for Handshake (`.hns`), Tor (`.onion`), and clearnet domains.
+2. **`GetCert` Endpoint:** Web servers request TLS certificates from `randbotd`'s ACME-compatible interface. Certificates are issued randomly from a pool of CAs exceeding the network's Trustworthy (TW) threshold.
+3. **Juanita Client Trust Verification:**
+   - **Unrecognized CAs:** Reuses security warning overlay with tailored warning (*"Unverified CA authority detected..."*); entering tracks the CA locally to evaluate trust over time.
+   - **Recognized & Untrustworthy (UTW):** Triggers security warning overlay with tailored alert; user override permitted.
+   - **Recognized & Neutral (TW 50–80):** Direct access allowed with a **Wary Warning Icon** in the URL bar and increased micro-questionnaire probability (*"Help us determine if this CA is trustworthy — vote this domain/CA"*).
+   - **Recognized & High Trust (TW > 80):** Direct access with clean green SSL shield.
+
+
 
 ---
 

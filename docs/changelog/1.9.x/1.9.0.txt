@@ -1,0 +1,9 @@
+Juanita Banana v1.9.0 Changelog
+===============================
+
+Features & Chore Refactoring:
+- Chore 16 (Intelligent Root-Folder Path Resolution Macro): Introduced build-time root path resolution via .scannable directory configuration markers (templates/, scripts/, assets/).
+- Eliminating Relative Path Traversals: Replaced all nested relative path traversals (../../../, ../../../..) across include_str! and include_bytes! calls throughout the codebase with clean, root-scoped include_root_str! and include_root_bytes! macros.
+- EU Age-Verification Countermeasure Status: Updated feature tracking specifications (docs/spec/FUNCTIONALITIES.md) and Juanita Companion documentation, marking DHT software certificate sharing as Deprecated in favor of future out-of-band friend-to-friend protocols.
+- Organization Roadmap: Added VisageRotulus (The Next-Generation Sovereign Identity & Social Secession Paradigm) to .github organizational specifications under future projects.
+- Quality Assurance: Verified 100% test suite pass rate (28/28 unit tests), zero Clippy compiler warnings (-D warnings), and strict cleanliness compliance (<= 9 items per folder, <= 500 lines per file).

@@ -7,9 +7,9 @@ pub fn ai_slop_detector_script(config: &AppConfig) -> String {
 
     let phrases_json =
         serde_json::to_string(&config.ai_slop_phrases).unwrap_or_else(|_| "[]".to_string());
-    let tokens_css = include_str!("../../templates/styles/tokens.css");
+    let tokens_css = include_root_str!(@templates, "tokens.css");
 
-    include_str!("../../scripts/js/ai_slop.js")
+    include_root_str!(@scripts, "ai_slop.js")
         .replace("AI_PHRASES_PLACEHOLDER", &phrases_json)
         .replace("TOKENS_CSS_PLACEHOLDER", tokens_css)
 }

@@ -331,7 +331,7 @@ pub fn create_tab(
             let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
             let http_uri = failing_uri.replace("https://", "http://");
             let certbot_img = crate::util::image::get_juanita_certbot_b64();
-            let error_html = include_str!("../../../templates/errors/tls.html")
+            let error_html = include_root_str!(@templates, "tls.html")
                 .replace("{shared_css}", shared_css)
                 .replace("{{CERTBOT_IMG}}", &certbot_img)
                 .replace("{{HTTP_URI}}", &http_uri);
@@ -351,7 +351,7 @@ pub fn create_tab(
         let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
         let broken_pipe_img = crate::util::image::get_juanita_broken_pipe_b64();
         let error_message = error.message();
-        let error_html = include_str!("../../../templates/errors/proxy.html")
+        let error_html = include_root_str!(@templates, "proxy.html")
             .replace("{shared_css}", shared_css)
             .replace("{{BROKEN_PIPE_IMG}}", &broken_pipe_img)
             .replace("{{ERROR_MESSAGE}}", error_message);
