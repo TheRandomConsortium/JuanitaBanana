@@ -141,4 +141,29 @@ peel
 *   **Universal Protocol Handler**: Automatically intercepts any response with `Content-Type: text/iasl` or `.bg` extensions across **Tor (`.onion`)**, **I2P (`.i2p`)**, **Handshake (`.hns`)**, **clearnet**, or **`juanita://`** addresses.
 *   **Internal Page Migration (MVP Goal)**: Recreate internal pages (e.g. `juanita://home` and `juanita://downloads`) in native IASL (`.bg`) to declare IASL as the official rendering language of the BPR.
 
+#### 4. Legacy W3C Compatibility & Panama Disease Quarantine (`[panama-disease]`)
+
+During initial IASL deployment phase (until 100% IASL feature completeness is achieved), legacy W3C web standards (HTML, CSS, JavaScript) are permitted as transitional fallbacks — but **only under strict containment in Panama Disease blocks**.
+
+```iasl
+[panama-disease:html]
+  <div class="legacy-wrap">Legacy HTML Fallback Content</div>
+[/panama-disease:html]
+
+[panama-disease:js dep="legacy_logic"]
+  console.log("Legacy JS execution attempt");
+[/panama-disease:js]
+```
+
+##### Strict Containment Rules:
+1.  **Single-Language Enclosures**: Each `[panama-disease]` block must contain **strictly one** legacy language (`:html`, `:css`, or `:js`). Inline `<script>` tags inside HTML blocks or inline `<style>` tags are strictly forbidden and trigger immediate parsing rejection (`PanamaContaminationError`).
+2.  **Infection Dependency System**: If a `[panama-disease:html]` block references or depends on a `[panama-disease:js]` block (or external JS resource), the browser **refuses to execute or render the document automatically**.
+3.  **Deferred Quarantine Warning Screen**: Contaminated documents with JS dependencies are halted and presented in a hazardous quarantine viewer:
+    > 🦠 **PANAMA DISEASE INFECTION DETECTED!**  
+    > *"This IASL document contains legacy W3C JavaScript dependencies that could infect and destroy your banana farm! Review the raw code below before approving execution."*
+    *   **User Action Options**:
+        *   `[ Risk Farm Infection & Render ]` → Executes the legacy script in an isolated sandbox.
+        *   `[ Sanitize & Strip JS ]` → Purges all `[panama-disease:js]` blocks and renders the pure IASL + HTML structure safely.
+
+
 
