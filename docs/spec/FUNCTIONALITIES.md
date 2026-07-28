@@ -24,7 +24,7 @@
 | **Session-Randomized Spoofing** | 📋 Planned | Make spoofed parameters (memory, cores, dimensions, platform) configurable and session-randomized. Values remain static within a session to prevent inconsistency tracking, but mutate on launch within logical boundaries. |
 | **Font Enumeration Protection** | ✅ Done | Overrides canvas text measurements and CSS font loading to report that only `Webdings` and `Monospace` are installed (until session-randomized font pools are implemented). |
 
-| **Prototype toString Protection** | 📋 Planned | Override `Function.prototype.toString` to return standard native function representation (`function () { [native code] }`) when called on any spoofed/overridden APIs, avoiding detection by bot detectors verifying `toString` outputs. |
+| **Prototype toString Protection** | ✅ Done | Override `Function.prototype.toString` to return standard native function representation (`function () { [native code] }`) when called on any spoofed/overridden APIs, avoiding detection by bot detectors verifying `toString` outputs. |
 | **Proxy-based API Hooking** | 📋 Planned | Migrate all manually overridden/monkeypatched properties and methods to use ES6 `Proxy` wrappers, creating a more uniform, robust, and clean interception system. |
 | **Web Audio API Spoofing** | 🔭 Future | Procedurally generated acoustic signatures (Soviet 1980s sound card) to poison oscillator fingerprinting. |
 | **Sensor API Poisoning** | ✅ Done | Poison devicemotion, deviceorientation, and W3C generic sensor APIs (Accelerometer, Gyroscope, etc.) with synthetic spiral walking data to prevent device-movement fingerprinting. |

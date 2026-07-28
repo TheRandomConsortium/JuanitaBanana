@@ -1,0 +1,9 @@
+Juanita Banana v2.1.0 Minor Release Changelog
+=============================================
+
+Prototype toString Protection & Overlay Enhancements
+- Prototype toString Protection: Overrode `Function.prototype.toString` to return standard native function strings (`function name() { [native code] }` / `function get prop() { [native code] }`) for all spoofed Web APIs (Canvas, WebGL, Viewport, Navigator, Timezone/Intl, Battery, Font enumeration, and Sensors). Defeats bot detection systems (FingerprintJS, Cloudflare Turnstile, Kasada, Akamai, DataDome) that verify `toString` outputs.
+- Centralized Anti-Fingerprinting Abstraction: Introduced `_makeNative`, `_defineGetter`, and `_overrideMethod` helpers in `scripts/js/anti_fingerprint.js` to ensure uniform native function spoofing across all injected DOM APIs.
+- I2P Garlic Routing (.i2p Eepsites): Integrated dual-port proxy fallback (4447 SOCKS / 4444 HTTP) and automated headless I2P router installation via `scripts/sh/build_i2p.sh`.
+- Protocol Stacking Warning & Visual Diagram: Added an expandable `<details>` warning disclosure in `juanita://config` featuring the Juanita Banana mascot in a deflating half-onion half-garlic costume (`assets/stacking_venn_diagram.png`) to explain latency and anonymity set intersection tradeoffs.
+- Specifications & Non-HTTP Protocols: Updated `docs/spec/FUNCTIONALITIES.md` and `docs/spec/OVERLAY_NETWORKS.md` marking Prototype `toString` protection as Done and documenting non-HTTP protocols (`gemini://`, `gopher://`).

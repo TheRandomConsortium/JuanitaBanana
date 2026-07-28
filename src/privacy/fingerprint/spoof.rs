@@ -22,9 +22,16 @@ mod tests {
     fn test_anti_fingerprint_script_contains_overrides() {
         let script = anti_fingerprint_script();
 
+        // Prototype toString Protection
+        assert!(script.contains("Function.prototype.toString"));
+        assert!(script.contains("[native code]"));
+        assert!(script.contains("_makeNative"));
+        assert!(script.contains("_defineGetter"));
+        assert!(script.contains("_overrideMethod"));
+
         // Viewport
-        assert!(script.contains("Object.defineProperty(screen, 'width'"));
-        assert!(script.contains("Object.defineProperty(window, 'innerHeight'"));
+        assert!(script.contains("screen.width"));
+        assert!(script.contains("window.innerHeight"));
 
         // GPU
         assert!(script.contains("Juanita Banana GPU"));
@@ -39,12 +46,12 @@ mod tests {
         assert!(script.contains("Europe/London"));
 
         // Battery
-        assert!(script.contains("navigator.getBattery = function()"));
+        assert!(script.contains("navigator.getBattery"));
         assert!(script.contains("charging: true"));
 
         // Fonts
-        assert!(script.contains("CanvasRenderingContext2D.prototype.measureText"));
-        assert!(script.contains("FontFaceSet.prototype.check"));
+        assert!(script.contains("CanvasRenderingContext2D.prototype"));
+        assert!(script.contains("FontFaceSet.prototype"));
 
         // Sensors
         assert!(script.contains("DeviceMotionEvent.prototype overrides"));
