@@ -184,24 +184,7 @@ pub fn handle_i2p_connection(
             http_stream.write_all(req_data).ok();
         }
     } else {
-        let rewritten_req = if req_str.starts_with("GET /")
-            || req_str.starts_with("POST /")
-            || req_str.starts_with("HEAD /")
-        {
-            let parts: Vec<&str> = req_str.splitn(3, ' ').collect();
-            if parts.len() == 3 {
-                format!(
-                    "{} http://{}{}\r\nCache-Control: no-cache\r\nPragma: no-cache",
-                    parts[0], outbound_host, parts[1]
-                ) + "\r\n"
-                    + parts[2]
-            } else {
-                req_str.to_string()
-            }
-        } else {
-            req_str.to_string()
-        };
-
+        let rewritten_req = rewrite_http_proxy_request(&req_str, &outbound_host);
         http_stream
             .write_all(rewritten_req.as_bytes())
             .map_err(|e| format!("Failed to send request to I2P HTTP proxy: {}", e))?;
@@ -246,4 +229,33 @@ pub fn tunnel_streams(client: &mut TcpStream, outbound: &mut TcpStream) -> Resul
     let _ = t.join();
 
     Ok(())
+}
+
+fn rewrite_http_proxy_request(req_str: &str, outbound_host: &str) -> String {
+    let methods = ["GET ", "POST ", "HEAD ", "PUT ", "DELETE ", "OPTIONS "];
+    if let Some(_method) = methods.iter().find(|m| req_str.starts_with(**m)) {
+        if let Some((first_line, rest)) = req_str.split_once("\r\n") {
+            let relative_target = " /";
+            let absolute_target = format!(" http://{}/", outbound_host);
+            let rewritten_first = first_line.replacen(relative_target, &absolute_target, 1);
+            return format!(
+                "{}\r\nCache-Control: no-cache\r\nPragma: no-cache\r\n{}",
+                rewritten_first, rest
+            );
+        }
+    }
+    req_str.to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_rewrite_http_proxy_request() {
+        let raw = "GET /index.html HTTP/1.1\r\nHost: reg.i2p\r\n\r\n";
+        let rewritten = rewrite_http_proxy_request(raw, "reg.i2p");
+        assert!(rewritten.starts_with("GET http://reg.i2p/index.html HTTP/1.1\r\nCache-Control: no-cache"));
+        assert!(rewritten.contains("Host: reg.i2p"));
+    }
 }
