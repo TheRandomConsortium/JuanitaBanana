@@ -67,6 +67,8 @@ echo "Preparing build files..."
 cp target/release/juanita-banana $RPM_ROOT/BUILD/
 cp bin/hnsd $RPM_ROOT/BUILD/
 cp bin/arti $RPM_ROOT/BUILD/ 2>/dev/null || echo "WARNING: bin/arti not found — Tor transport will not be available in this RPM."
+if [ -f bin/i2prouter ]; then cp bin/i2prouter $RPM_ROOT/BUILD/; fi
+if [ -f bin/i2p.jar ]; then cp bin/i2p.jar $RPM_ROOT/BUILD/; fi
 cp assets/icon.png $RPM_ROOT/BUILD/juanita-banana.png
 
 cat > $RPM_ROOT/BUILD/juanita-banana.desktop << 'EOF'
@@ -101,6 +103,8 @@ mkdir -p %{buildroot}/usr/share/pixmaps
 cp %{_topdir}/BUILD/juanita-banana %{buildroot}/usr/bin/
 cp %{_topdir}/BUILD/hnsd %{buildroot}/usr/bin/
 if [ -f %{_topdir}/BUILD/arti ]; then cp %{_topdir}/BUILD/arti %{buildroot}/usr/bin/; fi
+if [ -f %{_topdir}/BUILD/i2prouter ]; then cp %{_topdir}/BUILD/i2prouter %{buildroot}/usr/bin/; fi
+if [ -f %{_topdir}/BUILD/i2p.jar ]; then cp %{_topdir}/BUILD/i2p.jar %{buildroot}/usr/bin/; fi
 cp %{_topdir}/BUILD/juanita-banana.desktop %{buildroot}/usr/share/applications/
 cp %{_topdir}/BUILD/juanita-banana.png %{buildroot}/usr/share/pixmaps/
 
@@ -108,6 +112,8 @@ cp %{_topdir}/BUILD/juanita-banana.png %{buildroot}/usr/share/pixmaps/
 /usr/bin/juanita-banana
 /usr/bin/hnsd
 %ghost /usr/bin/arti
+%ghost /usr/bin/i2prouter
+%ghost /usr/bin/i2p.jar
 /usr/share/applications/juanita-banana.desktop
 /usr/share/pixmaps/juanita-banana.png
 EOF

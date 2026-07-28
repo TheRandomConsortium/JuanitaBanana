@@ -1,0 +1,4 @@
+Juanita Banana v2.0.5 Patch Release Changelog
+=============================================
+
+- HTTP Proxy Request Line Formatting Fix: Fixed string splitting in `src/tor/i2p_helper.rs` when injecting `Cache-Control` / `Pragma` headers (`rewrite_http_proxy_request`). Correctly preserves `HTTP/1.1` protocol version in the request line (`GET http://domain/path HTTP/1.1\r\n`), eliminating false-positive "Advertencia: Protocolo no HTTP" errors from I2P HTTP proxies.

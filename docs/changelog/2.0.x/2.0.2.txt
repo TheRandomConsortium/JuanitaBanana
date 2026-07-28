@@ -1,0 +1,7 @@
+Juanita Banana v2.0.2 Patch Release Changelog
+=============================================
+
+- Automated I2P IzPack Panel Resolution: Fixed IzPack panel order (`HelloPanel_0`, `InfoPanel_1`, `TargetPanel_2`, `PacksPanel_3`, `InstallPanel_4`, `ShortcutPanel_5`, `XInfoPanel_6`, `SimpleFinishPanel_7`) in `auto-install.xml` for automated headless I2P v2.13.0 installation.
+- Streamlined I2P Subprocess Daemon: Cleaned up unnecessary fallback logic in `src/i2p/daemon.rs` and `scripts/sh/build_i2p.sh` to focus directly on executing `i2prouter` / `i2pd` binaries in `bin/` or system PATH.
+- RPM Binary Packaging Verified: Added `/usr/bin/i2prouter` binary packaging into RPM spec files and verified build artifact inclusion in `/usr/bin/`.
+- Specifications Update: Documented `i2pd` (PurpleI2P's C++ I2P daemon) as the protocol reference in `docs/spec/FUNCTIONALITIES.md` and `docs/spec/OVERLAY_NETWORKS.md` for Phase 6 zero-Java in-process garlic routing.

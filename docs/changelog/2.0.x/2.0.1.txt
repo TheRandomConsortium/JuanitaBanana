@@ -1,0 +1,6 @@
+Juanita Banana v2.0.1 Patch Release Changelog
+=============================================
+
+- Build Pipeline & Packaging Fix: Added FOSS self-contained `scripts/sh/build_i2p.sh` script to fetch `https://files.i2p.net/2.13.0/i2pinstall_2.13.0.jar` and perform headless IzPack auto-installation during `build.rs`.
+- RPM Spec Packaging: Updated `build_rpm.sh` to package `i2prouter` and `i2p.jar` into RPM packages (`/usr/bin/i2prouter` and `/usr/bin/i2p.jar`).
+- Cargo Feature Specification: Added `i2p` to `[features]` in `Cargo.toml` (`default = ["handshake", "tor", "i2p"]`).

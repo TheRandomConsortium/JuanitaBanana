@@ -1,0 +1,8 @@
+Juanita Banana v2.0.3 Patch Release Changelog
+=============================================
+
+- Dual-Port I2P Proxy Fallback (4447 SOCKS / 4444 HTTP): Implemented dual-port proxy handling in `src/tor/i2p_helper.rs`. Automatically detects whether I2P SOCKS5 (`4447`) or standard I2P HTTP Proxy (`4444`) is listening, enabling out-of-the-box support for both Java `i2prouter` and C++ `i2pd`.
+- TLS Error Handshake Interception: WebKit GTK `connect_load_failed` now intercepts TLS handshake failures on `https://` requests and renders the custom `tls.html` error template featuring the Juanita Certbot visual and a "Try connecting over HTTP instead" action button.
+- Handshake Domain Outproxy Routing: Resolved Handshake domains (`.hns`, `.woodburn`, etc.) routed over I2P outproxies now format request lines using the resolved IPv4/IPv6 target while preserving `Host:` domain headers, avoiding upstream DNS lookup failures on ICANN outproxies.
+- I2P Outproxy Negative Cache Bypass: Injected `Cache-Control: no-cache` and `Pragma: no-cache` headers into I2P HTTP proxy requests and added WebKit `WebContext` cache clearing on TLS errors to prevent stale negative LeaseSet / domain resolution caching.
+- Chore Tracker Update: Registered Chore 18 (Custom Error Screen for Overlay Network 502/503/504 Gateway Errors).

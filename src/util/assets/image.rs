@@ -26,6 +26,11 @@ pub fn get_juanita_broken_pipe_b64() -> String {
     base64::engine::general_purpose::STANDARD.encode(bytes)
 }
 
+pub fn get_stacking_venn_diagram_b64() -> String {
+    let bytes = include_root_bytes!(@assets, "stacking_venn_diagram.png");
+    base64::engine::general_purpose::STANDARD.encode(bytes)
+}
+
 pub fn generate_random_noise_bmp_b64() -> String {
     let mut rng = rand::thread_rng();
     let width = 256;

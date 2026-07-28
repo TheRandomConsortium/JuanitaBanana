@@ -129,15 +129,15 @@ With stacking:      YOU ──(Tor onion)──► Tor exit ──(I2P garlic)�
 | Latency | Medium | Medium | High |
 | Anonymity set | Tor's | I2P's | **Intersection** (smaller, not larger) |
 
-> **The intersection caveat.** Stacking does not simply multiply privacy. Your anonymity set
-> shrinks to the population that is *both* a Tor user *and* an I2P user. This is useful for a
-> specific threat model, not a universal improvement. The config should surface this warning.
+> [!WARNING]
+> **The Intersection Caveat & Performance Reality:** Protocol stacking (I2P over Tor) is not only significantly slower and highly experimental, but borderline ridiculous for general browsing: while you think you are "double hidden", you actually shrink your anonymity set to the tiny intersection of people using both protocols simultaneously! You stand out among a far smaller crowd, while suffering massive latency penalties.
 
-The reverse — **Tor over I2P** (onion through garlic) — is technically possible but has
-even more exotic tradeoffs and is not in scope for the initial implementation.
+![Protocol Stacking Venn Diagram](file:///home/mreugenej7/git/juanita-banana/assets/stacking_venn_diagram.png)
+
+The reverse — **Tor over I2P** (onion through garlic) — is technically possible but has even more exotic tradeoffs and is not in scope for the initial implementation.
 
 **Config exposure:** When both transports are enabled, expose a per-transport option:
-`I2P entry via: [ Direct | Tor ]`. Default: Direct.
+`I2P entry via: [ Direct | Tor ]`. Default: Direct. Shows prominent warning regarding performance and anonymity set reduction.
 
 ---
 
@@ -362,6 +362,7 @@ ratio needs evaluation before committing to support.
 | **Yggdrasil** | IPv6 mesh | Encrypted mesh overlay, no special TLD; interesting for LAN mesh routing |
 | **GNUnet** | `.gnu` | GNU's fully decentralised network; very niche, academic |
 | **ZeroNet** | N/A | BitTorrent + Bitcoin blockchain; browser-based, less relevant for native |
+| **Gemini / Gopher** | `gemini://`, `gopher://` | Non-HTTP application protocols. Clearnet Gemini (port 1965) is typically rejected by default Tor exit relay policies (`ExitPolicy` restricted to 80/443). However, Gemini running **inside `.onion` hidden services or `.i2p` eepsites** functions 100% end-to-end without exit nodes or port restrictions. |
 
 If you know of another protocol that belongs here, open an issue.
 

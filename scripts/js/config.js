@@ -125,6 +125,12 @@ function saveConfig() {
     configData.handshake_enabled = document.getElementById('handshake-enabled').checked;
     configData.tor_enabled = document.getElementById('tor-enabled').checked;
     configData.tor_route_all = document.getElementById('tor-route-all').checked;
+    if (document.getElementById('i2p-enabled')) {
+        configData.i2p_enabled = document.getElementById('i2p-enabled').checked;
+        configData.i2p_route_all = document.getElementById('i2p-route-all').checked;
+        configData.protocol_stacking = document.getElementById('protocol-stacking').checked;
+        configData.overlay_default_transport = document.getElementById('overlay-default-transport').value;
+    }
     configData.tab_inactivity_ttl = parseInt(document.getElementById('tab-inactivity-ttl').value, 10);
     configData.last_tab_nuke_action = document.getElementById('last-tab-nuke-action').value;
     configData.ai_slop_detection_enabled = document.getElementById('ai-slop-enabled').checked;

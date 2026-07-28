@@ -18,6 +18,7 @@
 //! into `arti-client` circuits without any proxy intermediary.
 
 use crate::log;
+use crate::tor::i2p_helper::{handle_i2p_connection, tunnel_streams, DestHost};
 use crate::util::config::AppConfig;
 use std::io::{Read, Write};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
@@ -55,7 +56,7 @@ pub fn start_local_proxy() {
                 Ok(stream) => {
                     thread::spawn(move || {
                         if let Err(e) = handle_connection(stream) {
-                            log!(Debug, TOR, "Local proxy connection error: {}", e);
+                            log!(Error, TOR, "Local SOCKS5 proxy error: {}", e);
                         }
                     });
                 }
@@ -133,7 +134,12 @@ fn handle_connection(mut client: TcpStream) -> Result<(), String> {
                 .map_err(|e| format!("Failed to read port: {}", e))?;
             let port = u16::from_be_bytes(port_bytes);
             let ip = IpAddr::V4(Ipv4Addr::new(ipv4[0], ipv4[1], ipv4[2], ipv4[3]));
-            (DestHost::Ip(ip), port)
+            let host = if let Some(domain) = crate::resolver::get_sentinel_domain(&ip) {
+                DestHost::Domain(domain)
+            } else {
+                DestHost::Ip(ip)
+            };
+            (host, port)
         }
         0x03 => {
             // Domain Name / Hostname string
@@ -156,7 +162,12 @@ fn handle_connection(mut client: TcpStream) -> Result<(), String> {
 
             // Try to parse string as an IP address
             if let Ok(ip) = domain.parse::<IpAddr>() {
-                (DestHost::Ip(ip), port)
+                let host = if let Some(domain) = crate::resolver::get_sentinel_domain(&ip) {
+                    DestHost::Domain(domain)
+                } else {
+                    DestHost::Ip(ip)
+                };
+                (host, port)
             } else {
                 (DestHost::Domain(domain), port)
             }
@@ -173,7 +184,12 @@ fn handle_connection(mut client: TcpStream) -> Result<(), String> {
                 .map_err(|e| format!("Failed to read port: {}", e))?;
             let port = u16::from_be_bytes(port_bytes);
             let ip = IpAddr::V6(Ipv6Addr::from(ipv6));
-            (DestHost::Ip(ip), port)
+            let host = if let Some(domain) = crate::resolver::get_sentinel_domain(&ip) {
+                DestHost::Domain(domain)
+            } else {
+                DestHost::Ip(ip)
+            };
+            (host, port)
         }
         _ => {
             // Address type not supported
@@ -188,8 +204,8 @@ fn handle_connection(mut client: TcpStream) -> Result<(), String> {
     let target_ip = match dest_host {
         DestHost::Ip(ip) => Some(ip),
         DestHost::Domain(ref domain) => {
-            if domain.ends_with(".onion") {
-                // Do not resolve .onion domains locally; let Tor handle them
+            if domain.ends_with(".onion") || domain.ends_with(".i2p") {
+                // Do not resolve .onion or .i2p domains locally; let Tor/I2P handle them
                 None
             } else {
                 log!(Debug, TOR, "Local SOCKS5 proxy resolving '{}'...", domain);
@@ -202,7 +218,13 @@ fn handle_connection(mut client: TcpStream) -> Result<(), String> {
                             domain,
                             resolved_ip
                         );
-                        Some(resolved_ip)
+                        if resolved_ip == crate::resolver::onion::ONION_SENTINEL_IP
+                            || resolved_ip == crate::resolver::i2p::I2P_SENTINEL_IP
+                        {
+                            None
+                        } else {
+                            Some(resolved_ip)
+                        }
                     }
                     Err(e) => {
                         log!(
@@ -225,48 +247,90 @@ fn handle_connection(mut client: TcpStream) -> Result<(), String> {
 
     // 4. Establish Outbound Connection
     let config = AppConfig::load();
-    let use_tor = if config.tor_enabled {
-        if config.tor_route_all {
-            true
-        } else {
-            match &dest_host {
-                DestHost::Domain(domain) => domain.ends_with(".onion"),
-                DestHost::Ip(_) => false,
+
+    enum OverlayTransport {
+        Direct,
+        Tor,
+        I2p,
+    }
+
+    let transport_choice = match &dest_host {
+        DestHost::Domain(domain) if domain.ends_with(".onion") => {
+            if config.tor_enabled {
+                OverlayTransport::Tor
+            } else {
+                OverlayTransport::Direct
             }
         }
-    } else {
-        false
+        DestHost::Domain(domain) if domain.ends_with(".i2p") => {
+            if config.i2p_enabled {
+                OverlayTransport::I2p
+            } else {
+                OverlayTransport::Direct
+            }
+        }
+        _ => {
+            let tor_active = config.tor_enabled && config.tor_route_all;
+            let i2p_active = config.i2p_enabled && config.i2p_route_all;
+
+            match (tor_active, i2p_active) {
+                (true, true) => {
+                    if config.protocol_stacking {
+                        OverlayTransport::Tor
+                    } else if config.overlay_default_transport == "i2p" {
+                        OverlayTransport::I2p
+                    } else {
+                        OverlayTransport::Tor
+                    }
+                }
+                (true, false) => OverlayTransport::Tor,
+                (false, true) => OverlayTransport::I2p,
+                (false, false) => OverlayTransport::Direct,
+            }
+        }
     };
 
-    let mut outbound = if use_tor {
-        // Connect via Tor SOCKS5 proxy
-        let tor_addr = SocketAddr::new(
-            IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-            crate::tor::ARTI_SOCKS_PORT,
-        );
-        let mut tor_stream = TcpStream::connect(tor_addr)
-            .map_err(|e| format!("Failed to connect to Tor SOCKS5 proxy: {}", e))?;
+    if matches!(transport_choice, OverlayTransport::I2p) {
+        return handle_i2p_connection(&mut client, &dest_host, target_ip, dest_port);
+    }
 
-        tor_stream
+    let target_socks_port = match transport_choice {
+        OverlayTransport::Tor => Some(crate::tor::ARTI_SOCKS_PORT),
+        OverlayTransport::I2p | OverlayTransport::Direct => None,
+    };
+
+    let mut outbound = if let Some(proxy_port) = target_socks_port {
+        let proxy_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), proxy_port);
+        let mut proxy_stream = TcpStream::connect(proxy_addr).map_err(|e| {
+            format!(
+                "Failed to connect to SOCKS5 proxy on port {}: {}",
+                proxy_port, e
+            )
+        })?;
+
+        proxy_stream
             .set_read_timeout(Some(Duration::from_secs(30)))
             .ok();
-        tor_stream
+        proxy_stream
             .set_write_timeout(Some(Duration::from_secs(30)))
             .ok();
 
-        // Handshake with Tor SOCKS5
-        tor_stream
+        // Handshake with SOCKS5 proxy
+        proxy_stream
             .write_all(&[0x05, 0x01, 0x00])
-            .map_err(|e| format!("Tor SOCKS5 greeting failed: {}", e))?;
-        let mut tor_greeting = [0u8; 2];
-        tor_stream
-            .read_exact(&mut tor_greeting)
-            .map_err(|e| format!("Tor SOCKS5 greeting read failed: {}", e))?;
-        if tor_greeting[0] != 0x05 || tor_greeting[1] != 0x00 {
-            return Err("Tor SOCKS5 proxy rejected handshake".to_string());
+            .map_err(|e| format!("SOCKS5 greeting failed on port {}: {}", proxy_port, e))?;
+        let mut socks_greeting = [0u8; 2];
+        proxy_stream
+            .read_exact(&mut socks_greeting)
+            .map_err(|e| format!("SOCKS5 greeting read failed on port {}: {}", proxy_port, e))?;
+        if socks_greeting[0] != 0x05 || socks_greeting[1] != 0x00 {
+            return Err(format!(
+                "SOCKS5 proxy on port {} rejected handshake",
+                proxy_port
+            ));
         }
 
-        // Send Tor CONNECT request
+        // Send CONNECT request
         let mut connect_req = Vec::new();
         connect_req.extend_from_slice(&[0x05, 0x01, 0x00]); // VER, CMD, RSV
         match target_ip {
@@ -289,33 +353,33 @@ fn handle_connection(mut client: TcpStream) -> Result<(), String> {
             }
         }
         connect_req.extend_from_slice(&dest_port.to_be_bytes());
-        tor_stream
+        proxy_stream
             .write_all(&connect_req)
-            .map_err(|e| format!("Failed to write CONNECT request to Tor: {}", e))?;
+            .map_err(|e| format!("Failed to write CONNECT request to SOCKS5 proxy: {}", e))?;
 
-        // Read Tor CONNECT response
-        let mut tor_resp = [0u8; 4];
-        tor_stream
-            .read_exact(&mut tor_resp)
-            .map_err(|e| format!("Failed to read CONNECT response from Tor: {}", e))?;
-        if tor_resp[0] != 0x05 || tor_resp[1] != 0x00 {
-            // Tor failed to connect
+        // Read SOCKS5 CONNECT response
+        let mut socks_resp = [0u8; 4];
+        proxy_stream
+            .read_exact(&mut socks_resp)
+            .map_err(|e| format!("Failed to read CONNECT response from SOCKS5 proxy: {}", e))?;
+        if socks_resp[0] != 0x05 || socks_resp[1] != 0x00 {
+            // SOCKS5 proxy failed to connect
             client
-                .write_all(&[0x05, tor_resp[1], 0x00, 0x01, 0, 0, 0, 0, 0, 0])
+                .write_all(&[0x05, socks_resp[1], 0x00, 0x01, 0, 0, 0, 0, 0, 0])
                 .ok();
             return Err(format!(
-                "Tor SOCKS5 proxy failed to connect, status: {}",
-                tor_resp[1]
+                "SOCKS5 proxy failed to connect, status: {}",
+                socks_resp[1]
             ));
         }
 
         // Skip remainder of response address fields (6 bytes for IPv4/port)
-        let atyp_resp = tor_resp[3];
+        let atyp_resp = socks_resp[3];
         let skip_len = match atyp_resp {
             0x01 => 6,
             0x03 => {
                 let mut len_buf = [0u8; 1];
-                tor_stream
+                proxy_stream
                     .read_exact(&mut len_buf)
                     .map_err(|e| format!("Failed to read domain response length: {}", e))?;
                 len_buf[0] as usize + 2
@@ -323,17 +387,17 @@ fn handle_connection(mut client: TcpStream) -> Result<(), String> {
             0x04 => 18,
             _ => {
                 return Err(format!(
-                    "Unsupported SOCKS address type in Tor response: {}",
+                    "Unsupported SOCKS address type in proxy response: {}",
                     atyp_resp
                 ))
             }
         };
         let mut skip_buf = vec![0u8; skip_len];
-        tor_stream
+        proxy_stream
             .read_exact(&mut skip_buf)
-            .map_err(|e| format!("Failed to skip Tor response address: {}", e))?;
+            .map_err(|e| format!("Failed to skip proxy response address: {}", e))?;
 
-        tor_stream
+        proxy_stream
     } else {
         // Direct clearnet connection
         let ip = match target_ip {
@@ -381,44 +445,5 @@ fn handle_connection(mut client: TcpStream) -> Result<(), String> {
         .map_err(|e| format!("Failed to send success response: {}", e))?;
 
     // 6. Bidirectional Copy Tunneling
-    let mut client_clone = client
-        .try_clone()
-        .map_err(|e| format!("Failed to clone client socket: {}", e))?;
-    let mut outbound_clone = outbound
-        .try_clone()
-        .map_err(|e| format!("Failed to clone outbound socket: {}", e))?;
-
-    let t = thread::spawn(move || {
-        let mut buf = [0u8; 8192];
-        while let Ok(n) = client_clone.read(&mut buf) {
-            if n == 0 {
-                break;
-            }
-            if outbound_clone.write_all(&buf[..n]).is_err() {
-                break;
-            }
-        }
-        let _ = outbound_clone.shutdown(std::net::Shutdown::Both);
-        let _ = client_clone.shutdown(std::net::Shutdown::Both);
-    });
-
-    let mut buf = [0u8; 8192];
-    while let Ok(n) = outbound.read(&mut buf) {
-        if n == 0 {
-            break;
-        }
-        if client.write_all(&buf[..n]).is_err() {
-            break;
-        }
-    }
-    let _ = client.shutdown(std::net::Shutdown::Both);
-    let _ = outbound.shutdown(std::net::Shutdown::Both);
-    let _ = t.join();
-
-    Ok(())
-}
-
-enum DestHost {
-    Ip(IpAddr),
-    Domain(String),
+    tunnel_streams(&mut client, &mut outbound)
 }

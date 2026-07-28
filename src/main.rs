@@ -20,6 +20,7 @@
 mod util;
 
 mod browsing;
+mod i2p;
 mod plugins;
 mod privacy;
 mod resolver;
@@ -32,6 +33,7 @@ struct CleanupGuard;
 
 impl Drop for CleanupGuard {
     fn drop(&mut self) {
+        crate::i2p::shutdown_i2p();
         crate::tor::shutdown_tor();
         crate::resolver::shutdown_resolver();
     }
@@ -44,11 +46,14 @@ fn main() {
     config.save();
     state.borrow().save();
 
-    // Start local SOCKS5 proxy server for Handshake & Tor resolution
+    // Start local SOCKS5 proxy server for Handshake, Tor & I2P resolution
     tor::start_local_proxy();
 
     // Start Tor transport if enabled in config
     tor::init_tor();
+
+    // Start I2P transport if enabled in config
+    i2p::init_i2p();
 
     // Start local resolvers / daemon
     resolver::init_resolver();
