@@ -80,3 +80,65 @@ Triggered whenever navigating to a custom `juanita://` address that is not a reg
     - The packet hops randomly through peers.
     - If a peer decrypts the request and holds the corresponding host mapping, it encrypts the resolution mapping with the client's public key and sends the answer back.
     - If the node decrypts the request but does not hold that name record, it re-encrypts the request with a random public key and forwards it to a random peer.
+
+---
+
+### 🧪 IASL — Isoamyl Acetate Scripting Language (`.bg` / `text/iasl`)
+
+**"HTML, we hate you. Long live the Banana Gummy."**
+
+IASL is Juanita Banana's native, anti-HTML domain-specific document and UI language (DSL). Named after **isoamyl acetate** (the organic ester responsible for artificial banana flavor and banana gummy scent), IASL eliminates HTML5 tag soup, DOM complexity, and CSS bloat by introducing a 100% banana-centric markup syntax and a native GTK/Cairo rendering pipeline that skips HTML transpilation entirely.
+
+```
+MIME Type: text/iasl
+File Extension: .bg (Banana Gummy)
+Status: 📋 Planned (Afterdark Feature Stack)
+Official Language: Banana Peel Republic (BPR) & Internal Page Engine
+Rendering Engine: Zero-HTML Native GTK/Cairo Layout Engine
+```
+
+#### 1. The Banana Lexicon (Banana-Centric Vocabulary)
+IASL rejects generic web vocabulary (`<div>`, `<button>`, `class="card"`) in favor of organic banana anatomy and lifecycle terminology:
+
+| IASL Keyword | Traditional Equivalent | Description |
+|---|---|---|
+| `peel` | `<html>` / `<main>` | Root document container (`peel yellow`). |
+| `bunch` | `<section>` / `<div>` | Structural layout container / card block. |
+| `stem` | `<h1>` / `<header>` | Document title or section header. |
+| `pulp` | `<p>` / `<span>` | Main text content body. |
+| `dark-spot` | `<button>` | Interactive action button (clickable spot on the peel). |
+| `fiber` | `<input>` / `<textarea>` | Form text entry field / input line. |
+| `bruise` | `<div class="alert">` | Warning / alert callout banner. |
+| `slice` | `<hr>` | Horizontal divider / rule. |
+| `ripeness` | `@theme` / color scheme | Theme setting (`green`, `yellow`, `spotted`, `overripe`). |
+
+#### 2. Sample `.bg` Document (The Banana Gummy Markup)
+
+```iasl
+# Welcome to the Banana Peel Republic
+@ripeness yellow
+@stem "Juanita Banana Central Hub"
+
+peel
+  [bunch]
+    stem: "Banana Peel Republic — Official Network Node"
+    pulp: "HTML is deprecated. Long live the Isoamyl Acetate Scripting Language."
+
+    [bruise]
+      pulp: "Warning: Entering un-peeled overlay territory over Tor/I2P."
+    [/bruise]
+
+    fiber(id: "handle", type: "text"): "Enter BPR Node Handle"
+    dark-spot(action: "juanita://config"): "Adjust Ripeness Settings"
+    dark-spot(action: "juanita://downloads"): "Inspect Harvest Queue"
+  [/bunch]
+/peel
+```
+
+#### 3. Native Zero-HTML Engine Architecture
+*   **Rust AST Parser (`src/browsing/iasl/parser.rs`)**: High-performance Lexer/Parser that compiles `.bg` source into a native IASL Abstract Syntax Tree (`IaslAst`).
+*   **Direct GTK/Cairo Layout Renderer (`src/browsing/iasl/render.rs`)**: Bypasses WebKit HTML/CSS/JS rendering entirely! Converts the `IaslAst` directly into native GTK widgets (`gtk::Box`, `gtk::Button`, `gtk::Label`, `gtk::Entry`) or custom Cairo-painted surface primitives with Juanita Banana design tokens.
+*   **Universal Protocol Handler**: Automatically intercepts any response with `Content-Type: text/iasl` or `.bg` extensions across **Tor (`.onion`)**, **I2P (`.i2p`)**, **Handshake (`.hns`)**, **clearnet**, or **`juanita://`** addresses.
+*   **Internal Page Migration (MVP Goal)**: Recreate internal pages (e.g. `juanita://home` and `juanita://downloads`) in native IASL (`.bg`) to declare IASL as the official rendering language of the BPR.
+
+
