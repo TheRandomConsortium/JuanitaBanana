@@ -35,9 +35,10 @@ use webkit2gtk::{
 pub fn apply_tor_proxy(web_context: &WebContext) {
     let cfg = AppConfig::load();
     let tor_active = cfg.tor_enabled && crate::tor::is_tor_running();
+    let i2p_active = cfg.i2p_enabled && crate::i2p::is_i2p_running();
     let handshake_active = cfg.handshake_enabled;
 
-    if !tor_active && !handshake_active {
+    if !tor_active && !i2p_active && !handshake_active {
         if let Some(data_manager) = web_context.website_data_manager() {
             data_manager.set_network_proxy_settings(NetworkProxyMode::Default, None);
             log!(Info, TOR, "WebKit proxy settings reset to default");

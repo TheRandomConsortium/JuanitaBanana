@@ -5,7 +5,7 @@ use std::rc::Rc;
 use webkit2gtk::{
     HitTestResultExt, NavigationPolicyDecision, NavigationPolicyDecisionExt, PolicyDecisionExt,
     PolicyDecisionType, URIRequestExt, UserContentInjectedFrames, UserContentManager,
-    UserContentManagerExt, UserScript, UserScriptInjectionTime, WebContext, WebView, WebViewExt,
+    UserContentManagerExt, UserScript, UserScriptInjectionTime, WebContext, WebContextExt, WebView, WebViewExt,
 };
 
 use crate::browsing::browser::SharedBanList;
@@ -328,14 +328,7 @@ pub fn create_tab(
         let domain = crate::browsing::browser::extract_domain(failing_uri);
         let host = crate::resolver::clean_host(&domain);
         if !host.is_empty() && !crate::resolver::is_system_resolvable(&host) {
-            let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
-            let http_uri = failing_uri.replace("https://", "http://");
-            let certbot_img = crate::util::image::get_juanita_certbot_b64();
-            let error_html = include_root_str!(@templates, "tls.html")
-                .replace("{shared_css}", shared_css)
-                .replace("{{CERTBOT_IMG}}", &certbot_img)
-                .replace("{{HTTP_URI}}", &http_uri);
-            wv.load_html(&error_html, Some(failing_uri));
+            render_tls_error(wv, failing_uri);
             true
         } else {
             false
@@ -348,9 +341,20 @@ pub fn create_tab(
                 return false;
             }
         }
+        let error_message = error.message();
+        let msg_lower = error_message.to_lowercase();
+        let is_tls_error = msg_lower.contains("tls")
+            || msg_lower.contains("ssl")
+            || msg_lower.contains("handshake")
+            || msg_lower.contains("certificate");
+
+        if is_tls_error && failing_uri.starts_with("https://") {
+            render_tls_error(wv, failing_uri);
+            return true;
+        }
+
         let shared_css = crate::browsing::internal::SHARED_CSS.as_str();
         let broken_pipe_img = crate::util::image::get_juanita_broken_pipe_b64();
-        let error_message = error.message();
         let error_html = include_root_str!(@templates, "proxy.html")
             .replace("{shared_css}", shared_css)
             .replace("{{BROKEN_PIPE_IMG}}", &broken_pipe_img)
@@ -362,10 +366,8 @@ pub fn create_tab(
     let webview_create = webview.clone();
     webview.connect_create(move |_wv, nav_action| {
         #[allow(deprecated)]
-        if let Some(req) = nav_action.request() {
-            if let Some(uri) = req.uri() {
-                webview_create.load_uri(uri.as_str());
-            }
+        if let Some(uri) = nav_action.request().and_then(|r| r.uri()) {
+            webview_create.load_uri(uri.as_str());
         }
         None
     });
@@ -421,19 +423,16 @@ pub fn create_tab(
     webview.connect_context_menu(move |_wv, menu, _event, hit_test| {
         use webkit2gtk::{ContextMenuExt, ContextMenuItemExt};
         if let Some(uri) = hit_test.link_uri() {
-            let items = menu.items();
-            for item in &items {
+            for item in &menu.items() {
                 if item.stock_action() == webkit2gtk::ContextMenuAction::OpenLinkInNewWindow {
                     menu.remove(item);
                 }
             }
-
             if let Some(open_act) = window_menu.lookup_action("open-in-new-tab") {
-                let uri_variant = uri.to_string().to_variant();
                 let item = webkit2gtk::ContextMenuItem::from_gaction(
                     &open_act,
                     "Open Link in New Tab",
-                    Some(&uri_variant),
+                    Some(&uri.to_string().to_variant()),
                 );
                 menu.insert(&item, 0);
             }
@@ -445,12 +444,11 @@ pub fn create_tab(
     let is_killed_clone2 = is_killed.clone();
     let label_clone2 = label.clone();
     webview.connect_title_notify(move |wv| {
-        if *is_killed_clone2.borrow() {
-            return;
+        if !*is_killed_clone2.borrow() {
+            let title = wv.title().unwrap_or_else(|| "New Tab".into()).to_string();
+            *original_title_clone.borrow_mut() = title.clone();
+            label_clone2.set_text(&title);
         }
-        let title = wv.title().unwrap_or_else(|| "New Tab".into()).to_string();
-        *original_title_clone.borrow_mut() = title.clone();
-        label_clone2.set_text(&title);
     });
 
     let ctx = crate::browsing::internal::PageContext {
@@ -486,4 +484,16 @@ pub fn create_tab(
         intox_engine,
         ad_intox_engine,
     }
+}
+
+fn render_tls_error(wv: &WebView, failing_uri: &str) {
+    if let Some(ctx) = wv.context() {
+        ctx.clear_cache();
+    }
+    let http_uri = failing_uri.replace("https://", "http://");
+    let html = include_root_str!(@templates, "tls.html")
+        .replace("{shared_css}", crate::browsing::internal::SHARED_CSS.as_str())
+        .replace("{{CERTBOT_IMG}}", &crate::util::image::get_juanita_certbot_b64())
+        .replace("{{HTTP_URI}}", &http_uri);
+    wv.load_html(&html, Some(failing_uri));
 }

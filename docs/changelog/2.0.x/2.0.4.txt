@@ -1,0 +1,7 @@
+Juanita Banana v2.0.4 Patch Release Changelog
+=============================================
+
+- Protocol Stacking Warning & Expandable Venn Diagram: Added a collapsible UI disclosure in `juanita://config` explaining why protocol stacking (I2P over Tor) reduces anonymity set and causes severe latency. Includes custom artwork featuring the Juanita Banana mascot in a deflating, clumsily-stitched half-onion half-garlic costume (`assets/stacking_venn_diagram.png`).
+- Specifications & Non-HTTP Protocols Update: Documented non-HTTP application protocols (`gemini://`, `gopher://`) and Tor `ExitPolicy` port policies vs. end-to-end hidden service tunneling in `docs/spec/OVERLAY_NETWORKS.md`.
+
+

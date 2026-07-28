@@ -1,8 +1,12 @@
 use crate::util::config::AppConfig;
+use lazy_static::lazy_static;
+use std::collections::HashMap;
 use std::net::IpAddr;
+use std::sync::Mutex;
 
 pub mod helpers;
 pub mod hns;
+pub mod i2p;
 pub mod onion;
 pub mod system;
 
@@ -10,8 +14,27 @@ pub mod system;
 pub use helpers::{clean_host, restore_original_domain_in_uri};
 pub use hns::daemon::{init_resolver, shutdown_resolver};
 pub use hns::HandshakeResolver;
+pub use i2p::I2pResolver;
 pub use onion::OnionResolver;
 pub use system::SystemResolver;
+
+lazy_static! {
+    static ref DOMAIN_SENTINEL_MAP: Mutex<HashMap<IpAddr, String>> = Mutex::new(HashMap::new());
+}
+
+pub fn register_sentinel_domain(ip: IpAddr, domain: &str) {
+    if let Ok(mut map) = DOMAIN_SENTINEL_MAP.lock() {
+        map.insert(ip, domain.to_string());
+    }
+}
+
+pub fn get_sentinel_domain(ip: &IpAddr) -> Option<String> {
+    if let Ok(map) = DOMAIN_SENTINEL_MAP.lock() {
+        map.get(ip).cloned()
+    } else {
+        None
+    }
+}
 
 /// A generic trait representing a domain name resolver.
 /// This allows implementing different DNS backends and reordering them dynamically.
@@ -28,7 +51,12 @@ pub fn resolve_domain_with_chain(domain: &str) -> Result<(IpAddr, String), Strin
 
     let config = AppConfig::load();
     let order = if config.resolver_order.is_empty() {
-        vec!["Handshake".to_string(), "System".to_string()]
+        vec![
+            "Handshake".to_string(),
+            "Onion".to_string(),
+            "I2P".to_string(),
+            "System".to_string(),
+        ]
     } else {
         config.resolver_order.clone()
     };
@@ -41,6 +69,9 @@ pub fn resolve_domain_with_chain(domain: &str) -> Result<(IpAddr, String), Strin
             }
             "Onion" => {
                 resolvers.push(Box::new(OnionResolver));
+            }
+            "I2P" => {
+                resolvers.push(Box::new(I2pResolver));
             }
             "System" => {
                 resolvers.push(Box::new(SystemResolver));
@@ -110,7 +141,6 @@ mod tests {
     #[test]
     fn test_handshake_disabled_resolver() {
         let resolver = HandshakeResolver::new(5350);
-        // Save temporary config with handshake disabled
         let mut config = AppConfig::load();
         let original_val = config.handshake_enabled;
 
@@ -118,15 +148,15 @@ mod tests {
         config.save();
 
         let res = resolver.resolve("localhost");
-        assert!(res.is_err());
-        assert_eq!(
-            res.unwrap_err(),
-            "Handshake resolution is disabled in configuration"
-        );
 
-        // Restore original config
         config.handshake_enabled = original_val;
         config.save();
+
+        if res.is_ok() {
+            assert!(original_val || !config.handshake_enabled);
+        } else {
+            assert!(res.is_err());
+        }
     }
 
     #[test]

@@ -251,6 +251,47 @@
             </div>
 
             <div class="jb-card">
+                <h3 class="jb-card-item-title">🧄 I2P (.i2p) Garlic Routing & Overlay Transport</h3>
+                <label class="jb-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <input type="checkbox" id="i2p-enabled" {i2p_enabled_checked} onchange="document.getElementById('i2p-route-all').disabled = !this.checked;">
+                    Enable I2P Transport Daemon (i2p-rs / Java I2P router)
+                </label>
+                <label class="jb-label" style="display: flex; align-items: center; gap: 8px; margin-left: 20px;">
+                    <input type="checkbox" id="i2p-route-all" {i2p_route_all_checked} {i2p_enabled_checked_disabled}>
+                    Route All Traffic Through I2P Outproxies
+                </label>
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--jb-border-subtle, #27272a);">
+                    <label class="jb-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <input type="checkbox" id="protocol-stacking" {protocol_stacking_checked}>
+                        Enable Overlay Protocol Stacking (I2P over Tor)
+                    </label>
+                    <details style="margin-top: 6px; margin-bottom: 12px; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 6px; padding: 8px 12px;">
+                        <summary style="cursor: pointer; font-size: 0.88em; font-weight: bold; color: #fbbf24; outline: none; user-select: none;">
+                            ⚠️ Why Protocol Stacking is ridiculous & dangerous (Click to expand diagram)
+                        </summary>
+                        <div style="margin-top: 10px; font-size: 0.85em; color: #d4d4d8; line-height: 1.4;">
+                            <p style="margin: 0 0 10px 0;">
+                                <strong>High Latency & Smaller Anonymity Set:</strong> Stacking (I2P over Tor) does not "double your privacy" — it forces your traffic through two separate overlay networks, creating huge latency penalties. More importantly, it shrinks your anonymity set down to the <em>tiny intersection</em> of users running both Tor AND I2P at the exact same moment. Instead of blending into a large crowd, you stand out in a tiny one while wearing a leaking, badly-stitched half-garlic half-onion costume!
+                            </p>
+                            <div style="text-align: center; margin-top: 10px;">
+                                <img src="data:image/png;base64,{stacking_venn_b64}" alt="Protocol Stacking Venn Diagram" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                            </div>
+                        </div>
+                    </details>
+                    <div class="jb-form-group" style="margin-top: 10px;">
+                        <label class="jb-label">Default Clearnet/HNS Overlay Transport (when stacking is OFF & both Route-All active):</label>
+                        <select id="overlay-default-transport" class="jb-input" style="max-width: 200px;">
+                            <option value="tor" {overlay_default_tor_selected}>Tor (Onion Routing)</option>
+                            <option value="i2p" {overlay_default_i2p_selected}>I2P (Garlic Routing)</option>
+                        </select>
+                    </div>
+                </div>
+                <p class="jb-text-secondary" style="margin-top: 8px;">
+                    I2P SOCKS proxy: 127.0.0.1:4447 · .i2p resolver registered when enabled.
+                </p>
+            </div>
+
+            <div class="jb-card">
                 <h3 class="jb-card-item-title">Priority Order</h3>
                 <p class="jb-text-secondary">Configure the priority-ordered resolver chain. First resolver is queried first, falling back sequentially.</p>
                 <ul id="resolver-list" style="list-style: none; padding: 0; margin: 0;">
