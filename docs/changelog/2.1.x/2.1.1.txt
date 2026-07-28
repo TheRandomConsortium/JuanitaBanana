@@ -1,0 +1,5 @@
+Juanita Banana v2.1.1 Patch Release Changelog
+=============================================
+
+- Tab Submodule Refactoring & Tidiness Compliance: Split `src/browsing/tabs/tab.rs` by extracting UserScript setup and error page renderers into `src/browsing/tabs/handlers.rs`, keeping `tab.rs` formatted under the strict 500-line cleanliness ceiling.
+- Specifications Update (IASL & Panama Disease Quarantine): Documented Isoamyl Acetate Scripting Language (IASL / `.bg` / `text/iasl`), native GTK/Cairo zero-HTML rendering engine, Banana Lexicon (`peel`, `bunch`, `dark-spot`, `pulp`, `fiber`, `bruise`), and `[panama-disease]` legacy W3C code quarantine system in `docs/spec/FUNCTIONALITIES_AFTERDARK.md`.

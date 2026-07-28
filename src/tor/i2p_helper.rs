@@ -255,7 +255,8 @@ mod tests {
     fn test_rewrite_http_proxy_request() {
         let raw = "GET /index.html HTTP/1.1\r\nHost: reg.i2p\r\n\r\n";
         let rewritten = rewrite_http_proxy_request(raw, "reg.i2p");
-        assert!(rewritten.starts_with("GET http://reg.i2p/index.html HTTP/1.1\r\nCache-Control: no-cache"));
+        assert!(rewritten
+            .starts_with("GET http://reg.i2p/index.html HTTP/1.1\r\nCache-Control: no-cache"));
         assert!(rewritten.contains("Host: reg.i2p"));
     }
 }
