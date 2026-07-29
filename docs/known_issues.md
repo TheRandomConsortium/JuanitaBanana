@@ -91,5 +91,5 @@ Until we determine if a zero-compromise fix exists, we recommend the following p
      -H 'Accept-Language: en-US,en;q=0.5' \
      --data-raw '{"context":{"client":{"clientName":"WEB","clientVersion":"2.20240110.01.00","hl":"en","gl":"US"}},"query":"opensource"}'
    ```
-5. **Future Multi-Platform Streamer (`omnistreamer.randºm`)**: Rather than bloating the browser with custom internal protocol handlers, The Random Consortium is evaluating **`omnistreamer.randºm`**—a lightweight, multi-platform media aggregator that imports subscription RSS feeds, executes direct `youtubei` searches, and unifies YouTube, PeerTube, and other video platforms into a clean, zero-telemetry, ad-free stream.
+5. **Future Zero-Backend Streamer (`omnistreamer.randºm`)**: Rather than bloating the browser core with internal protocol handlers, The Random Consortium is evaluating **`omnistreamer.randºm`**—a zero-backend, minimal-code frontend wrapper that parses user-supplied RSS subscription feeds at launch, executes direct cURL/HTTP search queries (e.g. `youtubei` API & PeerTube REST), and renders video embeds directly (or via stream fallback borrowing) with zero accounts, zero data saving/tracking, and minimal code.
 
