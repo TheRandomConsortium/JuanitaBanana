@@ -310,6 +310,17 @@ pub fn config_page_html(
         "general"
     });
 
+    let ua_mode_honest_selected = if config.ua_spoof_mode == "honest" {
+        "selected"
+    } else {
+        ""
+    };
+    let ua_mode_rotate_selected = if config.ua_spoof_mode == "rotate_daily" {
+        "selected"
+    } else {
+        ""
+    };
+
     html_template
         .replace("{shared_css}", shared_css)
         .replace("{active_tab}", active_tab)
@@ -404,6 +415,8 @@ pub fn config_page_html(
             "{last_tab_action_home_selected}",
             last_tab_action_home_selected,
         )
+        .replace("{ua_mode_honest_selected}", ua_mode_honest_selected)
+        .replace("{ua_mode_rotate_selected}", ua_mode_rotate_selected)
 }
 
 #[cfg(test)]
@@ -438,5 +451,22 @@ mod tests {
         assert!(html.contains("newsmeme"));
         assert!(html.contains("shopmeme"));
         assert!(html.contains("socialmeme"));
+    }
+
+    #[test]
+    fn test_config_page_html_ua_spoof_mode() {
+        let config_rotate = AppConfig {
+            ua_spoof_mode: "rotate_daily".to_string(),
+            ..AppConfig::default()
+        };
+        let html = config_page_html(&config_rotate, false, None, false, None);
+        assert!(html.contains(r#"value="rotate_daily" selected"#));
+
+        let config_honest = AppConfig {
+            ua_spoof_mode: "honest".to_string(),
+            ..AppConfig::default()
+        };
+        let html2 = config_page_html(&config_honest, false, None, false, None);
+        assert!(html2.contains(r#"value="honest" selected"#));
     }
 }

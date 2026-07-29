@@ -106,3 +106,18 @@ This document maintains the tracking of known technical chores, API deprecations
   - Create a dedicated custom error template (e.g. `templates/errors/eepsite_503.html` or `gateway_error.html`) explaining that the target overlay site is currently unreachable, offline, or building tunnels in the network.
   - Intercept HTTP 502 / 503 / 504 responses in `src/tor/i2p_helper.rs` and `tab.rs`.
   - Render the custom overlay error page with helpful guidance and a "Retry Connection" action.
+
+### 19. Implement JS Linting & Testing in CI / Actions
+- **Files:** `.github/workflows/ci.yml`, `scripts/js/`, `scripts/sh/check_cleanliness.sh`
+- **Chore:** JavaScript files (`scripts/js/`) represent approximately ~9% of the Juanita Banana project codebase. Implement automated JS linting (e.g., ESLint / `node --check`) and JS unit testing into our verification scripts and CI workflow actions.
+- **Action Plan:**
+  - Add `node --check` and ESLint checks to `./scripts/sh/check_cleanliness.sh` and CI pipeline.
+  - Create a lightweight test harness to execute narrow unit tests for anti-fingerprinting JS helpers (`_makeNative`, `_defineGetter`, `_overrideMethod`, `_protectedToString`).
+
+### 20. Transition Testing Strategy to TDD-Adjacent Narrow Functional & Broad Happy Path Tests
+- **Files:** `src/`, `tests/`
+- **Chore:** Shift Rust test suite methodology away from implementation-dependent, brittle unit tests (which break during frequent refactoring and contribute little value) towards a TDD-adjacent testing paradigm centered around narrow functional tests and broad end-to-end happy path tests.
+- **Action Plan:**
+  - Audit existing test suite to deprecate/refactor brittle internal state assertions.
+  - Implement narrow functional tests for domain logic (e.g., User-Agent coincidence, config serialization, resolver routing, certificate parsing) that verify external contract behavior rather than internal private helpers.
+  - Expand broad happy-path integration tests verifying full workflows (e.g., URI resolution chain, config generation, and ban page rendering).

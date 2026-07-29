@@ -131,6 +131,9 @@ function saveConfig() {
         configData.protocol_stacking = document.getElementById('protocol-stacking').checked;
         configData.overlay_default_transport = document.getElementById('overlay-default-transport').value;
     }
+    if (document.getElementById('ua-spoof-mode')) {
+        configData.ua_spoof_mode = document.getElementById('ua-spoof-mode').value;
+    }
     configData.tab_inactivity_ttl = parseInt(document.getElementById('tab-inactivity-ttl').value, 10);
     configData.last_tab_nuke_action = document.getElementById('last-tab-nuke-action').value;
     configData.ai_slop_detection_enabled = document.getElementById('ai-slop-enabled').checked;

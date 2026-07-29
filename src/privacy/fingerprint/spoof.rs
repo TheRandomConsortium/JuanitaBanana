@@ -10,8 +10,9 @@
 
 /// JS payload injected into EVERY page and EVERY sub-frame
 /// before any page script executes.
-pub fn anti_fingerprint_script() -> &'static str {
-    include_root_str!(@scripts, "anti_fingerprint.js")
+pub fn anti_fingerprint_script(config: &crate::util::config::AppConfig) -> String {
+    let ua = config.active_user_agent();
+    include_root_str!(@scripts, "anti_fingerprint.js").replace("__JUANITA_UA__", &ua)
 }
 
 #[cfg(test)]
@@ -20,7 +21,8 @@ mod tests {
 
     #[test]
     fn test_anti_fingerprint_script_contains_overrides() {
-        let script = anti_fingerprint_script();
+        let config = crate::util::config::AppConfig::default();
+        let script = anti_fingerprint_script(&config);
 
         // Prototype toString Protection
         assert!(script.contains("Function.prototype.toString"));
@@ -58,5 +60,28 @@ mod tests {
         assert!(script.contains("DeviceOrientationEvent.prototype overrides"));
         assert!(script.contains("window.Accelerometer = createSensorMock"));
         assert!(script.contains("window.Gyroscope = createSensorMock"));
+    }
+
+    #[test]
+    fn test_anti_fingerprint_script_ua_coincidence_honest() {
+        let config = crate::util::config::AppConfig {
+            ua_spoof_mode: "honest".to_string(),
+            ..Default::default()
+        };
+        let script = anti_fingerprint_script(&config);
+        assert!(script.contains(crate::util::config::HONEST_USER_AGENT));
+        assert!(!script.contains("__JUANITA_UA__"));
+    }
+
+    #[test]
+    fn test_anti_fingerprint_script_ua_coincidence_rotate_daily() {
+        let config = crate::util::config::AppConfig {
+            ua_spoof_mode: "rotate_daily".to_string(),
+            ..Default::default()
+        };
+        let active_ua = config.active_user_agent();
+        let script = anti_fingerprint_script(&config);
+        assert!(script.contains(&active_ua));
+        assert!(!script.contains("__JUANITA_UA__"));
     }
 }

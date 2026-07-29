@@ -42,6 +42,19 @@
                 {default_btn}
             </div>
             <div class="jb-card">
+                <h3 class="jb-card-item-title">User-Agent Spoofing Settings</h3>
+                <div class="jb-form-group">
+                    <label class="jb-label">User-Agent Mode:</label>
+                    <select id="ua-spoof-mode" class="jb-select">
+                        <option value="honest" {ua_mode_honest_selected}>Honest Banana (Default)</option>
+                        <option value="rotate_daily" {ua_mode_rotate_selected}>Daily Rotation (Genuine Modern UAs)</option>
+                    </select>
+                    <p class="jb-text-secondary" style="margin-top: 8px; font-size: 0.85em;">
+                        Synchronizes both HTTP request headers and JavaScript <code>navigator.userAgent</code>. Honest mode reports the official Juanita Banana User-Agent. Daily Rotation deterministically rotates through genuine modern Chrome, Firefox, Safari, and Edge User-Agents daily.
+                    </p>
+                </div>
+            </div>
+            <div class="jb-card">
                 <h3 class="jb-card-item-title">Unsubscribe Crawler Settings</h3>
                 <div class="jb-form-group">
                     <label class="jb-label">Deep Crawl Max Pages:</label>

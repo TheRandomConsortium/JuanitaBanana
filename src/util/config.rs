@@ -15,6 +15,19 @@ pub struct RssSource {
     pub url: String,
 }
 
+pub const HONEST_USER_AGENT: &str = "JuanitaBanana/0.1 (FOSS; Not-Google; Linux)";
+
+pub const GENUINE_UA_POOL: &[&str] = &[
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64; rv:127.0) Gecko/20100101 Firefox/127.0",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:127.0) Gecko/20100101 Firefox/127.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0",
+];
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(default)]
 pub struct AppConfig {
@@ -54,6 +67,8 @@ pub struct AppConfig {
     pub last_tab_nuke_action: String,
     pub ai_slop_detection_enabled: bool,
     pub ai_slop_phrases: Vec<String>,
+    /// User-Agent spoof mode: "honest" (default, Honest Banana UA) or "rotate_daily".
+    pub ua_spoof_mode: String,
 }
 
 impl Default for AppConfig {
@@ -182,11 +197,26 @@ impl Default for AppConfig {
                 "language model".to_string(),
                 "as an ai language model".to_string(),
             ],
+            ua_spoof_mode: "honest".to_string(),
         }
     }
 }
 
 impl AppConfig {
+    pub fn active_user_agent(&self) -> String {
+        if self.ua_spoof_mode == "rotate_daily" {
+            let days_since_epoch = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs()
+                / 86400;
+            let index = (days_since_epoch as usize) % GENUINE_UA_POOL.len();
+            GENUINE_UA_POOL[index].to_string()
+        } else {
+            HONEST_USER_AGENT.to_string()
+        }
+    }
+
     pub fn expected_secret_id(&self) -> String {
         use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
@@ -317,5 +347,16 @@ mod tests {
         let deserialized: AppConfig = serde_json::from_str(&json).unwrap();
         assert_eq!(deserialized.tab_inactivity_ttl, 15);
         assert_eq!(deserialized.last_tab_nuke_action, "survive");
+    }
+
+    #[test]
+    fn test_ua_spoof_mode() {
+        let mut config = AppConfig::default();
+        assert_eq!(config.ua_spoof_mode, "honest");
+        assert_eq!(config.active_user_agent(), HONEST_USER_AGENT);
+
+        config.ua_spoof_mode = "rotate_daily".to_string();
+        let rotated_ua = config.active_user_agent();
+        assert!(GENUINE_UA_POOL.contains(&rotated_ua.as_str()));
     }
 }

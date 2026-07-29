@@ -161,8 +161,9 @@ impl IntoxicationEngine {
                 match &task {
                     IntoxicationTask::FakeSearch(uri) => {
                         crate::log!(Info, INTOX, "Firing background noise: {}", uri);
+                        let active_ua = AppConfig::load().active_user_agent();
                         let settings = webkit2gtk::Settings::builder()
-                            .user_agent("JuanitaBanana/0.1 (FOSS; Not-Google; Linux)")
+                            .user_agent(&active_ua)
                             .build();
                         let hidden_wv = webkit2gtk::WebView::builder()
                             .web_context(&engine.context)

@@ -1,0 +1,9 @@
+Juanita Banana v2.2.0 Minor Release Changelog
+=============================================
+
+User-Agent Spoofing Toggle & Daily Rotation
+- User-Agent Spoofing Toggle: Integrated a configuration toggle in `juanita://config` (General Settings tab) switching between `honest` (Default Honest Banana UA) and `rotate_daily` (Daily Rotation of genuine modern Chrome, Firefox, Safari, and Edge UAs).
+- HTTP & JavaScript Coincidence: Synchronized WebKitGTK HTTP User-Agent header with JavaScript DOM `navigator.userAgent` property, guaranteeing 100% coincidence and eliminating tracker header vs. DOM mismatch detection.
+- Deterministic Daily Rotation: Implemented day-epoch seeding for the `rotate_daily` pool (`GENUINE_UA_POOL`), ensuring stable User-Agent identity throughout a calendar day across all tabs and sub-frames.
+- Narrow Functional & Coverage Testing: Expanded unit testing suite with functional tests for User-Agent coincidence, configuration serialization, and UI template rendering (`test_ua_spoof_mode`, `test_anti_fingerprint_script_ua_coincidence_honest`, `test_anti_fingerprint_script_ua_coincidence_rotate_daily`, `test_config_page_html_ua_spoof_mode`).
+- Chore List Update: Added Chore 19 ("Implement JS Linting & Testing in CI / Actions") to `docs/chore_list.md`.

@@ -268,7 +268,7 @@ impl InternalPage for ConfigPage {
                             ucm.remove_all_scripts();
 
                             let fp_script = webkit2gtk::UserScript::new(
-                                crate::fingerprint::spoof::anti_fingerprint_script(),
+                                &crate::fingerprint::spoof::anti_fingerprint_script(&new_config),
                                 webkit2gtk::UserContentInjectedFrames::AllFrames,
                                 webkit2gtk::UserScriptInjectionTime::Start,
                                 &[],

@@ -146,7 +146,9 @@ impl AdIntoxicationEngine {
         // specifically omitting the ad-intoxication script and script message handlers to prevent loops.
         let headless_ucm = UserContentManager::new();
         let anti_fp_script = UserScript::new(
-            crate::fingerprint::spoof::anti_fingerprint_script(),
+            &crate::fingerprint::spoof::anti_fingerprint_script(
+                &crate::util::config::AppConfig::load(),
+            ),
             UserContentInjectedFrames::AllFrames,
             UserScriptInjectionTime::Start,
             &[],

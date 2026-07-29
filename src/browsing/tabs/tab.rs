@@ -5,8 +5,7 @@ use std::rc::Rc;
 use webkit2gtk::{
     HitTestResultExt, NavigationPolicyDecision, NavigationPolicyDecisionExt, PolicyDecisionExt,
     PolicyDecisionType, URIRequestExt, UserContentInjectedFrames, UserContentManager,
-    UserContentManagerExt, UserScript, UserScriptInjectionTime, WebContext, WebView,
-    WebViewExt,
+    UserContentManagerExt, UserScript, UserScriptInjectionTime, WebContext, WebView, WebViewExt,
 };
 
 use crate::browsing::browser::SharedBanList;
@@ -78,8 +77,9 @@ pub fn create_tab(
     );
     ucm.add_script(&form_interact_script);
 
+    let active_ua = config.active_user_agent();
     let settings = webkit2gtk::Settings::builder()
-        .user_agent("JuanitaBanana/0.1 (FOSS; Not-Google; Linux)")
+        .user_agent(&active_ua)
         .build();
     let webview = WebView::builder()
         .web_context(web_context)

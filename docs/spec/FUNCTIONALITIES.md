@@ -23,6 +23,7 @@
 | **Battery API Spoofing** | ✅ Done | Override `navigator.getBattery()` to always report 100% charging and charging status. |
 | **Session-Randomized Spoofing** | 📋 Planned | Make spoofed parameters (memory, cores, dimensions, platform) configurable and session-randomized. Values remain static within a session to prevent inconsistency tracking, but mutate on launch within logical boundaries. |
 | **Font Enumeration Protection** | ✅ Done | Overrides canvas text measurements and CSS font loading to report that only `Webdings` and `Monospace` are installed (until session-randomized font pools are implemented). |
+| **User-Agent Spoofing Toggle** | ✅ Done | Config toggle in `juanita://config` between Honest Banana UA (default) and daily rotation of genuine modern Chrome, Firefox, Safari, and Edge UAs. Synchronizes HTTP request headers and JS `navigator.userAgent`. |
 
 | **Prototype toString Protection** | ✅ Done | Override `Function.prototype.toString` to return standard native function representation (`function () { [native code] }`) when called on any spoofed/overridden APIs, avoiding detection by bot detectors verifying `toString` outputs. |
 | **Proxy-based API Hooking** | 📋 Planned | Migrate all manually overridden/monkeypatched properties and methods to use ES6 `Proxy` wrappers, creating a more uniform, robust, and clean interception system. |

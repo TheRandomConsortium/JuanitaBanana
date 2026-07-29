@@ -8,7 +8,7 @@ use crate::util::config::AppConfig;
 
 pub fn setup_user_content_manager(ucm: &UserContentManager, config: &AppConfig) {
     let script = UserScript::new(
-        spoof::anti_fingerprint_script(),
+        &spoof::anti_fingerprint_script(config),
         UserContentInjectedFrames::AllFrames,
         UserScriptInjectionTime::Start,
         &[],
