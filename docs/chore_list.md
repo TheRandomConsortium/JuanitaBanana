@@ -121,3 +121,11 @@ This document maintains the tracking of known technical chores, API deprecations
   - Audit existing test suite to deprecate/refactor brittle internal state assertions.
   - Implement narrow functional tests for domain logic (e.g., User-Agent coincidence, config serialization, resolver routing, certificate parsing) that verify external contract behavior rather than internal private helpers.
   - Expand broad happy-path integration tests verifying full workflows (e.g., URI resolution chain, config generation, and ban page rendering).
+
+### 21. Remote Fedora RPM Repository Distribution Pipeline (Staged DDNS -> Handshake Rollout)
+- **Files:** `build_rpm.sh`, `juanita.repo`, `docs/spec/DISTRIBUTION.md`
+- **Chore:** Establish remote automated repository hosting infrastructure for Juanita Banana Fedora RPM builds (`fedora.repo.randºm`).
+- **Action Plan:**
+  - **Stage 1 (DDNS + HTTP / GPG)**: Configure remote Ubuntu server with `createrepo_c` and Caddy. Sync built RPMs via `rsync` over SSH. Enable OpenPGP package signing (`gpgcheck=1`, `gpgkey=...`) and serve initial release repository via DDNS.
+  - **Stage 2 (Handshake DNF Plugin)**: Develop `dnf-plugin-hns` (DNF4/DNF5 Python plugin) that invokes lightweight Rust Handshake resolution (`hnsd` / custom HNS resolver) in-memory to resolve `.hns` domains (`repo.juanita.hns` / `fedora.repo.randºm`) without requiring system-wide DNS reconfigurations or full nodes.
+  - **Stage 3 (Decentralized TLS with `randbotd`)**: Integrate `randbotd` for automatic decentralized TLS certificate verification and trust establishment on Handshake names.
