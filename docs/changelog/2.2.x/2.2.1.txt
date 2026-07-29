@@ -1,0 +1,7 @@
+Juanita Banana v2.2.1 Patch Release Changelog
+=============================================
+
+Live Dynamic Configuration Reload Across Active WebViews
+- Live Configuration Application: Resolved issue where saving settings in `juanita://config` required a browser restart to take effect.
+- Instant User-Agent & Script Injection: Implemented container tree traversal (`update_all_webviews_in_widget`) on configuration save, dynamically updating WebKitGTK `Settings::set_user_agent` HTTP headers and `UserContentManager` DOM scripts live across all open tabs and WebViews immediately without restarting.
+- Unified UserContentManager Handler: Consolidated script injection logic (`setup_user_content_manager`) across tab creation, handlers, and dynamic configuration reloads.

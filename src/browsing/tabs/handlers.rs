@@ -56,6 +56,33 @@ pub fn setup_user_content_manager(ucm: &UserContentManager, config: &AppConfig) 
         );
         ucm.add_script(&ai_slop_script);
     }
+
+    let form_mon_script = UserScript::new(
+        crate::browsing::credentials_ui::form_monitor_script(),
+        UserContentInjectedFrames::TopFrame,
+        UserScriptInjectionTime::End,
+        &[],
+        &[],
+    );
+    ucm.add_script(&form_mon_script);
+
+    let console_override = UserScript::new(
+        crate::util::debug::console_override_script(),
+        UserContentInjectedFrames::AllFrames,
+        UserScriptInjectionTime::Start,
+        &[],
+        &[],
+    );
+    ucm.add_script(&console_override);
+
+    let form_interact_script = UserScript::new(
+        crate::browsing::credentials_ui::form_interact_script(),
+        UserContentInjectedFrames::TopFrame,
+        UserScriptInjectionTime::End,
+        &[],
+        &[],
+    );
+    ucm.add_script(&form_interact_script);
 }
 
 pub fn render_tls_error(wv: &WebView, failing_uri: &str) {
