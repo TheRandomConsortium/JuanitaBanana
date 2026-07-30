@@ -58,4 +58,38 @@ The CaBLE protocol routes authentication handshakes through Google or Apple's cl
 **We will never support CaBLE.** Even if technically feasible within WebKitGTK, we fundamentally oppose protocols that exfiltrate user authentication data and device metadata to first-party clouds for "integrity verification". We will not facilitate double-spying.
 
 ### Resolution
-Use physical **Hardware Security Keys** (e.g., YubiKey, Nitrokey, SoloKeys). They operate secure
+Use physical **Hardware Security Keys** (e.g., YubiKey, Nitrokey, SoloKeys). They operate securely via local USB/NFC hardware polling without relaying authentication payloads through corporate cloud proxies.
+
+---
+
+## YouTube Search & Recommendation Degradation
+
+### The Issue
+YouTube loads and plays individual video URLs directly without issue, but in-page video search, recommendations, and feed interactions fail to load or get blocked. Cloned/frontend YouTube interfaces (Invidious, Piped) work perfectly with search, recommendations, and playback.
+
+### The Cause
+Undetermined / Under active investigation. However, because video streaming payloads load cleanly when given a direct URL, this behavior strongly resembles voluntary, client-side degradation by Google against browsers that actively enforce anti-fingerprinting controls and refuse to leak user tracking telemetry.
+
+### Our Stance
+**Most likely Google being angry because they cannot spy on your watch history.** 
+
+PeerTube works natively. Privacy frontends and clones work natively. Do we truly need to work overtime to solve Google's confidence issues? If the only ultimate fix ends up requiring unhardening the browser's privacy controls, do you really want to lower your pants to the monopoly?
+
+### Resolution & Workarounds
+Until we determine if a zero-compromise fix exists, we recommend the following privacy-preserving alternatives:
+
+1. **Search Elsewhere & Jump In**: Perform video searches in DuckDuckGo or Google Search and click directly into the target YouTube video URL.
+2. **Use PeerTube**: Migrate to decentralized video platforms like PeerTube that respect user sovereignty.
+3. **Use Dedicated Privacy Apps / Frontends**: Use dedicated apps or privacy frontends (Invidious, Piped) so you only leak data through an isolated sandbox.
+4. **RSS Feeds & Direct `youtubei` API Searching**: Export your YouTube subscriptions to standard RSS feeds. Execute lightweight video searches directly against YouTube's `youtubei/v1/search` endpoint:
+   ```bash
+   curl 'https://www.youtube.com/youtubei/v1/search?prettyPrint=false' \
+     -X POST \
+     -H 'Content-Type: application/json' \
+     -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' \
+     -H 'Accept: application/json' \
+     -H 'Accept-Language: en-US,en;q=0.5' \
+     --data-raw '{"context":{"client":{"clientName":"WEB","clientVersion":"2.20240110.01.00","hl":"en","gl":"US"}},"query":"opensource"}'
+   ```
+5. **Future Zero-Backend Streamer (`omnistreamer.randºm`)**: Rather than bloating the browser core with internal protocol handlers, The Random Consortium is evaluating **`omnistreamer.randºm`**—a zero-backend, minimal-code frontend wrapper that parses user-supplied RSS subscription feeds at launch, executes direct cURL/HTTP search queries (e.g. `youtubei` API & PeerTube REST), and renders video embeds directly (or via stream fallback borrowing) with zero accounts, zero data saving/tracking, and minimal code.
+

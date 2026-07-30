@@ -1,6 +1,29 @@
 use crate::browsing::internal::{InternalPage, PageContext};
 use crate::util::config::AppConfig;
-use webkit2gtk::{UserContentManagerExt, WebViewExt};
+use gtk::prelude::*;
+use webkit2gtk::{SettingsExt, UserContentManagerExt, WebViewExt};
+
+fn update_single_webview(wv: &webkit2gtk::WebView, config: &AppConfig) {
+    let active_ua = config.active_user_agent();
+    if let Some(settings) = webkit2gtk::WebViewExt::settings(wv) {
+        settings.set_user_agent(Some(&active_ua));
+    }
+    if let Some(ucm) = wv.user_content_manager() {
+        ucm.remove_all_scripts();
+        crate::browsing::tabs::handlers::setup_user_content_manager(&ucm, config);
+    }
+}
+
+fn update_all_webviews_in_widget(widget: &gtk::Widget, config: &AppConfig) {
+    if let Ok(wv) = widget.clone().downcast::<webkit2gtk::WebView>() {
+        update_single_webview(&wv, config);
+    }
+    if let Ok(container) = widget.clone().downcast::<gtk::Container>() {
+        for child in container.children() {
+            update_all_webviews_in_widget(&child, config);
+        }
+    }
+}
 
 fn get_query_param(uri: &str, key: &str) -> Option<String> {
     let uri_no_hash = uri.split('#').next().unwrap_or(uri);
@@ -264,73 +287,10 @@ impl InternalPage for ConfigPage {
                             "Configuration saved successfully. Reloading scripts."
                         );
 
-                        if let Some(ucm) = webview_clone.user_content_manager() {
-                            ucm.remove_all_scripts();
-
-                            let fp_script = webkit2gtk::UserScript::new(
-                                crate::fingerprint::spoof::anti_fingerprint_script(),
-                                webkit2gtk::UserContentInjectedFrames::AllFrames,
-                                webkit2gtk::UserScriptInjectionTime::Start,
-                                &[],
-                                &["juanita://*"],
-                            );
-                            ucm.add_script(&fp_script);
-
-                            let ad_script = webkit2gtk::UserScript::new(
-                                &crate::ad_intoxication::ad_intoxication_script(&new_config),
-                                webkit2gtk::UserContentInjectedFrames::AllFrames,
-                                webkit2gtk::UserScriptInjectionTime::Start,
-                                &[],
-                                &["juanita://*"],
-                            );
-                            ucm.add_script(&ad_script);
-
-                            let toxic_script = webkit2gtk::UserScript::new(
-                                &crate::util::ban::toxic_warning_script(&new_config),
-                                webkit2gtk::UserContentInjectedFrames::TopFrame,
-                                webkit2gtk::UserScriptInjectionTime::Start,
-                                &[],
-                                &["juanita://*"],
-                            );
-                            ucm.add_script(&toxic_script);
-
-                            if new_config.guilt_trip_enabled {
-                                let guilt_script = webkit2gtk::UserScript::new(
-                                    &crate::browsing::guilt::guilt_trip_script(&new_config),
-                                    webkit2gtk::UserContentInjectedFrames::TopFrame,
-                                    webkit2gtk::UserScriptInjectionTime::Start,
-                                    &[],
-                                    &["juanita://*"],
-                                );
-                                ucm.add_script(&guilt_script);
-                            }
-
-                            let form_mon_script = webkit2gtk::UserScript::new(
-                                crate::browsing::credentials_ui::form_monitor_script(),
-                                webkit2gtk::UserContentInjectedFrames::TopFrame,
-                                webkit2gtk::UserScriptInjectionTime::End,
-                                &[],
-                                &[],
-                            );
-                            ucm.add_script(&form_mon_script);
-
-                            let form_interact_script = webkit2gtk::UserScript::new(
-                                crate::browsing::credentials_ui::form_interact_script(),
-                                webkit2gtk::UserContentInjectedFrames::TopFrame,
-                                webkit2gtk::UserScriptInjectionTime::End,
-                                &[],
-                                &[],
-                            );
-                            ucm.add_script(&form_interact_script);
-
-                            let console_override = webkit2gtk::UserScript::new(
-                                crate::util::debug::console_override_script(),
-                                webkit2gtk::UserContentInjectedFrames::AllFrames,
-                                webkit2gtk::UserScriptInjectionTime::Start,
-                                &[],
-                                &[],
-                            );
-                            ucm.add_script(&console_override);
+                        if let Some(toplevel) = webview_clone.toplevel() {
+                            update_all_webviews_in_widget(&toplevel, &new_config);
+                        } else {
+                            update_single_webview(&webview_clone, &new_config);
                         }
                     }
                 }

@@ -118,7 +118,7 @@
     _defineGetter(navigator, 'deviceMemory',        () => _reportAndExecute('navigator.deviceMemory', () => 8));
     _defineGetter(navigator, 'platform',            () => _reportAndExecute('navigator.platform', () => 'Linux x86_64'));
     _defineGetter(navigator, 'vendor',              () => _reportAndExecute('navigator.vendor', () => 'Juanita Banana'));
-    _defineGetter(navigator, 'userAgent',           () => _reportAndExecute('navigator.userAgent', () => 'JuanitaBanana/0.1 (FOSS; Not-Google; Linux)'));
+    _defineGetter(navigator, 'userAgent',           () => _reportAndExecute('navigator.userAgent', () => '__JUANITA_UA__'));
 
     // Bot detection bypass: these fields expose automation
     _defineGetter(navigator, 'webdriver', () => _reportAndExecute('navigator.webdriver', () => false));
