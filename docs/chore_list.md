@@ -129,3 +129,10 @@ This document maintains the tracking of known technical chores, API deprecations
   - **Stage 1 (DDNS + HTTP / GPG)**: Configure remote Ubuntu server with `createrepo_c` and Caddy. Sync built RPMs via `rsync` over SSH. Enable OpenPGP package signing (`gpgcheck=1`, `gpgkey=...`) and serve initial release repository via DDNS.
   - **Stage 2 (Handshake DNF Plugin)**: Develop `dnf-plugin-hns` (DNF4/DNF5 Python plugin) that invokes lightweight Rust Handshake resolution (`hnsd` / custom HNS resolver) in-memory to resolve `.hns` domains (`repo.juanita.hns` / `fedora.repo.randºm`) without requiring system-wide DNS reconfigurations or full nodes.
   - **Stage 3 (Decentralized TLS with `randbotd`)**: Integrate `randbotd` for automatic decentralized TLS certificate verification and trust establishment on Handshake names.
+
+### 22. Replace Text Input with Native GTK FileChooser Dialog for Download Location
+- **Files:** `templates/pages/config.html`, `scripts/js/config.js`, `src/browsing/internal/config_pages/config.rs`
+- **Chore:** Replace the plain text `<input type="text" id="permanent-download-dir">` field in `juanita://config` with a native GTK FolderChooser / FileChooser dialog button to allow users to graphically pick their target download directory without typing manual paths.
+- **Action Plan:**
+  - Update `templates/pages/config.html` to add a "Browse..." button alongside the location path display.
+  - Implement GTK IPC/webcontent handler for launching `GtkFileChooserNative` / `GtkFileChooserDialog` in folder selection mode.
