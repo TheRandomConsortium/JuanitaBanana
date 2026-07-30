@@ -136,3 +136,10 @@ This document maintains the tracking of known technical chores, API deprecations
 - **Action Plan:**
   - Update `templates/pages/config.html` to add a "Browse..." button alongside the location path display.
   - Implement GTK IPC/webcontent handler for launching `GtkFileChooserNative` / `GtkFileChooserDialog` in folder selection mode.
+
+### 23. Investigate Unkilled WebProcess Subprocesses When Closing Media/Game Tabs
+- **Files:** `src/browsing/tabs/tab.rs`, `src/browsing/tabs/tab_cleanup.rs`, `src/browsing/gui.rs`
+- **Chore:** Investigate and resolve issue where closing web tabs containing active video streams (`<video>`, WebGL games, or audio contexts) leaves orphaned `WebKitWebProcess` / GStreamer child processes active in background memory.
+- **Action Plan:**
+  - Audit tab close handlers (`destroy()`, `remove_page`, `tab_cleanup`) to ensure WebKitGTK WebViews call `webkit2gtk::WebViewExt::try_close()` / `terminate_web_process()` or load `about:blank` prior to GTK widget destruction.
+  - Verify WebKitWebProcess lifecycle and resource termination across multi-tab teardowns.
