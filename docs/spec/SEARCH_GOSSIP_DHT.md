@@ -47,6 +47,21 @@ Rather than generating purely synthetic dictionary noise or relying on centraliz
 > 
 > However, because there are currently 3 other planned features that utilize the P2P DHT network (such as *Opt-in P2P DHT Config Sharing*, *Decentralized Peer Discovery*, and *Tor Onion Directory Advertising*), peer unbanning (or a unified ban-system-based permission model) might become useful in broader DHT contexts.
 
+### 5. Architectural Reflection: Why No Leechers (Comparing Tor/Onion vs. Search Gossip)
+> [!NOTE]
+> **Architectural Reflection — The Illogic of Leeching in Search Gossip:**
+> In traditional P2P and overlay networks (such as BitTorrent, Tor Onion Services, or I2P), **leeching** (consuming network resources without contributing back) is common because contributing incurs tangible costs: uploading heavy bandwidth, running high CPU/RAM cycles, or facing legal risks from hosting/relaying third-party content.
+> 
+> In Juanita Banana's P2P Search Gossip network, however, **leeching makes zero technical or privacy sense**:
+> 1. **Zero Contribution Cost:** Contributing costs nothing extra. Your node is already running while browsing, and your search terms are generated organically during normal search engine usage.
+> 2. **No Additional Exposure:** The search queries you contribute are queries you already sent to Google, DuckDuckGo, or Bing. No extra sensitive data is created.
+> 3. **Passive Leeching Increases Privacy Risk:** Paradoxically, operating as a passive receiver (leeching without contributing) *worsens* your privacy. A node that only listens creates a thinner, sparse network where an adversary can broadcast targeted probe queries and profile your node's response when noise queries pass through. Active, symmetrical two-way gossip maximizes network entropy and hides all participants inside a dense cloud of real human traffic.
+> 
+> **User Empowerment Exception & 2-Minute Recall Staging Buffer:**
+> Despite leeching being fundamentally silly in this architecture, Juanita Banana prioritizes **user empowerment above all else**. If a user explicitly demands a "Receive Only / No Outbound Contribution" mode, we may still provide the toggle under `juanita://config`.
+> 
+> Furthermore, to address legitimate user anxiety regarding low OPSEC, low IQ, or "fat-finger" accidents (e.g., accidentally typing a password, SSN, or private key into a search bar), a **2-Minute Search Grace Period Staging Buffer** can be implemented as a middle-ground solution. Outbound search queries are held in a local 2-minute buffer before P2P broadcast, allowing the user to cancel or revoke any accidental query before it reaches the swarm.
+
 ---
 
 ## ⚙️ Configuration Interface (`juanita://config`)
