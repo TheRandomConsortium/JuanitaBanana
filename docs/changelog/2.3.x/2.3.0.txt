@@ -1,0 +1,7 @@
+Juanita Banana v2.3.0 Minor Release Changelog
+=============================================
+
+Configurable Make Permanent Download Location
+- Configurable Permanent Download Target: Added `permanent_download_dir` setting to `AppConfig` allowing users to configure custom target directories for permanent downloads saved from RAM storage (`juanita://downloads`).
+- Smart Path Resolution: Implemented `resolved_permanent_download_dir` supporting home directory expansion (`~/VaultDownloads`), custom absolute paths (`/var/tmp/downloads`), and defaulting to `~/Downloads` if left blank.
+- Integrated UI Settings: Added Sandboxed Download Settings card in `juanita://config` with dynamic configuration save support (`scripts/js/config.js`).

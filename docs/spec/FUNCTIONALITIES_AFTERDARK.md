@@ -165,5 +165,37 @@ During initial IASL deployment phase (until 100% IASL feature completeness is ac
         *   `[ Risk Farm Infection & Render ]` → Executes the legacy script in an isolated sandbox.
         *   `[ Sanitize & Strip JS ]` → Purges all `[panama-disease:js]` blocks and renders the pure IASL + HTML structure safely.
 
+---
+
+### 🐧 Stallman Mode Easter Egg (`juanita://st-ignutius`)
+
+**"Free Software, Free Mind, Carpal Tunnel Syndrome."**
+
+Navigating to `juanita://st-ignutius` (or launching with the `--saint-ignutius` flag) forces the browser into **Stallman Mode** — a hyper-dogmatic, anti-proprietary, keyboard-only terminal presentation environment inspired by the teachings of Saint Ignutius.
+
+```
+Status: 📋 Planned (Afterdark Easter Egg)
+Internal URI: juanita://st-ignutius
+Motto: "There is no system but GNU, and Linux is one of its kernels."
+```
+
+#### 1. Visual & Rendering Constraints
+*   **VT100 / TTY Monospace Rendering**: Overrides WebKitGTK/Cairo styles. All web pages are stripped of CSS and rendered in a green-on-black monospace font (`Courier New`, `Liberation Mono`, or `VT100`).
+*   **ASCII Media Transpilation**: Images and `<video>` streams are converted in real-time to ASCII art matrices (`@#S%?*+;:,. `) rendered directly into the terminal view.
+*   **Proprietary License Purge**: Any page content containing DRM, `Copyright ©`, `All Rights Reserved`, `DMCA`, or proprietary EULAs is redacted and replaced with:
+    > `[PROPRIETARY SLOP PURGED BY SAINT IGNUTIUS]`
+
+#### 2. Ergonomic Punishment & Keyboard-Only Control
+*   **Zero-Mouse Policy**: Mouse events, pointer tracking, clicks, context menus, and scroll wheels are **100% disabled**. The cursor is hidden, and any attempt to move or click the mouse triggers a system bell and displays:
+    > `ERR: MOUSE IS A PROPRIETARY POINTER DEVICE. USE EMACS KEYBINDINGS.`
+*   **Carpal Tunnel Keybindings**: All browser navigation and UI interactions require multi-modifier Emacs / GNU Info key combinations designed to maximize finger strain:
+    *   `C-x C-f` → Focus URL address bar
+    *   `C-x C-s` → Save web page
+    *   `C-u 42 C-v` → Scroll down 42 lines
+    *   `C-M-s` → Incremental search
+    *   `C-x k` → Kill active tab
+    *   `C-x C-c` → Close browser
+*   **CLI File Management**: GUI file pickers are banned. All file persistence actions must be typed via mocked terminal CLI commands (e.g. `mv <sandboxed_file> /target/location --paranoid`).
+
 
 

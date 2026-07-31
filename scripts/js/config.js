@@ -134,6 +134,9 @@ function saveConfig() {
     if (document.getElementById('ua-spoof-mode')) {
         configData.ua_spoof_mode = document.getElementById('ua-spoof-mode').value;
     }
+    if (document.getElementById('permanent-download-dir')) {
+        configData.permanent_download_dir = document.getElementById('permanent-download-dir').value;
+    }
     configData.tab_inactivity_ttl = parseInt(document.getElementById('tab-inactivity-ttl').value, 10);
     configData.last_tab_nuke_action = document.getElementById('last-tab-nuke-action').value;
     configData.ai_slop_detection_enabled = document.getElementById('ai-slop-enabled').checked;
