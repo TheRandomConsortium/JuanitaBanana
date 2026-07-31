@@ -25,19 +25,25 @@ Rather than generating purely synthetic dictionary noise or relying on centraliz
 ## 🔒 Protocol & Cryptographic Architecture
 
 ### 1. Node Identity & Cryptographic Handshake
-- **Readable Node Identity**: Every Juanita Banana instance generates a unique, human-readable Node Identity bound to a cryptographic public/private key pair (XChaCha20-Poly1305 / Ed25519 / ECDH).
-- **Public Key Exchange**: Upon connecting to a new P2P contributor node in the swarm, nodes execute an out-of-band key exchange handshake.
+- **Curve25519 X25519 & ChaCha20-Poly1305 AEAD**: Every Juanita Banana instance generates a random Curve25519 static secret key pair (`x25519-dalek`). Session keys are derived via Diffie-Hellman (`local_secret.diffie_hellman(&peer_public)`), encrypting payloads with ChaCha20-Poly1305 AEAD and a 12-byte random nonce.
+- **Wire Magic Header (`JBP1`)**: All P2P datagrams (handshake payloads and E2EE search payloads) begin with the 4-byte wire magic header `b"JBP1"`. Non-matching datagrams are discarded immediately.
+- **RAM-Only Node Secret Storage**: Node secret key pairs are stored encrypted inside the user's secure database (`SecureDbManager` / `userdata.enc`). On startup or via `juanita://config`, the master password unlocks the secret strictly into RAM (`GLOBAL_NODE_KEY`) for the duration of the session. Plaintext key files on disk do not exist.
+- **Swarm Phonebook & UPnP**: Active peers are persisted in `phonebook.bin` (active if seen in last 24h). Automatic UDP port mapping is attempted on IGD/UPnP routers via the `igd` crate.
 
 ### 2. Direct 1-Hop E2EE Broadcast (No Re-broadcasting)
-- **E2EE Payload Packaging**: When a local search occurs (or when background noise is dispatched), the query payload is encrypted individually for each active online peer using the peer's public key.
+- **E2EE Payload Packaging**: When a local search occurs (or background noise is dispatched), query payloads (`GossipQueryPayload`) are encrypted individually for each active online peer using their unique session key.
 - **Strict 1-Hop Limit**: Nodes **never re-broadcast** received queries to third-party peers. Search queries exist only as direct 1-hop exchanges.
 - **Live Online Exchange Only**: Search queries are delivered exclusively to currently online peers. No offline message queues or persistent relay servers exist.
 
 ### 3. Peer Banning Firewall & Isolation
-- **Strict Blacklisting**: Nodes track a local blacklist of banned contributor Node IDs.
+- **Strict Blacklisting**: Nodes track a local blacklist of banned contributor Node IDs stored separately from web domain bans (`BanList.banned_peers`).
 - **Zero Ingress / Egress**: 
   - **No Ingress**: Queries received from banned Node IDs are dropped immediately before decryption.
   - **No Egress**: Local search broadcasts are never transmitted to banned Node IDs.
+
+### 4. Doubtful Functionality: Unbanning Peers
+> [!NOTE]
+> **Doubtful Functionality:** Unbanning a peer is considered a doubtful / low-value feature. Peers are banned exclusively when they submit unacceptable, toxic, or spam search queries into the swarm. Consequently, unbanning a peer is unlikely to produce any positive result — it merely re-exposes your node to their undesirable search traffic.
 
 ---
 
@@ -82,5 +88,6 @@ To make the pool table fully manageable even with thousands of active search ter
 - **Delete Individual Term**: One-click removal of any specific search term from the pool.
 - **Ban Contributor Node (`Outright Ban`)**: One-click action to ban a P2P contributor Node ID (e.g., if a peer submits spam, abusive content, or "dumb-dumb" queries). Banning a contributor:
   1. Instantly purges all search terms originating from that Node ID from the local pool.
-  2. Adds the Node ID to the node's permanent P2P Blacklist.
-  3. Immediately severs all E2EE gossip connections with that peer.
+  2. Adds the Node ID to the node's permanent P2P Blacklist (`BanList.banned_peers`).
+  3. Evicts the peer from `SwarmPhonebook` and deletes their public key material.
+  4. Immediately severs all E2EE gossip connections with that peer.

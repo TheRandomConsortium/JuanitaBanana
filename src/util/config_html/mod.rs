@@ -321,8 +321,15 @@ pub fn config_page_html(
         ""
     };
 
+    let dht_secret_status_html = if crate::privacy::search::gossip::is_node_key_unlocked() {
+        r#"<span style="color: #4cd964; font-weight: bold;">🟢 P2P DHT Secret Unlocked in RAM</span>"#.to_string()
+    } else {
+        r#"<span style="color: #ff3b30; font-weight: bold;">🔴 P2P DHT Secret Locked (Secret not loaded)</span> <a href="juanita://config-unlock-dht" class="jb-button jb-button-secondary" style="margin-left: 12px; text-decoration: none; display: inline-block;">🔑 Unlock P2P DHT Secret</a>"#.to_string()
+    };
+
     html_template
         .replace("{shared_css}", shared_css)
+        .replace("{dht_secret_status_html}", &dht_secret_status_html)
         .replace("{active_tab}", active_tab)
         .replace("{config_js}", js_content)
         .replace("{default_btn}", default_btn)

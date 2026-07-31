@@ -53,6 +53,12 @@
             </div>
             <div class="jb-card">
                 <h3 class="jb-card-item-title">P2P Search Intoxication & Gossip Settings</h3>
+                <div class="jb-form-group" style="padding: 12px; background: rgba(0,0,0,0.25); border-radius: 6px; border: 1px solid var(--border-color, #444); margin-bottom: 16px;">
+                    <label class="jb-label" style="font-weight: bold; margin-bottom: 6px; display: block;">P2P DHT Secret RAM Status:</label>
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        {dht_secret_status_html}
+                    </div>
+                </div>
                 <div class="jb-form-group">
                     <label class="jb-checkbox-label">
                         <input type="checkbox" id="allow-dht-search-sharing" {allow_dht_search_sharing_checked}>

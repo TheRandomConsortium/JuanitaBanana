@@ -1,0 +1,11 @@
+Juanita Banana v3.0.4 Patch Release Changelog
+=============================================
+
+RAM-Only Master Password Key Storage, Isolate Peer BanList & Anti-Tamper Hardening
+- RAM-Only Node Secret Storage: Eliminated plaintext `node_key.bin` disk persistence. Node secret key pairs are generated randomly (`StaticSecret::random_from_rng`) and stored inside the user's encrypted database (`SecureDbManager` / `userdata.enc`), loaded strictly into RAM (`GLOBAL_NODE_KEY`) when unlocked with the master password.
+- Master Password Prompt at Startup & Config UI: Prompt user for master password when P2P DHT sharing is active. Added RAM status indicator (`🟢 Unlocked` / `🔴 Locked`) and `[Unlock P2P DHT Secret]` modal trigger in `juanita://config`.
+- Isolated Peer Ban Persistence (`peer_banlist.bin`): Moved P2P peer blacklisting (`PeerBanList`) out of `banlist.bin` into a separate `peer_banlist.bin` file. Reverted `banlist.bin` to its exact original binary schema (`secret_id`, `banned_domains`, `toxic_domains`).
+- Strict Anti-Tamper Enforcement Restored: Preserved strict `vengeful_mode` enforcement. Attempting to tamper with `banlist.bin`, mismatching `secret_id` across machines, or deleting `banlist.bin` while `config.json` exists triggers immediate lockout protection.
+
+Humiliating Note:
+Stupid AI agent thought himself smarter than the code and bricked development server, and then tried to unharden by doing helpful migrations leaving vulnerabilities open for people to kill their dopamine receptors.

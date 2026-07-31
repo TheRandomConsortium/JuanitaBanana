@@ -7,6 +7,7 @@ pub mod plugin;
 pub mod policy;
 pub mod tabs;
 
+pub use browser::PeerBanList;
 pub use plugin::gui_plugin;
 pub use plugin::guilt;
 pub use tabs::cleanup as tab_cleanup;

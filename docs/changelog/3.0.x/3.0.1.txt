@@ -1,0 +1,7 @@
+Juanita Banana v3.0.1 Patch Release Changelog
+=============================================
+
+Real Cryptography & Session Key Hardening
+- X25519 Curve25519 Diffie-Hellman Key Exchange: Replaced placeholder key derivation with real X25519 ECDH via `x25519-dalek` and ChaCha20-Poly1305 AEAD (`chacha20poly1305`), securing P2P search gossip payloads against eavesdropping and tampering.
+- Swarm Handshake Public Key Exchange: P2P nodes now broadcast their genuine Curve25519 public key during initial UDP handshake payloads (`PeerHandshakePayload`), registering verified peer endpoints into `SwarmPhonebook`.
+- Noise Pool Cleanup & Decoupling: Removed redundant local thread/state empty search term lists, unifying search pool query evaluation directly on `GLOBAL_NOISE_POOL` with automatic TTL expiration purge.

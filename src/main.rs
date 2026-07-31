@@ -60,7 +60,8 @@ fn main() {
 
     // Start P2P Search Gossip network daemon if enabled in config
     let gossip_net = privacy::search::gossip::P2pGossipNetwork::new(7744);
-    let ban_list = state.borrow().banned_peers.iter().cloned().collect();
+    let peer_banlist = browsing::PeerBanList::load();
+    let ban_list = peer_banlist.banned_peers.into_iter().collect();
     gossip_net.start_daemon(config.clone(), ban_list);
 
     // Launch GTK application

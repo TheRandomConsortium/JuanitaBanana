@@ -10,13 +10,58 @@ pub struct BanList {
     pub secret_id: String,
     pub banned_domains: HashSet<String>,
     pub toxic_domains: HashSet<String>,
-    #[serde(default)]
-    pub banned_peers: HashSet<String>,
     #[serde(skip)]
     pub vengeful_mode: bool,
 }
 
 pub type SharedBanList = Rc<RefCell<BanList>>;
+
+#[derive(Serialize, Deserialize, Default, Clone)]
+pub struct PeerBanList {
+    pub banned_peers: HashSet<String>,
+}
+
+impl PeerBanList {
+    fn state_path() -> PathBuf {
+        let base = std::env::var("XDG_DATA_HOME")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| {
+                PathBuf::from(std::env::var("HOME").unwrap_or_default()).join(".local/share")
+            });
+        base.join("juanita-banana").join("peer_banlist.bin")
+    }
+
+    pub fn load() -> Self {
+        let path = Self::state_path();
+        if path.exists() {
+            if let Ok(content) = fs::read(&path) {
+                if let Ok(loaded) = bincode::deserialize::<PeerBanList>(&content) {
+                    return loaded;
+                }
+            }
+        }
+        PeerBanList::default()
+    }
+
+    pub fn save(&self) {
+        let path = Self::state_path();
+        if let Some(p) = path.parent() {
+            let _ = fs::create_dir_all(p);
+        }
+        if let Ok(bin) = bincode::serialize(self) {
+            let _ = fs::write(path, bin);
+        }
+    }
+
+    pub fn ban_peer(&mut self, node_id: &str) {
+        self.banned_peers.insert(node_id.trim().to_lowercase());
+        self.save();
+    }
+
+    pub fn is_peer_banned(&self, node_id: &str) -> bool {
+        self.banned_peers.contains(&node_id.trim().to_lowercase())
+    }
+}
 
 impl BanList {
     fn state_path() -> PathBuf {
@@ -62,20 +107,15 @@ impl BanList {
                 }
             }
         } else {
-            // File does not exist. If config has search engines, it's not a fresh install!
             let mut s = BanList {
                 secret_id: expected_secret.clone(),
                 ..Default::default()
             };
-            // We assume that if config exists, the directory existed before.
-            // But actually, we know it's not a fresh install if they have modified config or we can just rely on first_launch_epoch.
-            // If they deleted banlist.bin, it's missing but expected.
             crate::log!(
                 Warn,
                 BAN,
                 "Missing banlist.bin. Treating as fresh install or tampering."
             );
-            // To be truly vengeful: if the path parent exists and has config.json, but no banlist, we brick.
             let config_path = path.parent().unwrap().join("config.json");
             if config_path.exists() {
                 crate::log!(
@@ -115,11 +155,6 @@ impl BanList {
         }
         self.banned_domains.iter().any(|d| uri.contains(d.as_str()))
     }
-
-    pub fn ban_peer(&mut self, node_id: &str) {
-        self.banned_peers.insert(node_id.trim().to_lowercase());
-        self.save();
-    }
 }
 
 pub fn normalize_url(raw: &str) -> String {
@@ -149,11 +184,11 @@ mod tests {
 
     #[test]
     fn test_ban_and_unban_peer() {
-        let mut banlist = BanList::default();
+        let mut peer_banlist = PeerBanList::default();
         let peer_id = "node-juanita-test1234";
 
-        assert!(!banlist.banned_peers.contains(peer_id));
-        banlist.ban_peer(peer_id);
-        assert!(banlist.banned_peers.contains(peer_id));
+        assert!(!peer_banlist.is_peer_banned(peer_id));
+        peer_banlist.ban_peer(peer_id);
+        assert!(peer_banlist.is_peer_banned(peer_id));
     }
 }

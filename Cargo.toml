@@ -1,6 +1,6 @@
 [package]
 name = "juanita-banana"
-version = "3.0.1"
+version = "3.0.5"
 edition = "2021"
 
 # ── Engine Stack ──────────────────────────────────────────────
@@ -35,6 +35,7 @@ openssl = "0.10"
 async-channel = "2.3"
 x25519-dalek = { version = "2.0.0", features = ["static_secrets"] }
 rand_core = { version = "0.6.4", features = ["std"] }
+igd = "0.12"
 
 [profile.release]
 opt-level = 3

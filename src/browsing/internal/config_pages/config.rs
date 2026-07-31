@@ -57,6 +57,7 @@ impl InternalPage for ConfigPage {
     fn matches_policy(&self, uri: &str) -> bool {
         // Match all navigation requests except base HTML target URIs starting with juanita://config-
         (uri.starts_with("juanita://config") && !uri.starts_with("juanita://config-"))
+            || uri.starts_with("juanita://config-unlock-dht")
             || uri.starts_with("juanita://save-config")
             || uri.starts_with("juanita://save-secure-config")
             || uri.starts_with("juanita://make-default")
@@ -70,6 +71,27 @@ impl InternalPage for ConfigPage {
         let uri_clone = uri.to_string();
         let config_clone = ctx.config.clone();
         let webview_clone = ctx.webview.clone();
+
+        if uri_clone.starts_with("juanita://config-unlock-dht") {
+            let wv = webview_clone.clone();
+            gtk::glib::idle_add_local(move || {
+                let parent_win = wv
+                    .toplevel()
+                    .and_then(|w| w.downcast::<gtk::ApplicationWindow>().ok());
+                if let Some(parent) = parent_win.as_ref() {
+                    if let Some(pass) = crate::browsing::credentials_ui::ask_master_password(
+                        parent,
+                        "Unlock P2P DHT Search Gossip Secret",
+                        "Please write master password to load secret in RAM.\n(Note: If cancelled, P2P DHT search gossip will remain inactive).",
+                    ) {
+                        let _ = crate::privacy::search::gossip::unlock_node_key(&pass);
+                    }
+                }
+                wv.load_uri("juanita://config");
+                gtk::glib::ControlFlow::Break
+            });
+            return true;
+        }
 
         if uri_clone.starts_with("juanita://config") {
             if let Some(pass) = get_query_param(&uri_clone, "unlock_pass") {
