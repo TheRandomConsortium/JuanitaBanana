@@ -120,16 +120,6 @@ impl BanList {
         self.banned_peers.insert(node_id.trim().to_lowercase());
         self.save();
     }
-
-    pub fn unban_peer(&mut self, node_id: &str) {
-        self.banned_peers.remove(&node_id.trim().to_lowercase());
-        self.save();
-    }
-
-    pub fn is_peer_banned(&self, node_id: &str) -> bool {
-        let cleaned = node_id.trim().to_lowercase();
-        self.banned_peers.contains(&cleaned)
-    }
 }
 
 pub fn normalize_url(raw: &str) -> String {
@@ -162,10 +152,8 @@ mod tests {
         let mut banlist = BanList::default();
         let peer_id = "node-juanita-test1234";
 
-        assert!(!banlist.is_peer_banned(peer_id));
+        assert!(!banlist.banned_peers.contains(peer_id));
         banlist.ban_peer(peer_id);
-        assert!(banlist.is_peer_banned(peer_id));
-        banlist.unban_peer(peer_id);
-        assert!(!banlist.is_peer_banned(peer_id));
+        assert!(banlist.banned_peers.contains(peer_id));
     }
 }

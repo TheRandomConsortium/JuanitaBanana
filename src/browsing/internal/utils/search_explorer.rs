@@ -5,7 +5,8 @@ pub struct SearchExplorerPage;
 
 impl InternalPage for SearchExplorerPage {
     fn matches_input(&self, input: &str) -> bool {
-        input.starts_with("juanita:search-explorer") || input.starts_with("juanita://search-explorer")
+        input.starts_with("juanita:search-explorer")
+            || input.starts_with("juanita://search-explorer")
     }
 
     fn handle_input(&self, input: &str, ctx: &PageContext) {
@@ -22,8 +23,9 @@ impl InternalPage for SearchExplorerPage {
 
     fn handle_policy(&self, uri: &str, ctx: &PageContext) -> bool {
         if let Some(query_part) = uri.strip_prefix("juanita://search-explorer-delete?term=") {
-            let term = urlencoding::decode(query_part).unwrap_or_default().to_string();
-            ctx.noise_pool.borrow_mut().remove_term(&term);
+            let term = urlencoding::decode(query_part)
+                .unwrap_or_default()
+                .to_string();
             if let Ok(mut pool) = crate::privacy::search::gossip::GLOBAL_NOISE_POOL.lock() {
                 pool.remove_term(&term);
             }
@@ -32,9 +34,10 @@ impl InternalPage for SearchExplorerPage {
         }
 
         if let Some(query_part) = uri.strip_prefix("juanita://search-explorer-ban-node?node_id=") {
-            let node_id = urlencoding::decode(query_part).unwrap_or_default().to_string();
+            let node_id = urlencoding::decode(query_part)
+                .unwrap_or_default()
+                .to_string();
             ctx.banlist.borrow_mut().ban_peer(&node_id);
-            ctx.noise_pool.borrow_mut().remove_by_node(&node_id);
             if let Ok(mut pool) = crate::privacy::search::gossip::GLOBAL_NOISE_POOL.lock() {
                 pool.remove_by_node(&node_id);
             }
@@ -49,11 +52,9 @@ impl InternalPage for SearchExplorerPage {
         let css = crate::browsing::internal::SHARED_CSS.as_str();
         let js = include_root_str!(@scripts, "search_explorer.js");
 
-        let mut terms = ctx.noise_pool.borrow().get_all_terms();
-        if terms.is_empty() {
-            if let Ok(pool_lock) = crate::privacy::search::gossip::GLOBAL_NOISE_POOL.lock() {
-                terms = pool_lock.get_all_terms();
-            }
+        let mut terms = Vec::new();
+        if let Ok(mut pool_lock) = crate::privacy::search::gossip::GLOBAL_NOISE_POOL.lock() {
+            terms = pool_lock.get_all_terms();
         }
         let total_terms_count = terms.len();
 

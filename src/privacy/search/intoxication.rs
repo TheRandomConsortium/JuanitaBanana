@@ -80,7 +80,9 @@ impl IntoxicationEngine {
                         .to_string();
                     if !extracted_query.is_empty() {
                         if config.contribute_own_searches {
-                            if let Ok(mut pool) = crate::privacy::search::gossip::GLOBAL_NOISE_POOL.lock() {
+                            if let Ok(mut pool) =
+                                crate::privacy::search::gossip::GLOBAL_NOISE_POOL.lock()
+                            {
                                 pool.add_term(
                                     extracted_query.clone(),
                                     "Local Search".to_string(),
@@ -89,7 +91,8 @@ impl IntoxicationEngine {
                             }
                         }
                         if config.allow_dht_search_sharing {
-                            let gossip_net = crate::privacy::search::gossip::P2pGossipNetwork::new(7744);
+                            let gossip_net =
+                                crate::privacy::search::gossip::P2pGossipNetwork::new(7744);
                             gossip_net.broadcast_search(config, &extracted_query);
                         }
                     }

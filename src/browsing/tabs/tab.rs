@@ -374,7 +374,6 @@ pub fn create_tab(
         downloads: downloads.clone(),
         banlist: banlist.clone(),
         expected_unban: expected_unban.clone(),
-        noise_pool: std::rc::Rc::new(std::cell::RefCell::new(crate::privacy::search::gossip::SearchNoisePool::new())),
         config: AppConfig::load(),
     };
 

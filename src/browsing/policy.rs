@@ -46,7 +46,6 @@ pub fn handle_decide_policy(
         downloads: downloads_policy.clone(),
         banlist: banlist_policy.clone(),
         expected_unban: expected_unban_policy.clone(),
-        noise_pool: std::rc::Rc::new(std::cell::RefCell::new(crate::privacy::search::gossip::SearchNoisePool::new())),
         config: AppConfig::load(),
     };
 

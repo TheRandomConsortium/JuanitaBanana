@@ -28,7 +28,6 @@ pub struct PageContext {
     pub downloads: Rc<RefCell<DownloadManager>>,
     pub banlist: Rc<RefCell<BanList>>,
     pub expected_unban: Rc<RefCell<Option<(String, i32)>>>,
-    pub noise_pool: Rc<RefCell<crate::privacy::search::gossip::SearchNoisePool>>,
     pub config: AppConfig,
 }
 

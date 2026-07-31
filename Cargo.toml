@@ -1,6 +1,6 @@
 [package]
 name = "juanita-banana"
-version = "3.0.0"
+version = "3.0.1"
 edition = "2021"
 
 # ── Engine Stack ──────────────────────────────────────────────
@@ -28,11 +28,13 @@ sha2 = "0.11.0"
 base64 = "0.22.1"
 rusqlite = { version = "0.31", features = ["bundled"] }
 argon2 = "0.5"
-chacha20poly1305 = "0.10"
+chacha20poly1305 = "0.10.1"
 lettre = { version = "0.11", features = ["smtp-transport"] }
 chrono = "0.4"
 openssl = "0.10"
 async-channel = "2.3"
+x25519-dalek = { version = "2.0.0", features = ["static_secrets"] }
+rand_core = { version = "0.6.4", features = ["std"] }
 
 [profile.release]
 opt-level = 3

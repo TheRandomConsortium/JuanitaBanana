@@ -113,7 +113,8 @@ impl NoiseProvider for GossipNoiseProvider {
         let mut rng = thread_rng();
         let mut selected = Vec::with_capacity(count);
 
-        if let Ok(pool_lock) = crate::privacy::search::gossip::GLOBAL_NOISE_POOL.lock() {
+        // AÑADIR 'mut' A pool_lock
+        if let Ok(mut pool_lock) = crate::privacy::search::gossip::GLOBAL_NOISE_POOL.lock() {
             let pool_terms = pool_lock.get_all_terms();
             if !pool_terms.is_empty() {
                 for _ in 0..count {
@@ -133,7 +134,9 @@ pub struct WeightedCompositeNoiseProvider<P1: NoiseProvider, P2: NoiseProvider> 
     pub provider1_weight_percent: u8,
 }
 
-impl<P1: NoiseProvider, P2: NoiseProvider> NoiseProvider for WeightedCompositeNoiseProvider<P1, P2> {
+impl<P1: NoiseProvider, P2: NoiseProvider> NoiseProvider
+    for WeightedCompositeNoiseProvider<P1, P2>
+{
     fn get_keywords(&self, count: usize) -> Vec<String> {
         let weight1 = self.provider1_weight_percent.min(100) as usize;
         let count1 = (count * weight1) / 100;

@@ -1,9 +1,14 @@
 use serde::{Deserialize, Serialize};
-use sha2::Digest;
 use std::fs;
 use std::path::PathBuf;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+use chacha20poly1305::{
+    aead::{Aead, AeadCore, KeyInit, OsRng},
+    ChaCha20Poly1305, Nonce,
+};
+use x25519_dalek::{PublicKey, StaticSecret};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NodeKeyPair {
     pub secret_key: [u8; 32],
     pub public_key: [u8; 32],
@@ -29,20 +34,15 @@ impl NodeKeyPair {
             }
         }
 
-        let mut secret_key = [0u8; 32];
-        use rand::Rng;
-        rand::thread_rng().fill(&mut secret_key);
-
-        let mut public_key = [0u8; 32];
-        let mut pub_hasher = sha2::Sha256::new();
-        pub_hasher.update(&secret_key);
-        pub_hasher.update(b"juanita_p2p_node_public_v1");
-        public_key.copy_from_slice(&pub_hasher.finalize());
+        // Generar un par de claves seguras en la Curva 25519
+        let secret = StaticSecret::random_from_rng(OsRng);
+        let public = PublicKey::from(&secret);
 
         let kp = NodeKeyPair {
-            secret_key,
-            public_key,
+            secret_key: secret.to_bytes(),
+            public_key: public.to_bytes(),
         };
+
         if let Some(parent) = path.parent() {
             let _ = fs::create_dir_all(parent);
         }
@@ -54,14 +54,10 @@ impl NodeKeyPair {
 }
 
 pub fn derive_shared_session_key(local_secret: &[u8; 32], peer_public: &[u8; 32]) -> [u8; 32] {
-    let mut hasher = sha2::Sha256::new();
-    hasher.update(local_secret);
-    hasher.update(peer_public);
-    hasher.update(b"juanita_dh_shared_session_key_v1");
-    let result = hasher.finalize();
-    let mut session_key = [0u8; 32];
-    session_key.copy_from_slice(&result);
-    session_key
+    let secret = StaticSecret::from(*local_secret);
+    let public = PublicKey::from(*peer_public);
+    let shared_secret = secret.diffie_hellman(&public);
+    *shared_secret.as_bytes() // Clave robusta acordada mutuamente por ECDH
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -180,10 +176,23 @@ pub struct SearchNoisePool {
 
 impl SearchNoisePool {
     pub fn new() -> Self {
-        Self { entries: Vec::new() }
+        Self {
+            entries: Vec::new(),
+        }
+    }
+
+    pub fn clean_expired(&mut self) {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        // Cierra la fuga de memoria purgando los caducados
+        self.entries
+            .retain(|e| e.expires_epoch == 0 || e.expires_epoch > now);
     }
 
     pub fn add_term(&mut self, term: String, origin: String, ttl_days: u32) {
+        self.clean_expired();
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -197,16 +206,9 @@ impl SearchNoisePool {
         });
     }
 
-    pub fn get_all_terms(&self) -> Vec<SearchPoolEntry> {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
-        self.entries
-            .iter()
-            .filter(|e| e.expires_epoch == 0 || e.expires_epoch > now)
-            .cloned()
-            .collect()
+    pub fn get_all_terms(&mut self) -> Vec<SearchPoolEntry> {
+        self.clean_expired();
+        self.entries.clone()
     }
 
     pub fn remove_term(&mut self, term: &str) {
@@ -251,22 +253,39 @@ pub fn is_node_banned(node_id: &str, banned_peers: &[String]) -> bool {
         .any(|banned| banned.trim().to_lowercase() == cleaned)
 }
 
-pub fn encrypt_query_with_session_key(payload: &GossipQueryPayload, session_key: &[u8; 32]) -> Vec<u8> {
-    let mut data = serde_json::to_vec(payload).unwrap_or_default();
-    for (i, byte) in data.iter_mut().enumerate() {
-        let key_byte = session_key[i % session_key.len()];
-        *byte ^= key_byte;
+pub fn encrypt_query_with_session_key(
+    payload: &GossipQueryPayload,
+    session_key: &[u8; 32],
+) -> Vec<u8> {
+    let cipher = ChaCha20Poly1305::new(session_key.into());
+    let nonce = ChaCha20Poly1305::generate_nonce(&mut OsRng);
+    let data = serde_json::to_vec(payload).unwrap_or_default();
+
+    if let Ok(ciphertext) = cipher.encrypt(&nonce, data.as_ref()) {
+        let mut packed = nonce.to_vec();
+        packed.extend(ciphertext);
+        packed
+    } else {
+        Vec::new() // Fallo fatal de encriptación AEAD
     }
-    data
 }
 
-pub fn decrypt_query_with_session_key(encrypted: &[u8], session_key: &[u8; 32]) -> Option<GossipQueryPayload> {
-    let mut decrypted = encrypted.to_vec();
-    for (i, byte) in decrypted.iter_mut().enumerate() {
-        let key_byte = session_key[i % session_key.len()];
-        *byte ^= key_byte;
+pub fn decrypt_query_with_session_key(
+    encrypted: &[u8],
+    session_key: &[u8; 32],
+) -> Option<GossipQueryPayload> {
+    if encrypted.len() < 12 {
+        return None;
     }
-    serde_json::from_slice(&decrypted).ok()
+    let cipher = ChaCha20Poly1305::new(session_key.into());
+    let nonce = Nonce::from_slice(&encrypted[..12]);
+    let ciphertext = &encrypted[12..];
+
+    if let Ok(decrypted) = cipher.decrypt(nonce, ciphertext) {
+        serde_json::from_slice(&decrypted).ok()
+    } else {
+        None
+    }
 }
 
 lazy_static::lazy_static! {
@@ -291,6 +310,22 @@ impl P2pGossipNetwork {
         let port = self.socket_port;
         let local_key = NodeKeyPair::load_or_generate(&config);
 
+        // Fase 1: Enviar Handshake de Bootstrap en Broadcast a la subred local
+        let hs_payload = PeerHandshakePayload {
+            source_node_id: get_readable_node_id(&config),
+            public_key: local_key.public_key,
+            listen_endpoint: String::new(),
+        };
+        std::thread::spawn(move || {
+            if let Ok(socket) = std::net::UdpSocket::bind("0.0.0.0:0") {
+                let _ = socket.set_broadcast(true);
+                if let Ok(msg) = serde_json::to_vec(&hs_payload) {
+                    let _ = socket.send_to(&msg, format!("255.255.255.255:{}", port));
+                }
+            }
+        });
+
+        // Fase 2: Escuchar el tráfico entrante
         std::thread::spawn(move || {
             let addr = format!("0.0.0.0:{}", port);
             if let Ok(socket) = std::net::UdpSocket::bind(&addr) {
@@ -300,11 +335,18 @@ impl P2pGossipNetwork {
                 loop {
                     if let Ok((amt, src)) = socket.recv_from(&mut buf) {
                         if amt > 0 {
-                            if let Ok(hs) = serde_json::from_slice::<PeerHandshakePayload>(&buf[..amt]) {
+                            // Intentar procesar como Handshake
+                            if let Ok(hs) =
+                                serde_json::from_slice::<PeerHandshakePayload>(&buf[..amt])
+                            {
                                 if !is_node_banned(&hs.source_node_id, &banned_peers) {
                                     if let Ok(mut pb) = GLOBAL_PHONEBOOK.lock() {
-                                        let ep = if hs.listen_endpoint.is_empty() {
-                                            src.to_string()
+                                        let ep = if hs.listen_endpoint.is_empty()
+                                            || hs.listen_endpoint.starts_with("0.0.0.0")
+                                        {
+                                            let mut resolved_src = src;
+                                            resolved_src.set_port(port); // Forzamos el puerto estándar P2P
+                                            resolved_src.to_string()
                                         } else {
                                             hs.listen_endpoint.clone()
                                         };
@@ -314,6 +356,7 @@ impl P2pGossipNetwork {
                                 continue;
                             }
 
+                            // Intentar descifrar como Búsqueda Entrante (E2EE)
                             let active_peers = if let Ok(pb) = GLOBAL_PHONEBOOK.lock() {
                                 pb.get_active_peers()
                             } else {
@@ -324,10 +367,18 @@ impl P2pGossipNetwork {
                                 if is_node_banned(&peer.node_id, &banned_peers) {
                                     continue;
                                 }
-                                let session_key = derive_shared_session_key(&local_key.secret_key, &peer.public_key);
-                                if let Some(payload) = decrypt_query_with_session_key(&buf[..amt], &session_key) {
+                                let session_key = derive_shared_session_key(
+                                    &local_key.secret_key,
+                                    &peer.public_key,
+                                );
+                                if let Some(payload) =
+                                    decrypt_query_with_session_key(&buf[..amt], &session_key)
+                                {
                                     if !is_node_banned(&payload.source_node_id, &banned_peers)
-                                        && !is_prohibited_query(&payload.query, &config.prohibited_keywords_regex)
+                                        && !is_prohibited_query(
+                                            &payload.query,
+                                            &config.prohibited_keywords_regex,
+                                        )
                                     {
                                         if let Ok(mut pool) = GLOBAL_NOISE_POOL.lock() {
                                             pool.add_term(
@@ -337,7 +388,7 @@ impl P2pGossipNetwork {
                                             );
                                         }
                                     }
-                                    break;
+                                    break; // Match de descifrado exitoso, parar de iterar peers
                                 }
                             }
                         }
@@ -374,9 +425,10 @@ impl P2pGossipNetwork {
 
         std::thread::spawn(move || {
             if let Ok(socket) = std::net::UdpSocket::bind("0.0.0.0:0") {
-                let _ = socket.set_broadcast(true);
+                // Broadcast false (es tráfico unicast directo y cifrado E2EE a cada peer)
                 for peer in active_peers {
-                    let session_key = derive_shared_session_key(&local_key.secret_key, &peer.public_key);
+                    let session_key =
+                        derive_shared_session_key(&local_key.secret_key, &peer.public_key);
                     let encrypted = encrypt_query_with_session_key(&payload, &session_key);
                     let _ = socket.send_to(&encrypted, &peer.endpoint);
                 }
@@ -392,21 +444,28 @@ mod tests {
     #[test]
     fn test_node_keypair_generation_and_dh_session_key() {
         let config = crate::util::config::AppConfig::default();
-        let kp1 = NodeKeyPair::load_or_generate(&config);
-        assert_ne!(kp1.secret_key, [0u8; 32]);
-        assert_ne!(kp1.public_key, [0u8; 32]);
 
-        let dummy_peer_pubkey = [0x77u8; 32];
-        let session_key = derive_shared_session_key(&kp1.secret_key, &dummy_peer_pubkey);
-        assert_ne!(session_key, [0u8; 32]);
+        let node_a = NodeKeyPair::load_or_generate(&config);
+        let node_b = NodeKeyPair::load_or_generate(&config);
+
+        assert_ne!(node_a.secret_key, [0u8; 32]);
+        assert_ne!(node_a.public_key, [0u8; 32]);
+
+        let session_key_a = derive_shared_session_key(&node_a.secret_key, &node_b.public_key);
+        let session_key_b = derive_shared_session_key(&node_b.secret_key, &node_a.public_key);
+
+        assert_eq!(session_key_a, session_key_b);
+        assert_ne!(session_key_a, [0u8; 32]);
 
         let payload = GossipQueryPayload {
             query: "handshake test".to_string(),
             source_node_id: "node-test-1".to_string(),
             timestamp_epoch: 1700000000,
         };
-        let encrypted = encrypt_query_with_session_key(&payload, &session_key);
-        let decrypted = decrypt_query_with_session_key(&encrypted, &session_key).unwrap();
+
+        let encrypted = encrypt_query_with_session_key(&payload, &session_key_a);
+        let decrypted = decrypt_query_with_session_key(&encrypted, &session_key_b).unwrap();
+
         assert_eq!(payload, decrypted);
     }
 

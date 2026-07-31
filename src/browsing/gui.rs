@@ -380,7 +380,6 @@ pub fn run(banlist: SharedBanList) {
                     downloads: downloads_act_entry.clone(),
                     banlist: banlist_act_entry.clone(),
                     expected_unban: expected_unban_act_entry.clone(),
-                    noise_pool: std::rc::Rc::new(std::cell::RefCell::new(crate::privacy::search::gossip::SearchNoisePool::new())),
                     config: AppConfig::load(),
                 };
 
