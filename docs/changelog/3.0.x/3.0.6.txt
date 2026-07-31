@@ -1,0 +1,6 @@
+Juanita Banana v3.0.6 Patch Release Changelog
+=============================================
+
+Thread-Safe RAM Peer Ban List Optimization
+- Thread-Safe RAM State (`GLOBAL_PEER_BANLIST`): Wrapped `PeerBanList` in a global `Arc<Mutex<PeerBanList>>` lazily loaded from disk on startup, eliminating redundant disk reads during UDP packet ingress processing.
+- Optimized P2P Ingress Filtering: `is_node_banned` now evaluates peer blacklist status in-memory via `GLOBAL_PEER_BANLIST`, preventing IO bottlenecks during high-frequency UDP gossip packet reception.

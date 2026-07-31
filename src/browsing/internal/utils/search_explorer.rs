@@ -39,8 +39,7 @@ impl InternalPage for SearchExplorerPage {
             let node_id = urlencoding::decode(query_part)
                 .unwrap_or_default()
                 .to_string();
-            let mut peer_banlist = crate::browsing::PeerBanList::load();
-            peer_banlist.ban_peer(&node_id);
+            crate::browsing::ban_peer(&node_id);
             if let Ok(mut pool) = crate::privacy::search::gossip::GLOBAL_NOISE_POOL.lock() {
                 pool.remove_by_node(&node_id);
             }

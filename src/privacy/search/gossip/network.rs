@@ -67,12 +67,8 @@ pub fn is_prohibited_query(query: &str, prohibited_regex: &str) -> bool {
     }
 }
 
-pub fn is_node_banned(node_id: &str, banned_peers: &[String]) -> bool {
-    let cleaned = node_id.trim().to_lowercase();
-    banned_peers
-        .iter()
-        .any(|banned| banned.trim().to_lowercase() == cleaned)
-        || crate::browsing::PeerBanList::load().is_peer_banned(node_id)
+pub fn is_node_banned(node_id: &str) -> bool {
+    crate::browsing::is_peer_banned(node_id)
 }
 
 pub struct P2pGossipNetwork {
@@ -84,7 +80,7 @@ impl P2pGossipNetwork {
         Self { socket_port: port }
     }
 
-    pub fn start_daemon(&self, config: crate::util::config::AppConfig, banned_peers: Vec<String>) {
+    pub fn start_daemon(&self, config: crate::util::config::AppConfig) {
         if !config.allow_dht_search_sharing {
             return;
         }
@@ -133,7 +129,7 @@ impl P2pGossipNetwork {
 
                             if let Ok(hs) = serde_json::from_slice::<PeerHandshakePayload>(payload)
                             {
-                                if !is_node_banned(&hs.source_node_id, &banned_peers) {
+                                if !is_node_banned(&hs.source_node_id) {
                                     if let Ok(mut pb) = GLOBAL_PHONEBOOK.lock() {
                                         let ep = if hs.listen_endpoint.is_empty()
                                             || hs.listen_endpoint.starts_with("0.0.0.0")
@@ -157,7 +153,7 @@ impl P2pGossipNetwork {
                             };
 
                             for peer in active_peers {
-                                if is_node_banned(&peer.node_id, &banned_peers) {
+                                if is_node_banned(&peer.node_id) {
                                     continue;
                                 }
                                 let session_key = derive_shared_session_key(
@@ -167,7 +163,7 @@ impl P2pGossipNetwork {
                                 if let Some(gossip) =
                                     decrypt_query_with_session_key(payload, &session_key)
                                 {
-                                    if !is_node_banned(&gossip.source_node_id, &banned_peers)
+                                    if !is_node_banned(&gossip.source_node_id)
                                         && !is_prohibited_query(
                                             &gossip.query,
                                             &config.prohibited_keywords_regex,

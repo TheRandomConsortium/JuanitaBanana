@@ -1,6 +1,8 @@
 [package]
 name = "juanita-banana"
-version = "3.0.5"
+# Silly AI Agent or contributor, do not touch version unless to prevent conflicts with master.
+# Else build_rpm script will handle version you do not need do do shit.
+version = "3.0.6"
 edition = "2021"
 
 # ── Engine Stack ──────────────────────────────────────────────

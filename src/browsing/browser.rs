@@ -63,6 +63,25 @@ impl PeerBanList {
     }
 }
 
+lazy_static::lazy_static! {
+    pub static ref GLOBAL_PEER_BANLIST: std::sync::Arc<std::sync::Mutex<PeerBanList>> =
+        std::sync::Arc::new(std::sync::Mutex::new(PeerBanList::load()));
+}
+
+pub fn ban_peer(node_id: &str) {
+    if let Ok(mut guard) = GLOBAL_PEER_BANLIST.lock() {
+        guard.ban_peer(node_id);
+    }
+}
+
+pub fn is_peer_banned(node_id: &str) -> bool {
+    if let Ok(guard) = GLOBAL_PEER_BANLIST.lock() {
+        guard.is_peer_banned(node_id)
+    } else {
+        false
+    }
+}
+
 impl BanList {
     fn state_path() -> PathBuf {
         let base = std::env::var("XDG_DATA_HOME")
