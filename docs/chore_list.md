@@ -143,3 +143,10 @@ This document maintains the tracking of known technical chores, API deprecations
 - **Action Plan:**
   - Audit tab close handlers (`destroy()`, `remove_page`, `tab_cleanup`) to ensure WebKitGTK WebViews call `webkit2gtk::WebViewExt::try_close()` / `terminate_web_process()` or load `about:blank` prior to GTK widget destruction.
   - Verify WebKitWebProcess lifecycle and resource termination across multi-tab teardowns.
+
+### 24. Auto Cargo.toml Version Conflict Resolver Script
+- **Files:** `scripts/sh/resolve_cargo_version_conflict.sh`, `Cargo.toml`, `build_rpm.sh`
+- **Chore:** Develop a helper script to automatically resolve version conflicts in `Cargo.toml` between local development branches and `master`.
+- **Action Plan:**
+  - Create `scripts/sh/resolve_cargo_version_conflict.sh` to check for `master` version changes, reset `Cargo.toml` package version to match `master` when conflicts occur, and delegate version bumping exclusively to `build_rpm.sh`.
+  - Add documentation and usage instructions in `Cargo.toml` and developer workflow guides.
