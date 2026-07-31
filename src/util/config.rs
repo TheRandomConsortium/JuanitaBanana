@@ -69,6 +69,8 @@ pub struct AppConfig {
     pub ai_slop_phrases: Vec<String>,
     /// User-Agent spoof mode: "honest" (default, Honest Banana UA) or "rotate_daily".
     pub ua_spoof_mode: String,
+    /// Destination folder for permanent downloads (defaults to ~/Downloads if empty).
+    pub permanent_download_dir: String,
 }
 
 impl Default for AppConfig {
@@ -198,11 +200,26 @@ impl Default for AppConfig {
                 "as an ai language model".to_string(),
             ],
             ua_spoof_mode: "honest".to_string(),
+            permanent_download_dir: String::new(),
         }
     }
 }
 
 impl AppConfig {
+    pub fn resolved_permanent_download_dir(&self) -> std::path::PathBuf {
+        let home = std::env::var("HOME").unwrap_or_else(|_| "/home/user".to_string());
+        let dir_str = self.permanent_download_dir.trim();
+        if dir_str.is_empty() {
+            std::path::Path::new(&home).join("Downloads")
+        } else if let Some(stripped) = dir_str.strip_prefix("~/") {
+            std::path::Path::new(&home).join(stripped)
+        } else if dir_str == "~" {
+            std::path::PathBuf::from(&home)
+        } else {
+            std::path::PathBuf::from(dir_str)
+        }
+    }
+
     pub fn active_user_agent(&self) -> String {
         if self.ua_spoof_mode == "rotate_daily" {
             let days_since_epoch = std::time::SystemTime::now()
@@ -358,5 +375,34 @@ mod tests {
         config.ua_spoof_mode = "rotate_daily".to_string();
         let rotated_ua = config.active_user_agent();
         assert!(GENUINE_UA_POOL.contains(&rotated_ua.as_str()));
+    }
+
+    #[test]
+    fn test_resolved_permanent_download_dir() {
+        let home = std::env::var("HOME").unwrap_or_else(|_| "/home/user".to_string());
+
+        let default_config = AppConfig::default();
+        assert_eq!(
+            default_config.resolved_permanent_download_dir(),
+            std::path::Path::new(&home).join("Downloads")
+        );
+
+        let tilde_config = AppConfig {
+            permanent_download_dir: "~/SecureVault".to_string(),
+            ..AppConfig::default()
+        };
+        assert_eq!(
+            tilde_config.resolved_permanent_download_dir(),
+            std::path::Path::new(&home).join("SecureVault")
+        );
+
+        let custom_config = AppConfig {
+            permanent_download_dir: "/var/tmp/downloads".to_string(),
+            ..AppConfig::default()
+        };
+        assert_eq!(
+            custom_config.resolved_permanent_download_dir(),
+            std::path::PathBuf::from("/var/tmp/downloads")
+        );
     }
 }

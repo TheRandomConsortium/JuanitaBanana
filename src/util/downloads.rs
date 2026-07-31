@@ -216,8 +216,8 @@ fi
 
     pub fn make_permanent(&mut self, id: &str) {
         if let Some((path, filename, true, _, _)) = self.active_downloads.get(id) {
-            let home = std::env::var("HOME").unwrap_or_else(|_| "/home/user".to_string());
-            let dest_dir = std::path::Path::new(&home).join("Downloads");
+            let config = crate::util::config::AppConfig::load();
+            let dest_dir = config.resolved_permanent_download_dir();
             std::fs::create_dir_all(&dest_dir).ok();
             let dest_path = dest_dir.join(filename);
 

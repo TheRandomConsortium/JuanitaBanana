@@ -417,6 +417,7 @@ pub fn config_page_html(
         )
         .replace("{ua_mode_honest_selected}", ua_mode_honest_selected)
         .replace("{ua_mode_rotate_selected}", ua_mode_rotate_selected)
+        .replace("{permanent_download_dir}", &config.permanent_download_dir)
 }
 
 #[cfg(test)]
@@ -468,5 +469,16 @@ mod tests {
         };
         let html2 = config_page_html(&config_honest, false, None, false, None);
         assert!(html2.contains(r#"value="honest" selected"#));
+    }
+
+    #[test]
+    fn test_config_page_html_permanent_download_dir() {
+        let config = AppConfig {
+            permanent_download_dir: "~/VaultDownloads".to_string(),
+            ..AppConfig::default()
+        };
+        let html = config_page_html(&config, false, None, false, None);
+        assert!(html.contains(r#"value="~/VaultDownloads""#));
+        assert!(html.contains("Sandboxed Download Settings"));
     }
 }
