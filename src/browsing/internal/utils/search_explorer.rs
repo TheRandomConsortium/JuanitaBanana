@@ -14,7 +14,9 @@ impl InternalPage for SearchExplorerPage {
     }
 
     fn matches_policy(&self, uri: &str) -> bool {
-        uri.starts_with("juanita://search-explorer")
+        (uri.starts_with("juanita://search-explorer") && !uri.starts_with("juanita://search-explorer-page"))
+            || uri.starts_with("juanita://search-explorer-delete")
+            || uri.starts_with("juanita://search-explorer-ban-node")
     }
 
     fn ignore_policy(&self, _uri: &str) -> bool {
