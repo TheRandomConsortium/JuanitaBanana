@@ -137,6 +137,13 @@ function saveConfig() {
     if (document.getElementById('permanent-download-dir')) {
         configData.permanent_download_dir = document.getElementById('permanent-download-dir').value;
     }
+    if (document.getElementById('allow-dht-search-sharing')) {
+        configData.allow_dht_search_sharing = document.getElementById('allow-dht-search-sharing').checked;
+        configData.rss_search_weight_percent = parseInt(document.getElementById('rss-search-weight-percent').value, 10);
+        configData.contribute_own_searches = document.getElementById('contribute-own-searches').checked;
+        configData.search_terms_ttl_days = parseInt(document.getElementById('search-terms-ttl-days').value, 10);
+        configData.prohibited_keywords_regex = document.getElementById('prohibited-keywords-regex').value;
+    }
     configData.tab_inactivity_ttl = parseInt(document.getElementById('tab-inactivity-ttl').value, 10);
     configData.last_tab_nuke_action = document.getElementById('last-tab-nuke-action').value;
     configData.ai_slop_detection_enabled = document.getElementById('ai-slop-enabled').checked;

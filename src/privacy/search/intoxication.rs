@@ -73,6 +73,27 @@ impl IntoxicationEngine {
                         continue;
                     }
 
+                    // Process own search contribution & P2P gossip broadcast
+                    let raw_extracted = signature.trim_matches('|');
+                    let extracted_query = urlencoding::decode(raw_extracted)
+                        .unwrap_or_default()
+                        .to_string();
+                    if !extracted_query.is_empty() {
+                        if config.contribute_own_searches {
+                            if let Ok(mut pool) = crate::privacy::search::gossip::GLOBAL_NOISE_POOL.lock() {
+                                pool.add_term(
+                                    extracted_query.clone(),
+                                    "Local Search".to_string(),
+                                    config.search_terms_ttl_days,
+                                );
+                            }
+                        }
+                        if config.allow_dht_search_sharing {
+                            let gossip_net = crate::privacy::search::gossip::P2pGossipNetwork::new(7744);
+                            gossip_net.broadcast_search(config, &extracted_query);
+                        }
+                    }
+
                     // Prevent infinite loop and double-poisoning from Consent redirects
                     let now = Instant::now();
                     let mut allowed = self.allowed_urls.borrow_mut();

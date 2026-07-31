@@ -10,6 +10,8 @@ pub struct BanList {
     pub secret_id: String,
     pub banned_domains: HashSet<String>,
     pub toxic_domains: HashSet<String>,
+    #[serde(default)]
+    pub banned_peers: HashSet<String>,
     #[serde(skip)]
     pub vengeful_mode: bool,
 }
@@ -113,6 +115,21 @@ impl BanList {
         }
         self.banned_domains.iter().any(|d| uri.contains(d.as_str()))
     }
+
+    pub fn ban_peer(&mut self, node_id: &str) {
+        self.banned_peers.insert(node_id.trim().to_lowercase());
+        self.save();
+    }
+
+    pub fn unban_peer(&mut self, node_id: &str) {
+        self.banned_peers.remove(&node_id.trim().to_lowercase());
+        self.save();
+    }
+
+    pub fn is_peer_banned(&self, node_id: &str) -> bool {
+        let cleaned = node_id.trim().to_lowercase();
+        self.banned_peers.contains(&cleaned)
+    }
 }
 
 pub fn normalize_url(raw: &str) -> String {
@@ -134,4 +151,21 @@ pub fn extract_domain(uri: &str) -> String {
         .next()
         .unwrap_or(uri)
         .to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ban_and_unban_peer() {
+        let mut banlist = BanList::default();
+        let peer_id = "node-juanita-test1234";
+
+        assert!(!banlist.is_peer_banned(peer_id));
+        banlist.ban_peer(peer_id);
+        assert!(banlist.is_peer_banned(peer_id));
+        banlist.unban_peer(peer_id);
+        assert!(!banlist.is_peer_banned(peer_id));
+    }
 }

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Search Term Explorer — Juanita Banana</title>
+    <style>
+        {css}
+    </style>
+</head>
+<body class="jb-body">
+    <div class="jb-container">
+        <header class="jb-header">
+            <h1 class="jb-title">💎 Search Term Explorer</h1>
+            <p class="jb-subtitle">Live Inspection, Governance & P2P Swarm Controls</p>
+        </header>
+
+        <main class="jb-content">
+            <div class="jb-card">
+                <h3 class="jb-card-item-title">Filter & Order Search Pool</h3>
+                <div class="jb-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div class="jb-form-group">
+                        <label class="jb-label">Filter by Search Term (Regex / Text):</label>
+                        <input type="text" id="filter-term-regex" class="jb-input" placeholder="e.g. ^crypto.*, privacy" oninput="filterAndSortTable()">
+                    </div>
+                    <div class="jb-form-group">
+                        <label class="jb-label">Filter by Node ID / Origin:</label>
+                        <input type="text" id="filter-origin" class="jb-input" placeholder="e.g. node-juanita-a7b3, Local RSS" oninput="filterAndSortTable()">
+                    </div>
+                </div>
+                <div class="jb-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="jb-form-group">
+                        <label class="jb-label">Sort Column:</label>
+                        <select id="sort-col" class="jb-select" onchange="filterAndSortTable()">
+                            <option value="date">Ingest Date</option>
+                            <option value="term">Search Term</option>
+                            <option value="origin">Node ID / Origin</option>
+                        </select>
+                    </div>
+                    <div class="jb-form-group">
+                        <label class="jb-label">Sort Direction:</label>
+                        <select id="sort-dir" class="jb-select" onchange="filterAndSortTable()">
+                            <option value="desc">Descending (Newest / Z-A)</option>
+                            <option value="asc">Ascending (Oldest / A-Z)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="jb-card" style="margin-top: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 class="jb-card-item-title" style="margin: 0;">Active Search Terms Pool (<span id="visible-count">{total_terms_count}</span> terms)</h3>
+                    <a href="juanita://config" class="jb-button jb-button-secondary" style="text-decoration: none;">⚙️ Back to Config</a>
+                </div>
+                
+                <table class="jb-table" style="width: 100%; border-collapse: collapse; margin-top: 8px;" id="explorer-table">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-color, #333); text-align: left;">
+                            <th style="padding: 10px;">Search Term</th>
+                            <th style="padding: 10px;">Origin / Node ID</th>
+                            <th style="padding: 10px;">Ingested Date</th>
+                            <th style="padding: 10px;">Expiration Date</th>
+                            <th style="padding: 10px; text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="explorer-tbody">
+                        {explorer_rows_html}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        {js}
+    </script>
+</body>
+</html>

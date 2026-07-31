@@ -58,6 +58,11 @@ fn main() {
     // Start local resolvers / daemon
     resolver::init_resolver();
 
+    // Start P2P Search Gossip network daemon if enabled in config
+    let gossip_net = privacy::search::gossip::P2pGossipNetwork::new(7744);
+    let ban_list = state.borrow().banned_peers.iter().cloned().collect();
+    gossip_net.start_daemon(config.clone(), ban_list);
+
     // Launch GTK application
     browsing::gui::run(state);
 }

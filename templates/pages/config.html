@@ -52,6 +52,51 @@
                 </div>
             </div>
             <div class="jb-card">
+                <h3 class="jb-card-item-title">P2P Search Intoxication & Gossip Settings</h3>
+                <div class="jb-form-group">
+                    <label class="jb-checkbox-label">
+                        <input type="checkbox" id="allow-dht-search-sharing" {allow_dht_search_sharing_checked}>
+                        Allow P2P DHT Search Sharing (No Leechers Allowed)
+                    </label>
+                    <p class="jb-text-secondary" style="margin-top: 4px; font-size: 0.85em;">
+                        Pulls anonymized, End-to-End Encrypted (E2EE) search queries from online peers and contributes your searches to the peer pool. Note: Participating requires two-way exchange — no leeching is permitted.
+                    </p>
+                </div>
+                <div class="jb-form-group" style="margin-top: 16px;">
+                    <label class="jb-label">RSS vs P2P Search Weight Ratio (<span id="rss-weight-val">{rss_search_weight_percent}</span>% RSS / <span id="p2p-weight-val">{p2p_search_weight_percent}</span>% P2P):</label>
+                    <input type="range" id="rss-search-weight-percent" min="0" max="100" value="{rss_search_weight_percent}" class="jb-range" oninput="document.getElementById('rss-weight-val').textContent=this.value;document.getElementById('p2p-weight-val').textContent=100-this.value;">
+                    <p class="jb-text-secondary" style="margin-top: 4px; font-size: 0.85em;">
+                        Controls the mix ratio of synthetic RSS n-gram terms versus real P2P peer searches injected into background noise. Use higher P2P weight to maintain organic human traffic recency.
+                    </p>
+                </div>
+                <div class="jb-form-group" style="margin-top: 16px;">
+                    <label class="jb-checkbox-label">
+                        <input type="checkbox" id="contribute-own-searches" {contribute_own_searches_checked}>
+                        Add Own Real Searches to Intoxication Pool
+                    </label>
+                    <p class="jb-text-secondary" style="margin-top: 4px; font-size: 0.85em;">
+                        Recycles your own local searches into your intoxication pool for future noise generation. Warn: In small streams this can aid correlation, but in large activity streams it significantly boosts entropy.
+                    </p>
+                </div>
+                <div class="jb-form-group" style="margin-top: 16px;">
+                    <label class="jb-label">Search Terms Expiration TTL (Days):</label>
+                    <input type="number" id="search-terms-ttl-days" value="{search_terms_ttl_days}" min="1" max="365" class="jb-input">
+                    <p class="jb-text-secondary" style="margin-top: 4px; font-size: 0.85em;">
+                        Expiration window (in days) for stored pool terms. Stale search terms are automatically purged after this period to maintain recency.
+                    </p>
+                </div>
+                <div class="jb-form-group" style="margin-top: 16px;">
+                    <label class="jb-label">Prohibited Keywords Regex Filter:</label>
+                    <input type="text" id="prohibited-keywords-regex" value="{prohibited_keywords_regex}" placeholder="e.g. ^(secret|private).*" class="jb-input">
+                    <p class="jb-text-secondary" style="margin-top: 4px; font-size: 0.85em;">
+                        Regex pattern to filter out sensitive keywords from ever being broadcast or ingested into your local pool. Warn: Filtering specific terms creates structural noise bias.
+                    </p>
+                </div>
+                <div style="margin-top: 16px;">
+                    <a href="juanita://search-explorer" class="jb-button jb-button-secondary" style="text-decoration: none; display: inline-block;">🔍 Open Search Term Explorer</a>
+                </div>
+            </div>
+            <div class="jb-card">
                 <h3 class="jb-card-item-title">User-Agent Spoofing Settings</h3>
                 <div class="jb-form-group">
                     <label class="jb-label">User-Agent Mode:</label>

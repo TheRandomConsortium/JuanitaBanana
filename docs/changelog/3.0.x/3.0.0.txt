@@ -1,0 +1,100 @@
+Juanita Banana v3.0.0 Major Release Changelog
+=============================================
+
+P2P Decentralized Search Gossip Network (DHT Search Intoxication)
+------------------------------------------------------------------
+This release introduces a fully decentralized, peer-to-peer search term gossip
+network for search intoxication. Unlike the previous RSS-only noise model, Juanita
+can now participate in an anonymized mesh of peers sharing search terms, making
+your real queries statistically indistinguishable in a pool of queries from many
+users.
+
+Core Architecture:
+- NodeKeyPair: Each node generates a cryptographically random 32-byte secret key
+  on first run, persisted to ~/.local/share/juanita-banana/node_key.bin. The
+  public key is SHA-256 of the secret only — identity is NOT used as key material
+  so peers cannot reconstruct your private key from your Node ID.
+- Diffie-Hellman Session Keys: Per-peer E2EE session keys are derived as
+  SHA-256(local_secret || peer_public || domain_separator). Every peer gets a
+  different symmetric key. No shared group key, no dummy keys.
+- SwarmPhonebook: Online peers are stored with Node ID, public key, endpoint, and
+  last-seen timestamp in ~/.local/share/juanita-banana/phonebook.bin. Peers
+  register via PeerHandshakePayload UDP datagrams. Active peers are those seen
+  in the last 24 hours.
+- P2pGossipNetwork daemon: Binds UDP :7744 on startup (if DHT enabled). Incoming
+  packets are first tried as a PeerHandshakePayload to register new peers. If
+  that fails, decryption is attempted with each known peer's session key. Accepted
+  search terms are added to the global noise pool with TTL from config.
+- Broadcaster: When a real user search is intercepted, it is encrypted individually
+  for each active phonebook peer with their specific session key and sent directly
+  to their endpoint. Falls back to LAN broadcast if phonebook is empty.
+
+NoiseProvider Trait Split:
+- RssNoiseProvider: Fetches RSS feeds in background thread, tokenizes into n-grams
+  (sizes 2-5), provides keywords on demand. Clean, RSS-only.
+- GossipNoiseProvider: Reads terms from GLOBAL_NOISE_POOL (received P2P terms +
+  optionally own searches). Clean, pool-only.
+- WeightedCompositeNoiseProvider<P1, P2>: Generic compositor respecting
+  rss_search_weight_percent config field (0 = all gossip, 100 = all RSS, 50 = mix).
+
+Configuration (juanita://config):
+- allow_dht_search_sharing (bool, default off): Bi-directional P2P participation.
+  Enabling means you send AND receive. No leechers.
+- rss_search_weight_percent (u8 0-100, default 50): RSS vs P2P noise weight.
+- contribute_own_searches (bool, default off): Adds your real search queries to
+  your local intoxication pool. Warning shown: small pool = profiling risk.
+- search_terms_ttl_days (u32, default 30): Expiry for received search terms.
+- prohibited_keywords_regex (String, default empty): Terms matching this regex are
+  never shared outbound or accepted inbound.
+
+Search Term Explorer (juanita://search-explorer):
+- Live table of all terms in the local intoxication pool with origin Node ID,
+  ingest date, and TTL expiry date.
+- Real-time regex filter on search term, filter by Node ID, sort by date / term /
+  node.
+- Delete individual terms. Ban contributing nodes: banning a node removes all
+  their terms from the pool, evicts them from the SwarmPhonebook (deleting their
+  key), and persists to the peer banlist. Peer bans are stored separately from
+  domain bans (BanList.banned_peers vs BanList.banned_domains).
+
+Security Notes:
+- Your Node ID is derived from config identity; your keypair is not. A peer
+  learning your Node ID gains nothing cryptographically useful.
+- 1-hop only: Juanita never re-broadcasts received terms to other peers.
+- Prohibited regex acts as both inbound and outbound firewall.
+- Banning a node deletes all cryptographic material associated with them locally.
+
+Stallman Mode Easter Egg (juanita://st-ignutius)
+------------------------------------------------
+Specification added to docs/spec/FUNCTIONALITIES_AFTERDARK.md. Full
+implementation tracked separately. Entering juanita://st-ignutius will engage
+Stallman Mode: VT100 monospace terminal rendering, ASCII image/video
+transpilation, proprietary license content purging, zero-mouse policy, Emacs
+carpal-tunnel keybindings, and CLI-style file saving (mv <file> /path --paranoid).
+
+Web-of-Trust SSL Certificate Authority Reputation System (randbotd)
+--------------------------------------------------------------------
+Updated randbotd/README.md to document the lazy trust evaluation model:
+- Domain trust ratings (TW = Trusted Web, UTW = Untrusted Web) are weighted by
+  node vote ponderation. CAs receive the weighted average of their hosted domains.
+- CAs can improve reputation by banning UTW domains. Domains can improve by
+  accumulating positive votes or having negative voters lose reputation (preventing
+  review bombing).
+- New domains and new CAs start at 50% confidence with dynamic threshold delta
+  based on vote count vs CA vote count (new = wide band, established = narrow band).
+- CAs may configure a risk floor, explicitly choosing to host higher-risk domains.
+- Certificate allocation is fair-band randomized within confidence threshold, not
+  strictly best-CA-wins.
+
+Build System Improvements
+-------------------------
+- build.rs now emits cargo:rerun-if-changed=<directory> for every scanned
+  directory and subdirectory. Adding new template or script files no longer
+  requires editing .scannable files; Cargo detects changes automatically.
+- scannable_cache.txt written to OUT_DIR for debugging macro expansion.
+
+Config HTML Refactoring
+-----------------------
+- src/util/config_html.rs split into src/util/config_html/mod.rs and
+  src/util/config_html/tests.rs to comply with the 500-line cleanliness budget
+  while preserving all unit tests intact.
