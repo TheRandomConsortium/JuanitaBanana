@@ -82,7 +82,7 @@
 | **Clever Heuristic for Toxicity** | 📋 Planned | Implement smarter heuristics (e.g., distinguishing raw volume vs content ratios like news articles vs ad blocks) instead of a simple flat threshold warning. |
 | **Contextual Guilt Trip Overlay** | ✅ Done | Loaded real high-fidelity meme assets (Ceiling Cat, Trump, Fry, Wojak, and Banana fallback) at compile time and injected a semi-transparent, non-blocking contextual meme overlay on pages matching user-configurable keyword rules. |
 | **Mathematical Unban** | ✅ Done | Requires solving a randomly generated integral challenge in `juanita://unban?domain=...` to unban a site. Fully integrated with `BanList` and Vengeful Mode. |
-| **Unbanning Peers** | ❓ Doubtful | Unbanning a peer is considered a doubtful / low-value feature. Peers are banned exclusively when they submit unacceptable, toxic, or spam search queries into the swarm. Consequently, unbanning a peer is unlikely to produce any positive result — it merely re-exposes your node to their undesirable search traffic. |
+| **Unbanning Peers** | ❓ Doubtful | Unbanning a peer is currently considered a doubtful / low-value feature for search gossip alone, as peers are banned for submitting unacceptable/spam search queries. However, because 3 other planned features utilize the P2P DHT network (*Opt-in P2P DHT Config Sharing*, *Decentralized Peer Discovery*, *Tor Onion Directory Advertising*), peer unbanning (or a unified ban-system-based permission model) might become useful in broader multi-feature DHT contexts. |
 
 ---
 

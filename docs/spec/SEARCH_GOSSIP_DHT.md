@@ -43,7 +43,9 @@ Rather than generating purely synthetic dictionary noise or relying on centraliz
 
 ### 4. Doubtful Functionality: Unbanning Peers
 > [!NOTE]
-> **Doubtful Functionality:** Unbanning a peer is considered a doubtful / low-value feature. Peers are banned exclusively when they submit unacceptable, toxic, or spam search queries into the swarm. Consequently, unbanning a peer is unlikely to produce any positive result — it merely re-exposes your node to their undesirable search traffic.
+> **Doubtful Functionality:** Unbanning a peer is currently considered a doubtful / low-value feature for search gossip alone. Peers are banned exclusively when they submit unacceptable, toxic, or spam search queries into the swarm. Consequently, unbanning a peer is unlikely to produce any positive result — it merely re-exposes your node to their undesirable search traffic.
+> 
+> However, because there are currently 3 other planned features that utilize the P2P DHT network (such as *Opt-in P2P DHT Config Sharing*, *Decentralized Peer Discovery*, and *Tor Onion Directory Advertising*), peer unbanning (or a unified ban-system-based permission model) might become useful in broader DHT contexts.
 
 ---
 
