@@ -113,7 +113,8 @@ pub fn init_resolver() {
         .arg("-p")
         .arg("8")
         .arg("-x")
-        .arg(&state_dir);
+        .arg(&state_dir)
+        .arg("-t");
 
     let spawn_result = cmd.stdout(Stdio::piped()).stderr(Stdio::piped()).spawn();
 

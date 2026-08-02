@@ -1,5 +1,5 @@
 Juanita Banana v3.0.8 Patch Release Changelog
 =============================================
 
-Handshake Mainnet Switch & Light Resolver Daemon Fix
-- Handshake Mainnet Daemon Launch: Removed erroneous `-t` (testnet) flag from `hnsd` daemon startup arguments in `src/resolver/hns/daemon.rs`. The `hnsd` SPV light resolver now connects directly to Handshake Mainnet P2P peers to sync root block headers and verify live Mainnet TLD proofs.
+Handshake SPV Checkpoint & Light Resolver Daemon Fix
+- Handshake Checkpoint Sync Restored: Preserved `-t` (`--checkpoint`) in `hnsd` daemon startup arguments in `src/resolver/hns/daemon.rs`. In `hnsd`, `-t` enables SPV chain sync directly from the hardcoded mainnet checkpoint (block ~300,000+), allowing instant resolution of Handshake TLD proofs without needing to sync 340,000+ blocks from genesis (block 0).
