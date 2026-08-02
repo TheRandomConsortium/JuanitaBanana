@@ -277,7 +277,16 @@ impl AppConfig {
     pub fn load() -> Self {
         let path = Self::config_path();
         let mut cfg = if let Ok(data) = fs::read_to_string(&path) {
-            serde_json::from_str(&data).unwrap_or_default()
+            let existing_epoch: Option<u64> = serde_json::from_str::<serde_json::Value>(&data)
+                .ok()
+                .and_then(|v| v.get("first_launch_epoch").and_then(|e| e.as_u64()));
+            let mut loaded_cfg: AppConfig = serde_json::from_str(&data).unwrap_or_default();
+            if let Some(epoch) = existing_epoch {
+                if epoch > 0 {
+                    loaded_cfg.first_launch_epoch = epoch;
+                }
+            }
+            loaded_cfg
         } else {
             Self::default()
         };

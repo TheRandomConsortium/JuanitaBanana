@@ -1289,7 +1289,7 @@ dependencies = [
 
 [[package]]
 name = "juanita-banana"
-version = "3.0.6"
+version = "3.0.8"
 dependencies = [
  "argon2",
  "async-channel",
@@ -1299,6 +1299,7 @@ dependencies = [
  "chrono",
  "gethostname",
  "gtk",
+ "idna",
  "igd",
  "javascriptcore-rs",
  "lazy_static",
@@ -1313,6 +1314,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "url",
  "urlencoding",
  "webkit2gtk",
  "x25519-dalek",

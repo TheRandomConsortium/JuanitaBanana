@@ -176,15 +176,44 @@ impl BanList {
     }
 }
 
+pub fn punycode_label(label: &str) -> String {
+    if !label.is_ascii() {
+        if let Some(encoded) = idna::punycode::encode_str(label) {
+            return format!("xn--{}", encoded);
+        }
+    }
+    label.to_string()
+}
+
+pub fn punycode_host(host: &str) -> String {
+    host.split('.')
+        .map(punycode_label)
+        .collect::<Vec<_>>()
+        .join(".")
+}
+
 pub fn normalize_url(raw: &str) -> String {
     let t = raw.trim();
-    if t.starts_with("http://") || t.starts_with("https://") {
-        t.to_string()
+    let (scheme_prefix, rest) = if let Some(stripped) = t.strip_prefix("http://") {
+        ("http://", stripped)
+    } else if let Some(stripped) = t.strip_prefix("https://") {
+        ("https://", stripped)
     } else if t.contains('.') && !t.contains(' ') {
-        format!("https://{t}")
+        ("https://", t)
     } else {
-        format!("https://duckduckgo.com/?q={}", t.replace(' ', "+"))
-    }
+        return format!("https://duckduckgo.com/?q={}", t.replace(' ', "+"));
+    };
+
+    let parts: Vec<&str> = rest.splitn(2, '/').collect();
+    let host_part = parts[0];
+    let path_part = if parts.len() > 1 {
+        format!("/{}", parts[1])
+    } else {
+        "/".to_string()
+    };
+
+    let safe_host = punycode_host(host_part);
+    format!("{}{}{}", scheme_prefix, safe_host, path_part)
 }
 
 pub fn extract_domain(uri: &str) -> String {
@@ -209,5 +238,12 @@ mod tests {
         assert!(!peer_banlist.is_peer_banned(peer_id));
         peer_banlist.ban_peer(peer_id);
         assert!(peer_banlist.is_peer_banned(peer_id));
+    }
+
+    #[test]
+    fn test_normalize_url_punycode() {
+        let raw = "lo.randºm";
+        let normalized = normalize_url(raw);
+        assert_eq!(normalized, "https://lo.xn--randm-cka/");
     }
 }
