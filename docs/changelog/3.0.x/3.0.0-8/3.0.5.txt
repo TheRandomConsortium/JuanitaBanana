@@ -1,0 +1,6 @@
+Juanita Banana v3.0.5 Patch Release Changelog
+=============================================
+
+Search Term Explorer Policy Loop Fix & Dark Theme Alignment
+- Search Term Explorer Policy Loop Fix: Excluded base target URI `juanita://search-explorer-page` from policy interception matching in `SearchExplorerPage::matches_policy`, resolving an infinite load loop and crash when navigating to `juanita://search-explorer`.
+- Dark Mode & Layout Centering: Updated `templates/pages/search_explorer.html` to use `jb-page jb-page-top` and `jb-container-wide jb-text-left` styling classes, matching Juanita's dark mode radial theme and centered wide layout container.

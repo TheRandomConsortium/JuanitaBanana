@@ -55,6 +55,7 @@ pub use static_pages::home::HomePage;
 pub use utils::downloads::DownloadsPage;
 pub use utils::local_html::LocalHtmlPage;
 pub use utils::passwords::PasswordsPage;
+pub use utils::search_explorer::SearchExplorerPage;
 
 pub fn get_internal_pages() -> Vec<Box<dyn InternalPage>> {
     vec![
@@ -70,5 +71,6 @@ pub fn get_internal_pages() -> Vec<Box<dyn InternalPage>> {
         Box::new(CompetitorsPage),
         Box::new(DownloadsPage),
         Box::new(UnbanPage),
+        Box::new(SearchExplorerPage),
     ]
 }

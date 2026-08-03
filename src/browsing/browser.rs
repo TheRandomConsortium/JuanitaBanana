@@ -16,6 +16,72 @@ pub struct BanList {
 
 pub type SharedBanList = Rc<RefCell<BanList>>;
 
+#[derive(Serialize, Deserialize, Default, Clone)]
+pub struct PeerBanList {
+    pub banned_peers: HashSet<String>,
+}
+
+impl PeerBanList {
+    fn state_path() -> PathBuf {
+        let base = std::env::var("XDG_DATA_HOME")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| {
+                PathBuf::from(std::env::var("HOME").unwrap_or_default()).join(".local/share")
+            });
+        base.join("juanita-banana").join("peer_banlist.bin")
+    }
+
+    pub fn load() -> Self {
+        let path = Self::state_path();
+        if path.exists() {
+            if let Ok(content) = fs::read(&path) {
+                if let Ok(loaded) = bincode::deserialize::<PeerBanList>(&content) {
+                    return loaded;
+                }
+            }
+        }
+        PeerBanList::default()
+    }
+
+    pub fn save(&self) {
+        let path = Self::state_path();
+        if let Some(p) = path.parent() {
+            let _ = fs::create_dir_all(p);
+        }
+        if let Ok(bin) = bincode::serialize(self) {
+            let _ = fs::write(path, bin);
+        }
+    }
+
+    pub fn ban_peer(&mut self, node_id: &str) {
+        self.banned_peers.insert(node_id.trim().to_lowercase());
+        self.save();
+    }
+
+    pub fn is_peer_banned(&self, node_id: &str) -> bool {
+        self.banned_peers.contains(&node_id.trim().to_lowercase())
+    }
+}
+
+lazy_static::lazy_static! {
+    pub static ref GLOBAL_PEER_BANLIST: std::sync::Arc<std::sync::Mutex<PeerBanList>> =
+        std::sync::Arc::new(std::sync::Mutex::new(PeerBanList::load()));
+}
+
+pub fn ban_peer(node_id: &str) {
+    if let Ok(mut guard) = GLOBAL_PEER_BANLIST.lock() {
+        guard.ban_peer(node_id);
+    }
+}
+
+pub fn is_peer_banned(node_id: &str) -> bool {
+    if let Ok(guard) = GLOBAL_PEER_BANLIST.lock() {
+        guard.is_peer_banned(node_id)
+    } else {
+        false
+    }
+}
+
 impl BanList {
     fn state_path() -> PathBuf {
         let base = std::env::var("XDG_DATA_HOME")
@@ -60,20 +126,15 @@ impl BanList {
                 }
             }
         } else {
-            // File does not exist. If config has search engines, it's not a fresh install!
             let mut s = BanList {
                 secret_id: expected_secret.clone(),
                 ..Default::default()
             };
-            // We assume that if config exists, the directory existed before.
-            // But actually, we know it's not a fresh install if they have modified config or we can just rely on first_launch_epoch.
-            // If they deleted banlist.bin, it's missing but expected.
             crate::log!(
                 Warn,
                 BAN,
                 "Missing banlist.bin. Treating as fresh install or tampering."
             );
-            // To be truly vengeful: if the path parent exists and has config.json, but no banlist, we brick.
             let config_path = path.parent().unwrap().join("config.json");
             if config_path.exists() {
                 crate::log!(
@@ -115,15 +176,44 @@ impl BanList {
     }
 }
 
+pub fn punycode_label(label: &str) -> String {
+    if !label.is_ascii() {
+        if let Some(encoded) = idna::punycode::encode_str(label) {
+            return format!("xn--{}", encoded);
+        }
+    }
+    label.to_string()
+}
+
+pub fn punycode_host(host: &str) -> String {
+    host.split('.')
+        .map(punycode_label)
+        .collect::<Vec<_>>()
+        .join(".")
+}
+
 pub fn normalize_url(raw: &str) -> String {
     let t = raw.trim();
-    if t.starts_with("http://") || t.starts_with("https://") {
-        t.to_string()
+    let (scheme_prefix, rest) = if let Some(stripped) = t.strip_prefix("http://") {
+        ("http://", stripped)
+    } else if let Some(stripped) = t.strip_prefix("https://") {
+        ("https://", stripped)
     } else if t.contains('.') && !t.contains(' ') {
-        format!("https://{t}")
+        ("https://", t)
     } else {
-        format!("https://duckduckgo.com/?q={}", t.replace(' ', "+"))
-    }
+        return format!("https://duckduckgo.com/?q={}", t.replace(' ', "+"));
+    };
+
+    let parts: Vec<&str> = rest.splitn(2, '/').collect();
+    let host_part = parts[0];
+    let path_part = if parts.len() > 1 {
+        format!("/{}", parts[1])
+    } else {
+        "/".to_string()
+    };
+
+    let safe_host = punycode_host(host_part);
+    format!("{}{}{}", scheme_prefix, safe_host, path_part)
 }
 
 pub fn extract_domain(uri: &str) -> String {
@@ -134,4 +224,26 @@ pub fn extract_domain(uri: &str) -> String {
         .next()
         .unwrap_or(uri)
         .to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ban_and_unban_peer() {
+        let mut peer_banlist = PeerBanList::default();
+        let peer_id = "node-juanita-test1234";
+
+        assert!(!peer_banlist.is_peer_banned(peer_id));
+        peer_banlist.ban_peer(peer_id);
+        assert!(peer_banlist.is_peer_banned(peer_id));
+    }
+
+    #[test]
+    fn test_normalize_url_punycode() {
+        let raw = "lo.randºm";
+        let normalized = normalize_url(raw);
+        assert_eq!(normalized, "https://lo.xn--randm-cka/");
+    }
 }

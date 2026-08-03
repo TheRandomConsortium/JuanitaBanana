@@ -1,0 +1,6 @@
+Juanita Banana v3.0.3 Patch Release Changelog
+=============================================
+
+Gossip Module Sub-division & UPnP Port Mapping
+- Gossip Sub-module Refactoring: Sub-divided `src/privacy/search/gossip.rs` into a clean modular package (`crypto.rs`, `network.rs`, `phonebook.rs`, `pool.rs`, `mod.rs`), maintaining strict compliance with the 500-line per file cleanliness budget.
+- Automatic UPnP Hole Punching: Integrated `igd` crate to automatically request UDP port mapping on IGD/UPnP-capable NAT routers, improving peer connectivity across home routers.

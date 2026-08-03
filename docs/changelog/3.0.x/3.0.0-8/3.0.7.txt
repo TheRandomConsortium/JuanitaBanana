@@ -1,0 +1,7 @@
+Juanita Banana v3.0.7 Patch Release Changelog
+=============================================
+
+IDN Punycode Encoding & Config Navigation Re-organization
+- Direct Punycode Label Encoding: Added `punycode_host` using `idna::punycode::encode_str` in `normalize_url`, converting internationalized domain labels (such as `randºm`) directly into pure ASCII Punycode (`xn--randm-cka`) prior to WebKit navigation, preventing UTS#46 compatibility character degradation (`º` -> `o`).
+- Preserved Immutable First Launch Epoch: Hardened `AppConfig::load` to preserve existing `first_launch_epoch` from disk JSON during configuration loading and migration, preventing false-positive secret ID mismatch triggers.
+- Re-organized Config Interface Tabs: Moved the P2P Search Intoxication & Gossip settings card into the Search Intoxication tab (`juanita://config#intoxication`), keeping General Settings focused on overall app settings and P2P master key status.

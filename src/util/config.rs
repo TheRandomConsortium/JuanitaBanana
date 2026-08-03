@@ -71,6 +71,16 @@ pub struct AppConfig {
     pub ua_spoof_mode: String,
     /// Destination folder for permanent downloads (defaults to ~/Downloads if empty).
     pub permanent_download_dir: String,
+    /// Whether P2P DHT search sharing (bi-directional send & receive) is enabled.
+    pub allow_dht_search_sharing: bool,
+    /// Percentage (0-100) of background intoxication queries pulled from RSS n-grams vs P2P searches.
+    pub rss_search_weight_percent: u8,
+    /// Whether to add own local real searches into local intoxication pool.
+    pub contribute_own_searches: bool,
+    /// Expiration TTL (in days) for stored pool search terms (default 30).
+    pub search_terms_ttl_days: u32,
+    /// Regex pattern to filter out sensitive keywords from being broadcast or ingested.
+    pub prohibited_keywords_regex: String,
 }
 
 impl Default for AppConfig {
@@ -201,6 +211,11 @@ impl Default for AppConfig {
             ],
             ua_spoof_mode: "honest".to_string(),
             permanent_download_dir: String::new(),
+            allow_dht_search_sharing: false,
+            rss_search_weight_percent: 50,
+            contribute_own_searches: false,
+            search_terms_ttl_days: 30,
+            prohibited_keywords_regex: String::new(),
         }
     }
 }
@@ -262,7 +277,16 @@ impl AppConfig {
     pub fn load() -> Self {
         let path = Self::config_path();
         let mut cfg = if let Ok(data) = fs::read_to_string(&path) {
-            serde_json::from_str(&data).unwrap_or_default()
+            let existing_epoch: Option<u64> = serde_json::from_str::<serde_json::Value>(&data)
+                .ok()
+                .and_then(|v| v.get("first_launch_epoch").and_then(|e| e.as_u64()));
+            let mut loaded_cfg: AppConfig = serde_json::from_str(&data).unwrap_or_default();
+            if let Some(epoch) = existing_epoch {
+                if epoch > 0 {
+                    loaded_cfg.first_launch_epoch = epoch;
+                }
+            }
+            loaded_cfg
         } else {
             Self::default()
         };
@@ -404,5 +428,15 @@ mod tests {
             custom_config.resolved_permanent_download_dir(),
             std::path::PathBuf::from("/var/tmp/downloads")
         );
+    }
+
+    #[test]
+    fn test_p2p_gossip_config_defaults() {
+        let config = AppConfig::default();
+        assert!(!config.allow_dht_search_sharing);
+        assert_eq!(config.rss_search_weight_percent, 50);
+        assert!(!config.contribute_own_searches);
+        assert_eq!(config.search_terms_ttl_days, 30);
+        assert!(config.prohibited_keywords_regex.is_empty());
     }
 }

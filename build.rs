@@ -153,6 +153,9 @@ fn generate_root_path_macros() {
 
     let dest_path = Path::new(&out_dir).join("generated_root_macros.rs");
     fs::write(dest_path, generated_code).expect("Failed to write generated_root_macros.rs");
+
+    let cache_path = Path::new(&out_dir).join("scannable_cache.txt");
+    let _ = fs::write(cache_path, format!("{}\n{}", str_rules, bytes_rules));
 }
 
 fn parse_scannable_config(file: &Path) -> (String, String) {
@@ -177,6 +180,7 @@ fn parse_scannable_config(file: &Path) -> (String, String) {
 }
 
 fn collect_files(dir: &Path, recursive: bool, files: &mut Vec<PathBuf>) {
+    println!("cargo:rerun-if-changed={}", dir.display());
     if let Ok(entries) = fs::read_dir(dir) {
         for entry in entries.flatten() {
             let path = entry.path();

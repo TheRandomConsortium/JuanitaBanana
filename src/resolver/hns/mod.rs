@@ -172,8 +172,12 @@ impl DomainResolver for HandshakeResolver {
         if !config.handshake_enabled {
             return Err("Handshake resolution is disabled in configuration".to_string());
         }
+        let ascii_domain = match url::Host::parse(domain) {
+            Ok(url::Host::Domain(d)) => d,
+            _ => domain.to_string(),
+        };
         let dns_server = format!("127.0.0.1:{}", self.port);
-        match resolve_dns_udp(domain, &dns_server) {
+        match resolve_dns_udp(&ascii_domain, &dns_server) {
             Ok(ips) => {
                 if let Some(ip) = ips.into_iter().next() {
                     Ok(ip)

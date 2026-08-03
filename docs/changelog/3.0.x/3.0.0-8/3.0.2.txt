@@ -1,0 +1,6 @@
+Juanita Banana v3.0.2 Patch Release Changelog
+=============================================
+
+Protocol Wire Magic Filtering
+- UDP Packet Header Magic Prefix: Prefixed all P2P Search Gossip UDP datagrams (both handshakes and E2EE search term payloads) with 4-byte protocol magic signature `JBP1` (`b"JBP1"`).
+- Early Packet Rejection: Wire listener discards malformed or random ambient UDP noise before deserialization or decryption processing.

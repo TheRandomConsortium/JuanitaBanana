@@ -346,6 +346,20 @@ To build a completely decentralized, secure P2P validation network over Tor with
 - **Onion Directory Advertising:** Full-node instances dynamically spin up their own Tor Onion Hidden Services and automatically advertise their `.onion` addresses over Juanita's decentralized search DHT network.
 - **Automated Peer Discovery:** SPV light client instances query the DHT to discover active full-node `.onion` addresses and use them as their peer seeds over Tor, creating a self-healing overlay mesh where peer discovery and header sync are fully private and automated.
 
+---
+
+## 🍌 P2P Search Gossip Protocol & DHT Mesh
+
+| Property | Value |
+|---|---|
+| Address space | P2P Peer Swarm (`0.0.0.0:7744` UDP default) |
+| Encryption | End-to-End Encrypted (X25519 Curve25519 ECDH + ChaCha20-Poly1305 AEAD) |
+| Wire Signature | `b"JBP1"` 4-byte datagram magic header |
+| Persistence | `SwarmPhonebook` (`phonebook.bin`) & Encrypted DB (`SecureDbManager` / `userdata.enc`) |
+| Secret Lifetime | Strictly held in RAM (`GLOBAL_NODE_KEY`) via GTK master password prompt |
+| Status | ✅ Implemented (v3.0.x) |
+
+The **P2P Search Gossip Protocol** establishes an anonymized, 1-hop E2EE mesh across active Juanita Banana instances. Nodes exchange real human search terms to dynamically populate local search intoxication pools, ensuring background noise queries remain indistinguishable from authentic human search trends without relying on centralized servers.
 
 ---
 
