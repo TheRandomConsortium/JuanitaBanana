@@ -430,13 +430,21 @@ fn handle_connection(mut client: TcpStream) -> Result<(), String> {
             }
         };
 
-        TcpStream::connect(SocketAddr::new(ip, dest_port)).map_err(|e| {
+        let outbound_stream = TcpStream::connect(SocketAddr::new(ip, dest_port)).map_err(|e| {
             // Connection refused
             client
                 .write_all(&[0x05, 0x05, 0x00, 0x01, 0, 0, 0, 0, 0, 0])
                 .ok();
             format!("Direct connection failed: {}", e)
-        })?
+        })?;
+        log!(
+            Info,
+            TOR,
+            "Local SOCKS5 proxy established connection to {}:{}",
+            ip,
+            dest_port
+        );
+        outbound_stream
     };
 
     // 5. Send Success Response to WebKit
@@ -444,6 +452,10 @@ fn handle_connection(mut client: TcpStream) -> Result<(), String> {
         .write_all(&[0x05, 0x00, 0x00, 0x01, 0, 0, 0, 0, 0, 0])
         .map_err(|e| format!("Failed to send success response: {}", e))?;
 
+    let original_domain = match dest_host {
+        DestHost::Domain(ref domain) => Some(domain.clone()),
+        _ => None,
+    };
     // 6. Bidirectional Copy Tunneling
-    tunnel_streams(&mut client, &mut outbound)
+    tunnel_streams(&mut client, &mut outbound, original_domain)
 }

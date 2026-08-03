@@ -249,6 +249,12 @@ pub fn create_tab(
     });
 
     webview.connect_load_failed_with_tls_errors(move |wv, failing_uri, _cert, _errors| {
+        log!(
+            Warn,
+            WEBKIT,
+            "WebKit load_failed_with_tls_errors: uri='{}'",
+            failing_uri
+        );
         let domain = crate::browsing::browser::extract_domain(failing_uri);
         let host = crate::resolver::clean_host(&domain);
         if !host.is_empty() && !crate::resolver::is_system_resolvable(&host) {
@@ -260,6 +266,13 @@ pub fn create_tab(
     });
 
     webview.connect_load_failed(move |wv, _load_event, failing_uri, error| {
+        log!(
+            Warn,
+            WEBKIT,
+            "WebKit load_failed: uri='{}', msg='{}'",
+            failing_uri,
+            error.message()
+        );
         if let Some(network_error) = error.kind::<webkit2gtk::NetworkError>() {
             if matches!(network_error, webkit2gtk::NetworkError::Cancelled) {
                 return false;

@@ -117,14 +117,24 @@ pub fn handle_decide_policy(
             let decision = decision.clone();
             let webview_nav = webview_nav.clone();
             let host = host.to_string();
+            let uri_str_owned = uri_str.to_string();
             gtk::glib::spawn_future_local(async move {
                 if let Ok(res) = rx.recv().await {
                     match res {
-                        Ok(_) => {
-                            // Since we run a local SOCKS5 proxy that handles all DNS resolutions
-                            // and proxying dynamically, we do not need to rewrite URIs to plain IPs
-                            // or downgrade HTTPS. We simply let WebKit use the connection.
-                            decision.use_();
+                        Ok((ip, _)) => {
+                            let ip_str = ip.to_string();
+                            let new_uri = uri_str_owned.replace(&host, &ip_str);
+                            crate::log!(
+                                Info,
+                                RESOLVER,
+                                "Rewriting navigation from '{}' to IP '{}' (new URI: '{}')",
+                                host,
+                                ip_str,
+                                new_uri
+                            );
+                            crate::resolver::register_sentinel_domain(ip, &host);
+                            webview_nav.load_uri(&new_uri);
+                            decision.ignore();
                         }
                         Err(e) => {
                             log!(
