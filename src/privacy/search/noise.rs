@@ -101,8 +101,60 @@ impl NoiseProvider for RssNoiseProvider {
             }
             selected
         } else {
-            vec!["error".to_string(); count]
+            vec!["privacy".to_string(); count]
         }
+    }
+}
+
+pub struct GossipNoiseProvider;
+
+impl NoiseProvider for GossipNoiseProvider {
+    fn get_keywords(&self, count: usize) -> Vec<String> {
+        let mut rng = thread_rng();
+        let mut selected = Vec::with_capacity(count);
+
+        // AÑADIR 'mut' A pool_lock
+        if let Ok(mut pool_lock) = crate::privacy::search::gossip::GLOBAL_NOISE_POOL.lock() {
+            let pool_terms = pool_lock.get_all_terms();
+            if !pool_terms.is_empty() {
+                for _ in 0..count {
+                    if let Some(entry) = pool_terms.choose(&mut rng) {
+                        selected.push(entry.term.clone());
+                    }
+                }
+            }
+        }
+        selected
+    }
+}
+
+pub struct WeightedCompositeNoiseProvider<P1: NoiseProvider, P2: NoiseProvider> {
+    pub provider1: P1,
+    pub provider2: P2,
+    pub provider1_weight_percent: u8,
+}
+
+impl<P1: NoiseProvider, P2: NoiseProvider> NoiseProvider
+    for WeightedCompositeNoiseProvider<P1, P2>
+{
+    fn get_keywords(&self, count: usize) -> Vec<String> {
+        let weight1 = self.provider1_weight_percent.min(100) as usize;
+        let count1 = (count * weight1) / 100;
+        let count2 = count.saturating_sub(count1);
+
+        let mut res = Vec::with_capacity(count);
+        if count1 > 0 {
+            res.extend(self.provider1.get_keywords(count1));
+        }
+        if count2 > 0 {
+            res.extend(self.provider2.get_keywords(count2));
+        }
+
+        while res.len() < count {
+            res.push("privacy".to_string());
+        }
+
+        res
     }
 }
 
@@ -132,5 +184,34 @@ mod tests {
         assert!(ngrams.contains(&"quick brown jumps".to_string()));
         assert!(ngrams.contains(&"quick brown jumps over".to_string()));
         assert!(ngrams.contains(&"quick brown jumps over lazy".to_string()));
+    }
+
+    #[test]
+    fn test_gossip_and_composite_noise_providers() {
+        if let Ok(mut pool) = crate::privacy::search::gossip::GLOBAL_NOISE_POOL.lock() {
+            pool.add_term("privacy tool".to_string(), "node-1".to_string(), 30);
+        }
+
+        let gossip_provider = GossipNoiseProvider;
+        let terms = gossip_provider.get_keywords(3);
+        assert_eq!(terms.len(), 3);
+        assert_eq!(terms[0], "privacy tool");
+
+        struct DummyProvider;
+        impl NoiseProvider for DummyProvider {
+            fn get_keywords(&self, count: usize) -> Vec<String> {
+                vec!["rss_term".to_string(); count]
+            }
+        }
+
+        let composite = WeightedCompositeNoiseProvider {
+            provider1: DummyProvider,
+            provider2: GossipNoiseProvider,
+            provider1_weight_percent: 50,
+        };
+        let comp_terms = composite.get_keywords(4);
+        assert_eq!(comp_terms.len(), 4);
+        assert!(comp_terms.contains(&"rss_term".to_string()));
+        assert!(comp_terms.contains(&"privacy tool".to_string()));
     }
 }

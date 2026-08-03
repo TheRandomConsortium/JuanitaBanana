@@ -447,6 +447,24 @@ pub fn run(banlist: SharedBanList) {
         }
 
         window.show_all();
+
+        if config.allow_dht_search_sharing && !crate::privacy::search::gossip::is_node_key_unlocked() {
+            let win_parent = window.clone();
+            gtk::glib::idle_add_local(move || {
+                if let Some(pass) = crate::browsing::credentials_ui::ask_master_password(
+                    &win_parent,
+                    "Unlock P2P DHT Search Gossip Secret",
+                    "Please write master password to load secret in RAM.\n(Note: If cancelled, P2P DHT search gossip will remain inactive).",
+                ) {
+                    if let Err(e) = crate::privacy::search::gossip::unlock_node_key(&pass) {
+                        crate::log!(Error, NOISE, "Failed to unlock P2P DHT node key from database: {}", e);
+                    }
+                } else {
+                    crate::log!(Warn, NOISE, "Master password prompt cancelled. P2P DHT search gossip will remain inactive.");
+                }
+                gtk::glib::ControlFlow::Break
+            });
+        }
     });
 
     app.run();

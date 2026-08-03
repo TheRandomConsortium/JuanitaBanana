@@ -22,5 +22,18 @@ pub fn clean_host(domain: &str) -> String {
 }
 
 pub fn restore_original_domain_in_uri(uri: &str) -> String {
+    if let Ok(parsed) = url::Url::parse(uri) {
+        if let Some(host_str) = parsed.host_str() {
+            if let Ok(ip) = host_str.parse::<std::net::IpAddr>() {
+                if let Some(domain) = crate::resolver::get_sentinel_domain(&ip) {
+                    let new_url = uri.replace(host_str, &domain);
+                    crate::log!(Trace, RESOLVER, "Restored {} to {}", uri, new_url);
+                    return new_url;
+                } else {
+                    crate::log!(Trace, RESOLVER, "No sentinel domain found for IP {}", ip);
+                }
+            }
+        }
+    }
     uri.to_string()
 }

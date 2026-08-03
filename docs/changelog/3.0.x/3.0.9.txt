@@ -1,0 +1,8 @@
+Juanita Banana v3.0.9 Patch Release Changelog
+=============================================
+
+SOCKS5 Proxy Host Header Rewrite for Local DNS Resolution
+- Handshake Domain Proxy Fix: Handshake domains are locally resolved to IP addresses and then the navigation URI is rewritten to route by IP (e.g. `http://85.52.85.114/`) to workaround WebKitGTK's inability to route unresolvable domains via SOCKS5 proxies. 
+- To support downstream infrastructure (like Caddy) that aborts direct IP HTTP connections (`:80 :443 { abort }`), a Host header rewrite was introduced in the `tunnel_streams` proxy helper (`src/tor/i2p_helper.rs`). It dynamically identifies HTTP traffic and replaces the IP-based `Host` header with the original requested Handshake domain, ensuring seamless rendering without dropping the connection.
+- Reduced log noise by demoting byte-level WebKit <-> Target proxy traffic logs from `Warn` to `Trace` in `src/tor/i2p_helper.rs`.
+- This took longer than needed to fix because people like to solve the code without reading the issue eventhough main engineer clearly stated we were sending ip but we decided to ignore him.

@@ -99,7 +99,7 @@ pub fn handle_i2p_connection(
                             .write_all(&[0x05, 0x00, 0x00, 0x01, 0, 0, 0, 0, 0, 0])
                             .map_err(|e| format!("Failed to send success response: {}", e))?;
 
-                        return tunnel_streams(client, &mut socks_stream);
+                        return tunnel_streams(client, &mut socks_stream, None);
                     }
                 }
             }
@@ -190,10 +190,14 @@ pub fn handle_i2p_connection(
             .map_err(|e| format!("Failed to send request to I2P HTTP proxy: {}", e))?;
     }
 
-    tunnel_streams(client, &mut http_stream)
+    tunnel_streams(client, &mut http_stream, None)
 }
 
-pub fn tunnel_streams(client: &mut TcpStream, outbound: &mut TcpStream) -> Result<(), String> {
+pub fn tunnel_streams(
+    client: &mut TcpStream,
+    outbound: &mut TcpStream,
+    original_domain: Option<String>,
+) -> Result<(), String> {
     let mut client_clone = client
         .try_clone()
         .map_err(|e| format!("Failed to clone client socket: {}", e))?;
@@ -203,12 +207,50 @@ pub fn tunnel_streams(client: &mut TcpStream, outbound: &mut TcpStream) -> Resul
 
     let t = thread::spawn(move || {
         let mut buf = [0u8; 8192];
+        let mut first = true;
         while let Ok(n) = client_clone.read(&mut buf) {
             if n == 0 {
                 break;
             }
-            if outbound_clone.write_all(&buf[..n]).is_err() {
-                break;
+            if first {
+                let mut data_to_write = buf[..n].to_vec();
+                if let Some(ref domain) = original_domain {
+                    let req_str = String::from_utf8_lossy(&data_to_write);
+                    if req_str.contains("HTTP/") {
+                        // Very simple Host header replacement
+                        let mut new_req = String::new();
+                        for line in req_str.split("\r\n") {
+                            if line.to_lowercase().starts_with("host: ") {
+                                new_req.push_str(&format!("Host: {}", domain));
+                            } else {
+                                new_req.push_str(line);
+                            }
+                            new_req.push_str("\r\n");
+                        }
+                        // Strip trailing \r\n added by loop
+                        if new_req.ends_with("\r\n") {
+                            new_req.truncate(new_req.len() - 2);
+                        }
+                        data_to_write = new_req.into_bytes();
+                    }
+                }
+                crate::log!(
+                    Trace,
+                    WEBKIT,
+                    "WebKit -> Target (first {} bytes): {:?}",
+                    data_to_write.len(),
+                    String::from_utf8_lossy(
+                        &data_to_write[..std::cmp::min(data_to_write.len(), 200)]
+                    )
+                );
+                if outbound_clone.write_all(&data_to_write).is_err() {
+                    break;
+                }
+                first = false;
+            } else {
+                if outbound_clone.write_all(&buf[..n]).is_err() {
+                    break;
+                }
             }
         }
         let _ = outbound_clone.shutdown(std::net::Shutdown::Both);
@@ -216,9 +258,20 @@ pub fn tunnel_streams(client: &mut TcpStream, outbound: &mut TcpStream) -> Resul
     });
 
     let mut buf = [0u8; 8192];
+    let mut first = true;
     while let Ok(n) = outbound.read(&mut buf) {
         if n == 0 {
             break;
+        }
+        if first {
+            crate::log!(
+                Trace,
+                WEBKIT,
+                "Target -> WebKit (first {} bytes): {:?}",
+                n,
+                String::from_utf8_lossy(&buf[..std::cmp::min(n, 200)])
+            );
+            first = false;
         }
         if client.write_all(&buf[..n]).is_err() {
             break;

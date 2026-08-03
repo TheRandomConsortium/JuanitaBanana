@@ -1,0 +1,274 @@
+Juanita Banana Historical Releases (v1.3.0 – v1.6.11)
+=====================================================
+
+Juanita Banana v1.6.11 Changelog
+=================================
+
+Changes:
+- Configured and enabled the active Tox contact channel (Tox ID: 4EEA789C455A42E27C203755D3397365C59947EA0B20FCD7DEC075F9F3371E260DA7441FA0F3) in templates/contact.html.
+- Marked Chore 13 (Deploy and Integrate Tox Contact Channel) as Done in docs/chore_list.md.
+Juanita Banana v1.6.10 Changelog
+=================================
+
+Changes:
+- Added a custom connection / proxy error page for when the underlying daemon (arti, hnsd), network proxy (local proxy 9151), or general connections fail.
+- Extracted and styled the page via templates/proxy_error.html with a banana gold title, crimson buttons, and explanations of proxy and connection failure modes.
+- Added and embedded a custom cartoon illustration (juanita_broken_pipe.png) depicting Juanita shrugging next to a broken network cable.
+- Hooked into WebKit's connect_load_failed signal to intercept network errors and display this custom page instead of the generic browser fallback.
+- Added a new internal contact static page registered at `juanita://contact` using templates/contact.html.
+- Provided contact options (GitHub, ProtonMail, and placeholder for Tox). Fictitious .onion contact details were omitted.
+- Added "Contact the Consortium" links to the TLS error page, connection/proxy error page, and home page.
+- Appended Chore 13 (implementing a Tox contact node) and Chore 14 (investigating and configuring WebKit proxy timeout patience/settings) to docs/chore_list.md.
+
+Juanita Banana v1.6.9 Changelog
+================================
+
+Changes:
+- Redesigned TLS certificate error page: replaced placeholder text with two collapsible sections
+  explaining why the error happens (certbot, ICANN monopoly, malicious actors, expired autorenew)
+  and what TLS/SSL actually means (cynical but accurate technical breakdown).
+- Moved TLS error page HTML from inline Rust format string to templates/tls_error.html, reducing
+  tab.rs from 572 lines to 460 lines.
+- Added Juanita vs certbot illustration (Juanita smacking a dead certbot robot with a bat)
+  embedded in the TLS error page via base64 data URI.
+- Changed TLS error page h1 to banana gold (#f5c518) and button to dark crimson (#8b1a1a).
+- Added collapsible <details>/<summary> sections for the two explanatory paragraphs.
+- Marked entire src/tor/ module as deprecated (interim subprocess architecture):
+  daemon.rs, proxy.rs, and webcontext.rs annotated with //! deprecation doc comments.
+  Public re-exports in mod.rs marked with #[deprecated(since = "1.6.8", note = "...")] attributes.
+  All deprecated items describe their Phase 4 replacement (arti-client in-process).
+- Updated docs/OVERLAY_NETWORKS.md and docs/FUNCTIONALITIES.md with full deprecation rationale,
+  hop chain diagrams, and Phase 4 elimination plan.
+- Added chore 12 to docs/chore_list.md: create a unified internal stylesheet for all juanita://
+  pages to replace ad-hoc per-page inline CSS.
+
+Juanita Banana v1.6.8 Changelog
+================================
+
+Changes:
+- Implemented Local SOCKS5 Proxy Architecture (port 9151) to intercept WebKit connection requests.
+- Resolved Tor SOCKS5 IP-as-hostname lookup failures by converting IP-as-hostname strings into native IP addresses before proxying to Tor.
+- Restored native HTTPS and TLS certificate validation for Handshake domains by eliminating URI-to-IP rewriting and HTTP downgrading hacks.
+- Enabled seamless Handshake subresource loading (scripts, stylesheets, images) over Tor by resolving Handshake domains locally and tunneling assets securely.
+- Intercepted load failures due to TLS errors on Handshake/custom domains (non-system resolvable) to show a custom warning page asking the user if they'd prefer to reload via HTTP, avoiding silent bypasses or standard browser TLS warnings.
+
+Juanita Banana v1.6.7 Changelog
+================================
+
+Changes:
+- Restored direct local hnsd daemon resolution for Handshake domains, ensuring both TLDs and subdomains (like nathan.woodburn) resolve successfully.
+
+Juanita Banana v1.6.6 Changelog
+================================
+
+Changes:
+- Implemented secure trustless local DNS-over-Tor forwarding for Handshake resolution.
+  When Tor route-all is active, hnsd runs directly (to perform local SPV validation) and forwards
+  outbound nameserver lookup queries to Tor's DNS listener port (dns_listen="127.0.0.1:9053") on localhost.
+- Removed torsocks dependency and wrapping features entirely, eliminating UDP loopback connection blocking and P2P connection failures over Tor exit nodes.
+
+Juanita Banana v1.6.5 Changelog
+================================
+
+Changes:
+- Added dynamic Tor initialization: when the user updates and saves settings in the
+  juanita://config page, the config save handler now calls crate::tor::init_tor()
+  to start or stop the arti daemon immediately without requiring a browser restart.
+
+Juanita Banana v1.6.4 Changelog
+================================
+
+Changes:
+- Fixed startup freeze/delay by moving the SOCKS5 proxy port readiness check loop to
+  a background thread, allowing the main GTK application window and initial tab
+  to render immediately without waiting.
+- Configured hnsd to only wrap in torsocks when route_all_traffic_through_tor
+  (tor_route_all) is active, in addition to tor_enabled.
+- Fixed the socks5 connect: Connection refused error for torsocks:
+  - Generates a local/custom torsocks.conf pointing to arti's port 9150 inside
+    the base data directory.
+  - Spawns torsocks with TORSOCKS_CONF_FILE environment variable pointing to
+    the custom config, resolving port mismatch (9050 vs 9150) for both system
+    and locally compiled torsocks.
+
+Juanita Banana v1.6.3 Changelog
+================================
+
+Changes:
+- Decoupled torsocks compilation from the main tor feature in Cargo.toml and build.rs:
+  - Created a separate torsocks Cargo feature.
+  - default and all-resolvers features enable handshake and tor (building hnsd
+    and arti but skipping torsocks to keep basic builds lightweight).
+  - fullsuite feature enables all-resolvers and torsocks (building hnsd, arti,
+    and compiling torsocks locally).
+- Updated build_rpm.sh to compile the release target using --features fullsuite,
+  guaranteeing that official RPM packages bundle hnsd, arti, and the local
+  torsocks wrapper environment.
+
+Juanita Banana v1.6.2 Changelog
+================================
+
+Changes:
+- Reorganized scripts folder to prevent folder bloat (> 9 items):
+  - Created scripts/js/ for all JavaScript files.
+  - Created scripts/sh/ for all shell build scripts.
+  - Updated build.rs rerun paths and runner commands to point to scripts/sh/.
+  - Updated include_str! macro paths in config_html.rs, engine.rs, ban.rs,
+    spoof.rs, and credentials_ui.rs.
+- Resolved clippy warning: too-many-arguments on setup_cleanup_triggers.
+- Updated wiki/Overlay-Networks.md to reflect the new scripts/sh/ directory layout.
+
+Juanita Banana v1.6.1 Changelog
+================================
+
+Changes:
+- Fixed a startup race condition where the first tab opened did not synchronize
+  with the global webview reference, causing the navigation bar to be unresponsive.
+- Pre-emptively kill any orphan hnsd or arti processes on startup to prevent port
+  binding conflicts (EFAILURE) when the browser is restarted.
+- Fixed the double-free / heap corruption crash (free(): corrupted unsorted chunks)
+  by removing unsafe destroy() calls on headless WebViews, allowing GObject to
+  manage their lifecycle cleanly.
+- Added self-healing configuration: AppConfig::load() now automatically injects the
+  "Onion" resolver into the priority list for legacy config files.
+- Trimmed src/browsing/gui.rs down to 438 lines (respecting the 500-line threshold)
+  by extracting all GTK cleanup triggers into src/browsing/tabs/cleanup.rs.
+- Added Cargo compile-time features: default, handshake, tor, just-system,
+  all-resolvers, fullsuite. Building with --no-default-features --features just-system
+  skips all external daemon building.
+- Added scripts/build_torsocks.sh to automatically compile and build a local
+  torsocks installation at build time when the tor feature is active.
+- Packaged local torsocks and its environment lib into the RPM under /usr/bin/ and
+  /usr/lib/juanita-banana/.
+
+Juanita Banana v1.6.0 Changelog
+================================
+
+Changes:
+- Tor transport implemented via arti subprocess (same lifecycle pattern as hnsd).
+- New src/tor/ module: daemon.rs manages arti process, webcontext.rs applies SOCKS5
+  proxy to WebKit's WebsiteDataManager.
+- New src/resolver/onion/ module: OnionResolver handles .onion v3 addresses — returns
+  sentinel IP 127.0.0.2 so policy.rs routes the original URI through the SOCKS5 proxy
+  without DNS (onion v3 addresses are self-authenticating).
+- arti built at compile time via scripts/build_arti.sh (cargo install arti).
+  Non-fatal: browser degrades gracefully when arti is unavailable at runtime.
+- HNS-over-Tor: hnsd subprocess wrapped with torsocks when Tor is enabled and torsocks
+  is installed; falls back with warning if torsocks not found.
+- Config: tor_enabled (default false) and tor_route_all (default false) added to AppConfig.
+  Default resolver order updated to [Handshake, Onion, System].
+- Config UI: Tor Transport card added to juanita://config -> Resolver Stack tab.
+- gui.rs reduced below 500 lines by extracting Tor proxy setup into tor/webcontext.rs.
+- build.rs extended: builds both hnsd and arti at compile time when binaries are absent.
+- clippy and fmt clean.
+- Wiki Overlay-Networks.md updated: Tor status, implementation details, HNS-over-Tor
+  current approach vs. Phase 4 in-process arti-client target.
+- docs/OVERLAY_NETWORKS.md and docs/FUNCTIONALITIES.md status updated to Done.
+
+
+Version 1.5.7
+-------------
+- Migrated all println! and eprintln! calls in application source files to the structured log! macro with proper categories and levels.
+- Implemented support for the JUANITA_LOG_OVERRIDE environment variable to allow per-system log level overrides.
+- Updated documentation to list "Clever Heuristic for Toxicity" under planned features.
+
+Version 1.5.6
+-------------
+- Refactored browsing modules to keep them organized.
+- Cleaned up unused imports and dead code.
+
+Version 1.5.5
+-------------
+- Refactored tab inactivity timeout checking into `tab_cleanup.rs` to keep `gui.rs` strictly under 500 lines.
+- Added `in_destruction()` checks on notebook, entry, and button references to guard against double-free/use-after-free events during application shutdown.
+- Prevented background timers from executing during application termination by returning `ControlFlow::Break` if the main window is in destruction.
+- Refined Settings page `<select>` element styling with white background and black text to ensure visibility on all GTK themes.
+
+Version 1.5.4
+-------------
+- Fixed middle-click on links not opening in a new tab by checking `nav_decision.mouse_button() == 2`.
+- Fixed tab names getting cleared and loading/nuking infinitely when closed by inactivity by ignoring WebKit load events on killed tabs.
+- Added notebook hover (enter-notify) and window focus-in triggers to seamlessly execute tab cleanup when user attention returns.
+- Fixed Settings page dropdown visibility on dark mode by rendering options with black text on white background.
+
+Version 1.5.3
+-------------
+- Added CleanupGuard to terminate local hnsd resolver daemon on application exit or panic.
+- Enhanced hnsd daemon initialization to check process status via try_wait() and clean up failed handles to prevent port collisions.
+- Refactored tab management and page removal/sync logic into a dedicated module tab_cleanup.rs to comply with the 500-line limit.
+- Replaced basic tab headers with interactive EventBox + GtkBox widgets containing a close button 'x' and support for middle-click closing.
+- Intercepted NewWindowAction policy decisions and added custom context menus to support "Open Link in New Tab" navigation.
+- Shared a single RssNoiseProvider across all tabs to prevent redundant RSS crawler thread spawns.
+- Fixed inactivity active_count tracking in the timer loop to prevent nuking the last active tab.
+- Preserved tab label titles when tabs are killed by TTL to prevent layout shifting.
+
+Version 1.5.2
+-------------
+- Fixed a RefCell mutably borrowed runtime panic that occurred when adding a new tab, caused by the switch-page signal firing while the tabs list RefCell was still mutably borrowed.
+
+Version 1.5.1
+-------------
+- Added a new Warn log level weight (1) to the LogLevel enum and environment variable parser in debug utilities.
+- Switched newly introduced and existing raw console outputs (println!) for domain banning in gui.rs and message_handler.rs to structured log! macro calls at the Warn level.
+- Migrated HTML viewer disk-saving console feedback to log! calls under the Info and Error levels.
+
+Version 1.5.0
+-------------
+- Added customizable tab settings to AppConfig, allowing configuration of tab inactivity TTL (1 to 60 minutes) and last tab nuke behavior (survive or redirect to home).
+- Overhauled the browser UI layout by replacing the single WebView packing with a tabbed GtkNotebook widget, adding a dynamic new tab "+" button to the headerbar.
+- Integrated background inactivity audit monitoring that automatically shuts down inactive webviews in the background, updating tab labels to "tab closed due to inactivity in 0 frames" to preserve user attention.
+- Implemented deferred tab pruning: visually reordering and removing dead tabs occurs only when the notebook tab headers or url entry bar are focused by the user.
+- Decoupled context menus and unsubscribe flows to query active tab contexts dynamically using ACTIVE_TAB thread-local storage, ensuring correct target isolation in multi-tab workspaces.
+- Refactored gui.rs to extract all tab management code into its own submodule tab.rs, keeping gui.rs clean and under the 500-line budget limit.
+- Updated the local RPM builder (build_rpm.sh) to support auto-incrementing build releases when executing builds with version bump argument set to none.
+
+Version 1.4.0
+-------------
+- Added subliminal guilt trip overlay to remind the user about toxic browsing habits, featuring category-configurable high-fidelity meme overlays (Ceiling Cat for NSFW/porn, Donald Trump for news, Fry "Take My Money" for shopping/gambling, Wojak "Touch Grass" for social media/time wasting, and Banana for fallbacks).
+- Overhauled webconsole log interception, capturing guest page console messages (`console.log`, `console.error`, etc.) inside the webview and routing them to the Rust log macro under the debug levels.
+- Reconfigured GitHub CI compilation script for hnsd (recursive resolver) by adding libunbound-dev, autoconf, automake, and libtool dependencies to the Ubuntu runner image to resolve build panics.
+- Corrected templates/config.html spaced template placeholder parsing error which previously caused page scripts to break on configuration updates.
+- Restored Guilt Trip Overlay subliminal opacity limits (capped slider back to a maximum of 0.1).
+- Avoided injecting ad-intoxication, fingerprint-spoofing, toxic warnings, or guilt overlays on internal local pages (juanita://*).
+
+Version 1.3.5
+-------------
+- Refactored the monolithic `src/resolver/mod.rs` into a clean, modular submodule architecture under `src/resolver/` (`helpers.rs`, `system/`, and `hns/`).
+- Implemented fully asynchronous resolver integration in GTK policy decision hooks using non-blocking channels and local GLib futures.
+- Resolved browser GUI freezing/locking up during slow Handshake resolver network timeouts by offloading resolutions to spawned worker threads.
+- Ensured seamless and responsive fallback capability to system DNS for unresolvable Handshake domains.
+
+Version 1.3.4
+-------------
+- Implemented dynamic DNS resolution utilizing the user's configured priority chain (Handshake -> System).
+- Eliminated static clearnet TLD checklists in favor of checking system DNS resolvability dynamically via `is_system_resolvable`.
+- Resolved infinite redirect loops on clearweb sites (like google.com) by natively loading domains that are resolvable via the system DNS, bypassing IP-rewriting.
+- Implemented robust host normalization (`clean_host`) to correctly parse URIs containing custom ports (e.g. :8080), userinfo (e.g. user:pass@), and IPv6 brackets (e.g. [2001:db8::1]).
+- Integrated a thread-safe mapping registry (`RESOLVED_IPS`) to intercept GTK load-changed events and restore original domain names in the address bar.
+
+Version 1.3.3
+-------------
+- Resolved a port collision conflict in the Handshake resolver system where both the root nameserver (ns) and the recursive nameserver (rns) components of the `hnsd` daemon attempted to bind to the same port (5349).
+- Configured root nameserver to bind explicitly to port 5349 (`-n 127.0.0.1:5349`) and recursive nameserver to port 5350 (`-r 127.0.0.1:5350`).
+- Implemented background log readers for `hnsd` daemon process's `stdout` and `stderr` streams.
+
+Version 1.3.2
+-------------
+- Added a dedicated `handshake_enabled` configuration setting to allow enabling or disabling Handshake resolution independently from the BIOS resolver chain.
+- Implemented a checkbox toggle for the Handshake daemon in the Resolver Stack tab of `juanita://config`.
+- Configured the `hnsd` resolver daemon to be immediately shut down if Handshake is disabled during runtime.
+
+Version 1.3.1
+-------------
+- Fixed compilation and linting checks by resolving cargo clippy warnings.
+- Removed unused `LogLevel::Warn` variant and corresponding environment parser cases.
+- Restored standard mapping for the custom `log!` macro, ensuring `Error` log levels output directly to standard error stream.
+
+Version 1.3.0
+-------------
+- Integrated Handshake (HNS) resolver daemon (hnsd) directly compiled with system unbound development dependencies.
+- Implemented browser-managed hnsd subprocess lifecycle, dynamically starting and stopping the daemon with the browser.
+- Added a DomainResolver trait to implement the Open-Closed Principle for future resolver plugins.
+- Implemented SystemResolver fallback using rust standard library ToSocketAddrs resolving ICANN namespaces.
+- Added a customizable, priority-ordered "Resolver Stack" configuration UI tab under juanita://config with interactive reordering controls.
+
