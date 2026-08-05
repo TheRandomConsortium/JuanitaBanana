@@ -1289,7 +1289,7 @@ dependencies = [
 
 [[package]]
 name = "juanita-banana"
-version = "3.0.9"
+version = "3.0.10"
 dependencies = [
  "argon2",
  "async-channel",

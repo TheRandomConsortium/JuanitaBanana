@@ -121,20 +121,30 @@ pub fn handle_decide_policy(
             gtk::glib::spawn_future_local(async move {
                 if let Ok(res) = rx.recv().await {
                     match res {
-                        Ok((ip, _)) => {
-                            let ip_str = ip.to_string();
-                            let new_uri = uri_str_owned.replace(&host, &ip_str);
-                            crate::log!(
-                                Info,
-                                RESOLVER,
-                                "Rewriting navigation from '{}' to IP '{}' (new URI: '{}')",
-                                host,
-                                ip_str,
-                                new_uri
-                            );
-                            crate::resolver::register_sentinel_domain(ip, &host);
-                            webview_nav.load_uri(&new_uri);
-                            decision.ignore();
+                        Ok((ip, is_sys)) => {
+                            if is_sys {
+                                // For standard ICANN system-resolvable domains, allow WebKit to proceed using
+                                // the original domain URI. The SOCKS5 proxy handles routing/resolution, and
+                                // WebKit preserves TLS SNI and HTTP Host headers.
+                                decision.use_();
+                            } else {
+                                // For non-system domains (Handshake, custom TLDs), WebKit's internal resolver
+                                // cannot resolve them directly and will fail. Rewrite the navigation URI to the
+                                // resolved IP and register the sentinel domain for Host header / TLS error recovery.
+                                let ip_str = ip.to_string();
+                                let new_uri = uri_str_owned.replace(&host, &ip_str);
+                                crate::log!(
+                                    Info,
+                                    RESOLVER,
+                                    "Rewriting non-system domain navigation from '{}' to IP '{}' (new URI: '{}')",
+                                    host,
+                                    ip_str,
+                                    new_uri
+                                );
+                                crate::resolver::register_sentinel_domain(ip, &host);
+                                webview_nav.load_uri(&new_uri);
+                                decision.ignore();
+                            }
                         }
                         Err(e) => {
                             log!(

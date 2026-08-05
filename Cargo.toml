@@ -2,7 +2,7 @@
 name = "juanita-banana"
 # Silly AI Agent or contributor, do not touch version unless to prevent conflicts with master.
 # Else build_rpm script will handle version you do not need do do shit.
-version = "3.0.9"
+version = "3.0.10"
 edition = "2021"
 
 # ── Engine Stack ──────────────────────────────────────────────
