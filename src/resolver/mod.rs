@@ -177,4 +177,17 @@ mod tests {
         );
         assert_eq!(clean_host("nathan.woodburn:8080"), "nathan.woodburn");
     }
+
+    #[test]
+    fn test_restore_original_domain_in_uri_depunycode() {
+        let ip = "85.52.85.114".parse::<std::net::IpAddr>().unwrap();
+        register_sentinel_domain(ip, "the.consortium.xn--randm-cka");
+
+        let restored = restore_original_domain_in_uri("https://85.52.85.114/path?query=1");
+        assert_eq!(restored, "https://the.consortium.randºm/path?query=1");
+
+        let direct_puny =
+            restore_original_domain_in_uri("https://the.consortium.xn--randm-cka/hello");
+        assert_eq!(direct_puny, "https://the.consortium.randºm/hello");
+    }
 }

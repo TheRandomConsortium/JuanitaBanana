@@ -21,19 +21,42 @@ pub fn clean_host(domain: &str) -> String {
     host
 }
 
+pub fn depunycode_host(host: &str) -> String {
+    host.split('.')
+        .map(|label| {
+            if let Some(stripped) = label.strip_prefix("xn--") {
+                if let Some(decoded_chars) = idna::punycode::decode(stripped) {
+                    return decoded_chars.into_iter().collect::<String>();
+                }
+            }
+            label.to_string()
+        })
+        .collect::<Vec<_>>()
+        .join(".")
+}
+
 pub fn restore_original_domain_in_uri(uri: &str) -> String {
+    let mut restored = uri.to_string();
     if let Ok(parsed) = url::Url::parse(uri) {
         if let Some(host_str) = parsed.host_str() {
             if let Ok(ip) = host_str.parse::<std::net::IpAddr>() {
                 if let Some(domain) = crate::resolver::get_sentinel_domain(&ip) {
-                    let new_url = uri.replace(host_str, &domain);
-                    crate::log!(Trace, RESOLVER, "Restored {} to {}", uri, new_url);
-                    return new_url;
+                    restored = uri.replace(host_str, &domain);
+                    crate::log!(Trace, RESOLVER, "Restored {} to {}", uri, restored);
                 } else {
                     crate::log!(Trace, RESOLVER, "No sentinel domain found for IP {}", ip);
                 }
             }
         }
     }
-    uri.to_string()
+
+    let host_part = crate::browsing::browser::extract_domain(&restored);
+    if !host_part.is_empty() {
+        let unicode_host = depunycode_host(&host_part);
+        if unicode_host != host_part {
+            restored = restored.replace(&host_part, &unicode_host);
+        }
+    }
+
+    restored
 }
