@@ -150,3 +150,11 @@ This document maintains the tracking of known technical chores, API deprecations
 - **Action Plan:**
   - Create `scripts/sh/resolve_cargo_version_conflict.sh` to check for `master` version changes, reset `Cargo.toml` package version to match `master` when conflicts occur, and delegate version bumping exclusively to `build_rpm.sh`.
   - Add documentation and usage instructions in `Cargo.toml` and developer workflow guides.
+
+### 25. Defer Handshake Resolution to SOCKS5 Proxy to Eliminate `is_system_resolvable` URI Rewriting
+- **Files:** `src/browsing/policy.rs`, `src/tor/proxy.rs`, `src/browsing/tabs/tab.rs`
+- **Chore:** Eliminate the in-process `is_system_resolvable` URI IP rewriting fallback in `decide_policy` by fully delegating Handshake domain resolution to the internal SOCKS5 proxy layer (`socks5://127.0.0.1:9151`).
+- **Action Plan:**
+  - Enhance the internal SOCKS5 proxy helper to intercept and resolve custom Handshake TLDs (`.hns`, `.randºm`, etc.) directly at the SOCKS socket level before WebKit triggers local OS/glibc DNS lookup failures.
+  - Remove the necessity for `policy.rs` to rewrite navigation URIs to raw IP addresses for non-system domains.
+  - Allow WebKit to send all HTTP/HTTPS requests with the authentic Handshake domain in the TLS SNI header, enabling native validation of Handshake TLS certificates without encountering IP SAN mismatch errors.

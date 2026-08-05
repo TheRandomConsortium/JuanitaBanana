@@ -1,0 +1,9 @@
+Juanita Banana v3.0.10 Patch Release Changelog
+==============================================
+
+IDNA Punycode Depunycode URL Display & System Domain Resolution Policy Hotfix
+- IDNA Punycode Depunycode URL Display: Added `depunycode_host` helper in `src/resolver/helpers.rs` and integrated it into `restore_original_domain_in_uri`. Decodes Punycode domain labels (e.g. `xn--randm-cka`) to Unicode (e.g. `randºm`) so the address bar displays clean, human-readable internationalized domain names.
+- System Domain TLS Verification Policy: Updated `handle_decide_policy` in `src/browsing/policy.rs` to evaluate `is_system_resolvable`. For standard ICANN clearnet domains (`is_sys == true`), WebKit proceeds with `decision.use_()`, preserving domain names in URIs, TLS SNI, and HTTP Host headers to ensure TLS certificate verification passes without IP SAN mismatch errors.
+- Handshake Domain Navigation Fallback: Non-system domains (Handshake / custom TLDs) continue to rewrite navigation URIs to their resolved IP addresses to prevent WebKit/glibc OS DNS lookup failures on non-ICANN TLDs.
+- Custom TLS Error Template Restoration: Updated `connect_load_failed_with_tls_errors` in `src/browsing/tabs/tab.rs` to restore sentinel domains from IPs via `restore_original_domain_in_uri` prior to checking `is_system_resolvable`, ensuring custom Certbot TLS error templates (`tls.html`) render properly for Handshake sites.
+- Chore Roadmap Addition: Added Chore #25 to `docs/chore_list.md` to track deferring Handshake domain resolution entirely to the proxy layer in a future refactor, allowing WebKit to pass authentic hostnames for native Handshake TLS validation without IP rewriting.

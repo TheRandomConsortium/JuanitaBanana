@@ -255,10 +255,11 @@ pub fn create_tab(
             "WebKit load_failed_with_tls_errors: uri='{}'",
             failing_uri
         );
-        let domain = crate::browsing::browser::extract_domain(failing_uri);
+        let restored_uri = crate::resolver::restore_original_domain_in_uri(failing_uri);
+        let domain = crate::browsing::browser::extract_domain(&restored_uri);
         let host = crate::resolver::clean_host(&domain);
         if !host.is_empty() && !crate::resolver::is_system_resolvable(&host) {
-            super::handlers::render_tls_error(wv, failing_uri);
+            super::handlers::render_tls_error(wv, &restored_uri);
             true
         } else {
             false
